@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CameraIcon, LeafIcon } from "@/lib/icons";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, getQueryFn } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { insertPlantSchema } from "@shared/schema";
 import { toast } from "@/hooks/use-toast";
@@ -31,7 +31,27 @@ interface AddPlantModalProps {
   plantToEdit?: PlantWithCare | null;
 }
 
+interface PlantIdentificationResult {
+  plantType: string;
+  commonName: string;
+  scientificName: string;
+  careRecommendations: {
+    waterFrequency: number;
+    sunlightLevel: "low" | "medium" | "high";
+    fertilizerFrequency: number;
+    additionalCare: string;
+  };
+  confidence: "high" | "medium" | "low";
+}
+
 export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalProps) {
+  // State for image upload and identification
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isIdentifying, setIsIdentifying] = useState(false);
+  const [identificationResult, setIdentificationResult] = useState<PlantIdentificationResult | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Extend the insertPlantSchema with client-side validation
   const formSchema = insertPlantSchema.extend({
     name: z.string().min(2, "Plant name must be at least 2 characters."),
@@ -64,6 +84,84 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
     },
   });
 
+  // Handle image file selection
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      setImageFile(file);
+      
+      // Create a preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          setSelectedImage(e.target.result as string);
+          // Store the image in form data
+          form.setValue("image", e.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Trigger file input click
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // Identify plant using OpenAI
+  const identifyPlant = async () => {
+    if (!selectedImage) {
+      toast({
+        title: "No image selected",
+        description: "Please upload an image of your plant first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsIdentifying(true);
+      
+      // Extract base64 data from the data URL
+      const base64Data = selectedImage.split(',')[1];
+      
+      // Call the identification API
+      const response = await apiRequest('POST', '/api/identify-plant', {
+        imageBase64: base64Data
+      });
+      
+      // Type assertion to ensure response is treated as PlantIdentificationResult
+      const result = response as unknown as PlantIdentificationResult;
+      setIdentificationResult(result);
+      
+      // Pre-fill the form with the identification results
+      form.setValue("name", result.commonName);
+      form.setValue("type", result.plantType.toLowerCase());
+      form.setValue("sunlightLevel", result.careRecommendations.sunlightLevel);
+      form.setValue("waterFrequency", result.careRecommendations.waterFrequency);
+      form.setValue("fertilizerFrequency", result.careRecommendations.fertilizerFrequency);
+      
+      // Add scientific name and additional care tips to notes
+      const existingNotes = form.getValues("notes") || "";
+      const newNotes = `Scientific Name: ${result.scientificName}\n\nCare Tips: ${result.careRecommendations.additionalCare}${existingNotes ? "\n\n" + existingNotes : ""}`;
+      form.setValue("notes", newNotes);
+      
+      toast({
+        title: "Plant identified!",
+        description: `Identified as ${result.commonName} with ${result.confidence} confidence.`
+      });
+    } catch (error) {
+      console.error("Error identifying plant:", error);
+      toast({
+        title: "Identification failed",
+        description: "Unable to identify the plant. Please try again or fill in the details manually.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsIdentifying(false);
+    }
+  };
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       if (plantToEdit) {
@@ -88,6 +186,9 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
       
       // Reset form and close modal
       form.reset();
+      setSelectedImage(null);
+      setImageFile(null);
+      setIdentificationResult(null);
       onClose();
     } catch (error) {
       toast({
@@ -143,10 +244,76 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {/* Plant Image Upload */}
               <div className="mb-4">
-                <div className="h-44 bg-neutral-medium bg-opacity-30 rounded-lg flex flex-col items-center justify-center cursor-pointer">
-                  <CameraIcon className="h-8 w-8 text-neutral-dark opacity-60 mb-2" />
-                  <p className="text-sm text-neutral-dark opacity-70">Add a photo of your plant</p>
+                <input 
+                  type="file" 
+                  ref={fileInputRef}
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageChange}
+                />
+                
+                <div 
+                  onClick={handleImageClick}
+                  className="h-44 bg-neutral-medium bg-opacity-30 rounded-lg flex flex-col items-center justify-center cursor-pointer relative overflow-hidden"
+                >
+                  {selectedImage ? (
+                    <>
+                      <img 
+                        src={selectedImage}
+                        alt="Selected plant" 
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                        <CameraIcon className="h-8 w-8 text-white mb-2" />
+                        <p className="text-sm text-white">Change photo</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <CameraIcon className="h-8 w-8 text-neutral-dark opacity-60 mb-2" />
+                      <p className="text-sm text-neutral-dark opacity-70">Add a photo of your plant</p>
+                    </>
+                  )}
                 </div>
+                
+                {selectedImage && !isIdentifying && !identificationResult && (
+                  <div className="mt-2 flex justify-center">
+                    <Button 
+                      type="button" 
+                      onClick={identifyPlant} 
+                      variant="outline" 
+                      size="sm"
+                      className="flex items-center gap-2"
+                    >
+                      <LeafIcon className="h-4 w-4" />
+                      Identify Plant
+                    </Button>
+                  </div>
+                )}
+                
+                {isIdentifying && (
+                  <div className="mt-3 space-y-2">
+                    <Progress value={66} className="h-2" />
+                    <p className="text-xs text-center text-neutral-dark">Identifying your plant...</p>
+                  </div>
+                )}
+                
+                {identificationResult && (
+                  <div className="mt-2 p-2 bg-primary/10 rounded-md">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-sm font-medium">{identificationResult.commonName}</p>
+                        <p className="text-xs text-neutral-dark italic">{identificationResult.scientificName}</p>
+                      </div>
+                      <Badge variant={
+                        identificationResult.confidence === "high" ? "default" : 
+                        identificationResult.confidence === "medium" ? "outline" : "secondary"
+                      }>
+                        {identificationResult.confidence} confidence
+                      </Badge>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Plant Name */}
@@ -317,7 +484,11 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
                       <Textarea 
                         placeholder="Add any special care instructions or notes about your plant" 
                         className="min-h-[100px]"
-                        {...field} 
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
                       />
                     </FormControl>
                     <FormMessage />
