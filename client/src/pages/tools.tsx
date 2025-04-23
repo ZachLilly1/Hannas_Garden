@@ -18,7 +18,6 @@ export default function Tools() {
   return (
     <MainLayout>
       <div className="p-4">
-        <h1 className="text-2xl font-medium mb-2">Garden Tools</h1>
         <p className="text-sm text-neutral-dark opacity-70 mb-6">
           Specialized tools to help with your gardening tasks
         </p>
