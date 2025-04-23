@@ -1,7 +1,7 @@
 import { MainLayout } from '@/components/layouts/MainLayout';
 import { Card } from '@/components/ui/card';
 import { Link } from 'wouter';
-import { SunIcon, CameraIcon } from '@/lib/icons';
+import { SunIcon, CameraIcon, LeafIcon } from '@/lib/icons';
 
 export default function Tools() {
   const tools = [
@@ -11,6 +11,13 @@ export default function Tools() {
       path: '/tools/light-meter',
       icon: <SunIcon className="w-10 h-10 text-yellow-500" />,
       color: 'bg-yellow-100'
+    },
+    {
+      title: 'Plant Identifier',
+      description: 'Identify plants and get care recommendations',
+      path: '/tools/plant-identifier',
+      icon: <LeafIcon className="w-10 h-10 text-green-500" />,
+      color: 'bg-green-100'
     },
     // More tools can be added here in the future
   ];
