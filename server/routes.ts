@@ -197,8 +197,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Plant not found" });
     }
     
-    // For demo, use a fixed userId=1
-    const userId = 1;
+    // Get the authenticated user ID
+    const userId = req.user!.id;
     
     // If water frequency changed, update or create a watering reminder
     if (validation.data.waterFrequency && validation.data.waterFrequency !== originalPlant.waterFrequency) {
@@ -348,8 +348,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Get the plant to update its reminders
     const plant = await storage.getPlant(careLogData.plantId);
     if (plant) {
-      // For demo, use a fixed userId=1
-      const userId = 1;
+      // Get the authenticated user ID
+      const userId = req.user!.id;
       
       // Update existing reminders based on the care action performed
       const existingReminders = await storage.getRemindersByPlant(careLogData.plantId);
@@ -389,7 +389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Update the plant's last watered date
         await storage.updatePlant(plant.id, {
-          lastWatered: new Date()
+          lastWatered: new Date().toISOString()
         });
       } else if (careLogData.careType === 'fertilize') {
         // Find existing fertilizer reminder
@@ -435,12 +435,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Plant guides routes
-  apiRouter.get("/api/plant-guides", async (req, res) => {
+  apiRouter.get("/api/plant-guides", isAuthenticated, async (req, res) => {
     const guides = await storage.getPlantGuides();
     res.json(guides);
   });
 
-  apiRouter.get("/api/plant-guides/:type", async (req, res) => {
+  apiRouter.get("/api/plant-guides/:type", isAuthenticated, async (req, res) => {
     const plantType = req.params.type;
     const guide = await storage.getPlantGuideByType(plantType);
     
@@ -568,7 +568,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Plant identification route
-  apiRouter.post("/api/identify-plant", async (req, res) => {
+  apiRouter.post("/api/identify-plant", isAuthenticated, async (req, res) => {
     try {
       // Validate request
       const identifySchema = z.object({
