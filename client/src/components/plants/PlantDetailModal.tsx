@@ -24,6 +24,8 @@ import { queryClient } from "@/lib/queryClient";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CareTimeline } from "./CareTimeline";
 import { CareLogForm } from "./CareLogForm";
+import { ReminderList } from "../reminders/ReminderList";
+import { ReminderForm } from "../reminders/ReminderForm";
 
 interface PlantDetailModalProps {
   plant: PlantWithCare | null;
