@@ -120,13 +120,13 @@ export default function Profile() {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-6">
       {/* User Profile */}
-      <Card>
+      <Card className="overflow-visible">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg">My Profile</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-visible">
           <div className="flex items-center mb-4">
             {user?.avatarUrl ? (
               <div className="h-16 w-16 rounded-full overflow-hidden mr-4 flex-shrink-0">
@@ -198,7 +198,7 @@ export default function Profile() {
             open={isEditProfileOpen} 
             onOpenChange={setIsEditProfileOpen}
           >
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] w-[95vw] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Edit Profile</DialogTitle>
                 <DialogDescription>
@@ -364,11 +364,11 @@ export default function Profile() {
       </Card>
       
       {/* App Settings */}
-      <Card>
+      <Card className="overflow-visible">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg">App Settings</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 overflow-visible">
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">Care Reminders</p>
@@ -400,11 +400,11 @@ export default function Profile() {
       </Card>
       
       {/* About */}
-      <Card>
+      <Card className="overflow-visible">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg">About Hanna's Garden</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-visible">
           <div className="flex justify-center mb-4">
             <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
               <LeafIcon className="h-6 w-6" />
