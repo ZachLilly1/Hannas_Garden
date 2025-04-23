@@ -58,12 +58,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!validation.success) return;
     
     // For demo, use a fixed userId=1
+    const userId = 1;
     const plantData: InsertPlant = {
       ...validation.data,
-      userId: 1
+      userId
     };
     
     const plant = await storage.createPlant(plantData);
+    
+    // Create automatic reminders for watering and fertilizing
+    if (plant.waterFrequency > 0) {
+      const wateringDueDate = new Date();
+      wateringDueDate.setDate(wateringDueDate.getDate() + plant.waterFrequency);
+      
+      await storage.createReminder({
+        plantId: plant.id,
+        userId,
+        title: `Water your ${plant.name}`,
+        message: `It's time to water your ${plant.name}`,
+        dueDate: wateringDueDate.toISOString(),
+        careType: 'water',
+        status: 'pending',
+        recurring: true,
+        recurringInterval: plant.waterFrequency,
+        notified: false
+      });
+    }
+    
+    if (plant.fertilizerFrequency > 0) {
+      const fertilizingDueDate = new Date();
+      fertilizingDueDate.setDate(fertilizingDueDate.getDate() + plant.fertilizerFrequency);
+      
+      await storage.createReminder({
+        plantId: plant.id,
+        userId,
+        title: `Fertilize your ${plant.name}`,
+        message: `It's time to fertilize your ${plant.name}`,
+        dueDate: fertilizingDueDate.toISOString(),
+        careType: 'fertilize',
+        status: 'pending',
+        recurring: true,
+        recurringInterval: plant.fertilizerFrequency,
+        notified: false
+      });
+    }
+    
     res.status(201).json(plant);
   });
 
@@ -77,9 +116,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const validation = validateRequest(insertPlantSchema.partial(), req, res);
     if (!validation.success) return;
     
+    // Get the original plant to compare changes
+    const originalPlant = await storage.getPlant(plantId);
+    if (!originalPlant) {
+      return res.status(404).json({ message: "Plant not found" });
+    }
+    
     const updatedPlant = await storage.updatePlant(plantId, validation.data);
     if (!updatedPlant) {
       return res.status(404).json({ message: "Plant not found" });
+    }
+    
+    // For demo, use a fixed userId=1
+    const userId = 1;
+    
+    // If water frequency changed, update or create a watering reminder
+    if (validation.data.waterFrequency && validation.data.waterFrequency !== originalPlant.waterFrequency) {
+      // Get existing water reminders for this plant
+      const existingReminders = await storage.getRemindersByPlant(plantId);
+      const waterReminder = existingReminders.find(r => r.careType === 'water');
+      
+      if (updatedPlant.waterFrequency > 0) {
+        const wateringDueDate = new Date();
+        wateringDueDate.setDate(wateringDueDate.getDate() + updatedPlant.waterFrequency);
+        
+        if (waterReminder) {
+          // Update existing reminder
+          await storage.updateReminder(waterReminder.id, {
+            title: `Water your ${updatedPlant.name}`,
+            message: `It's time to water your ${updatedPlant.name}`,
+            dueDate: wateringDueDate.toISOString(),
+            recurring: true,
+            recurringInterval: updatedPlant.waterFrequency
+          });
+        } else {
+          // Create new reminder
+          await storage.createReminder({
+            plantId: updatedPlant.id,
+            userId,
+            title: `Water your ${updatedPlant.name}`,
+            message: `It's time to water your ${updatedPlant.name}`,
+            dueDate: wateringDueDate.toISOString(),
+            careType: 'water',
+            status: 'pending',
+            recurring: true,
+            recurringInterval: updatedPlant.waterFrequency,
+            notified: false
+          });
+        }
+      } else if (waterReminder) {
+        // If water frequency set to 0, delete the reminder
+        await storage.deleteReminder(waterReminder.id);
+      }
+    }
+    
+    // If fertilizer frequency changed, update or create a fertilizing reminder
+    if (validation.data.fertilizerFrequency && validation.data.fertilizerFrequency !== originalPlant.fertilizerFrequency) {
+      // Get existing fertilizer reminders for this plant
+      const existingReminders = await storage.getRemindersByPlant(plantId);
+      const fertilizerReminder = existingReminders.find(r => r.careType === 'fertilize');
+      
+      if (updatedPlant.fertilizerFrequency > 0) {
+        const fertilizingDueDate = new Date();
+        fertilizingDueDate.setDate(fertilizingDueDate.getDate() + updatedPlant.fertilizerFrequency);
+        
+        if (fertilizerReminder) {
+          // Update existing reminder
+          await storage.updateReminder(fertilizerReminder.id, {
+            title: `Fertilize your ${updatedPlant.name}`,
+            message: `It's time to fertilize your ${updatedPlant.name}`,
+            dueDate: fertilizingDueDate.toISOString(),
+            recurring: true,
+            recurringInterval: updatedPlant.fertilizerFrequency
+          });
+        } else {
+          // Create new reminder
+          await storage.createReminder({
+            plantId: updatedPlant.id,
+            userId,
+            title: `Fertilize your ${updatedPlant.name}`,
+            message: `It's time to fertilize your ${updatedPlant.name}`,
+            dueDate: fertilizingDueDate.toISOString(),
+            careType: 'fertilize',
+            status: 'pending',
+            recurring: true,
+            recurringInterval: updatedPlant.fertilizerFrequency,
+            notified: false
+          });
+        }
+      } else if (fertilizerReminder) {
+        // If fertilizer frequency set to 0, delete the reminder
+        await storage.deleteReminder(fertilizerReminder.id);
+      }
     }
     
     res.json(updatedPlant);
@@ -146,6 +274,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     const careLog = await storage.createCareLog(careLogData);
+    
+    // Get the plant to update its reminders
+    const plant = await storage.getPlant(careLogData.plantId);
+    if (plant) {
+      // For demo, use a fixed userId=1
+      const userId = 1;
+      
+      // Update existing reminders based on the care action performed
+      const existingReminders = await storage.getRemindersByPlant(careLogData.plantId);
+      
+      if (careLogData.careType === 'water') {
+        // Find existing water reminder
+        const waterReminder = existingReminders.find(r => r.careType === 'water');
+        
+        if (waterReminder && plant.waterFrequency > 0) {
+          // Calculate next watering date
+          const nextWateringDate = new Date();
+          nextWateringDate.setDate(nextWateringDate.getDate() + plant.waterFrequency);
+          
+          // Update existing reminder
+          await storage.updateReminder(waterReminder.id, {
+            dueDate: nextWateringDate.toISOString(),
+            status: 'pending' // Reset status if it was completed/dismissed
+          });
+        } else if (plant.waterFrequency > 0) {
+          // Create new reminder if none exists
+          const nextWateringDate = new Date();
+          nextWateringDate.setDate(nextWateringDate.getDate() + plant.waterFrequency);
+          
+          await storage.createReminder({
+            plantId: plant.id,
+            userId,
+            title: `Water your ${plant.name}`,
+            message: `It's time to water your ${plant.name}`,
+            dueDate: nextWateringDate.toISOString(),
+            careType: 'water',
+            status: 'pending',
+            recurring: true,
+            recurringInterval: plant.waterFrequency,
+            notified: false
+          });
+        }
+        
+        // Update the plant's last watered date
+        await storage.updatePlant(plant.id, {
+          lastWatered: new Date()
+        });
+      } else if (careLogData.careType === 'fertilize') {
+        // Find existing fertilizer reminder
+        const fertilizerReminder = existingReminders.find(r => r.careType === 'fertilize');
+        
+        if (fertilizerReminder && plant.fertilizerFrequency > 0) {
+          // Calculate next fertilizing date
+          const nextFertilizingDate = new Date();
+          nextFertilizingDate.setDate(nextFertilizingDate.getDate() + plant.fertilizerFrequency);
+          
+          // Update existing reminder
+          await storage.updateReminder(fertilizerReminder.id, {
+            dueDate: nextFertilizingDate.toISOString(),
+            status: 'pending' // Reset status if it was completed/dismissed
+          });
+        } else if (plant.fertilizerFrequency > 0) {
+          // Create new reminder if none exists
+          const nextFertilizingDate = new Date();
+          nextFertilizingDate.setDate(nextFertilizingDate.getDate() + plant.fertilizerFrequency);
+          
+          await storage.createReminder({
+            plantId: plant.id,
+            userId,
+            title: `Fertilize your ${plant.name}`,
+            message: `It's time to fertilize your ${plant.name}`,
+            dueDate: nextFertilizingDate.toISOString(),
+            careType: 'fertilize',
+            status: 'pending',
+            recurring: true,
+            recurringInterval: plant.fertilizerFrequency,
+            notified: false
+          });
+        }
+        
+        // Update the plant's last fertilized date
+        await storage.updatePlant(plant.id, {
+          lastFertilized: new Date()
+        });
+      }
+    }
+    
     res.status(201).json(careLog);
   });
 
