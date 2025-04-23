@@ -157,12 +157,22 @@ export function CareTimeline({ plant }: CareTimelineProps) {
                 )}
                 
                 {log.photo && (
-                  <div className="mt-2 rounded-md overflow-hidden w-full max-w-[240px]">
+                  <div 
+                    className="mt-2 rounded-md overflow-hidden w-full max-w-[240px] cursor-pointer"
+                    onClick={() => {
+                      if (log.photo) {
+                        window.open(log.photo, '_blank');
+                      }
+                    }}
+                  >
                     <img 
                       src={log.photo} 
                       alt={`Care log ${log.careType} photo`} 
                       className="w-full h-auto object-cover"
                     />
+                    <div className="text-xs text-center py-1 bg-neutral-medium bg-opacity-30">
+                      Click to enlarge
+                    </div>
                   </div>
                 )}
               </div>
