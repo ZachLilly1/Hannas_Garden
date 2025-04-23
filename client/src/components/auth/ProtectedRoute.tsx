@@ -1,6 +1,6 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
+import { useLocation } from "wouter";
 import { useAuth } from "@/context/AuthContext";
-import { Redirect, useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
@@ -13,22 +13,27 @@ export function ProtectedRoute({
   redirectTo = "/auth" 
 }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   
-  // Show loading spinner while checking authentication
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      // Add the current path as a redirect parameter
+      const redirectParam = location !== "/" ? `?redirect=${encodeURIComponent(location)}` : "";
+      navigate(`${redirectTo}${redirectParam}`);
+    }
+  }, [isAuthenticated, isLoading, location, navigate, redirectTo]);
+  
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
   
-  // Redirect to auth page if not authenticated
   if (!isAuthenticated) {
-    return <Redirect to={`${redirectTo}?redirect=${encodeURIComponent(location)}`} />;
+    return null;
   }
   
-  // Render children if authenticated
   return <>{children}</>;
 }
