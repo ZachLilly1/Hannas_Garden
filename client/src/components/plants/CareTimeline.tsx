@@ -25,10 +25,16 @@ export function CareTimeline({ plant }: CareTimelineProps) {
     const fetchCareLogs = async () => {
       try {
         setIsLoading(true);
-        const logs = await apiRequest<CareLog[]>('GET', `/api/plants/${plant.id}/care-logs`);
-        setCareLogs(logs || []);
+        const logs = await apiRequest('GET', `/api/plants/${plant.id}/care-logs`);
+        if (Array.isArray(logs)) {
+          setCareLogs(logs);
+        } else {
+          setCareLogs([]);
+          console.error('Unexpected response format from care logs API', logs);
+        }
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Failed to fetch care logs'));
+        console.error('Error fetching care logs:', err);
       } finally {
         setIsLoading(false);
       }
@@ -115,9 +121,11 @@ export function CareTimeline({ plant }: CareTimelineProps) {
   }
 
   // Sort logs by timestamp, newest first
-  const sortedLogs = [...careLogs].sort((a, b) => 
-    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-  );
+  const sortedLogs = [...careLogs].sort((a, b) => {
+    const dateA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+    const dateB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+    return dateB - dateA;
+  });
 
   return (
     <div className="mt-4">
@@ -140,12 +148,22 @@ export function CareTimeline({ plant }: CareTimelineProps) {
                     {formatCareType(log.careType)}
                   </Badge>
                   <span className="text-xs text-neutral-dark opacity-70">
-                    {format(new Date(log.timestamp), "MMM d, yyyy 'at' h:mm a")}
+                    {log.timestamp ? format(new Date(log.timestamp), "MMM d, yyyy 'at' h:mm a") : 'Unknown date'}
                   </span>
                 </div>
                 
                 {log.notes && (
                   <p className="text-sm mt-1 text-neutral-dark">{log.notes}</p>
+                )}
+                
+                {log.photo && (
+                  <div className="mt-2 rounded-md overflow-hidden w-full max-w-[240px]">
+                    <img 
+                      src={log.photo} 
+                      alt={`Care log ${log.careType} photo`} 
+                      className="w-full h-auto object-cover"
+                    />
+                  </div>
                 )}
               </div>
             </div>

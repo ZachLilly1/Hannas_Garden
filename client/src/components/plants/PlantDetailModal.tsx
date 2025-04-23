@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { 
@@ -10,7 +10,9 @@ import {
   HistoryIcon, 
   BellIcon, 
   CircleDotIcon, 
-  CheckCircleIcon 
+  CheckCircleIcon,
+  CameraIcon,
+  LeafIcon
 } from "@/lib/icons";
 import { cn, formatRelativeDate, getDefaultPlantImage } from "@/lib/utils";
 import { type PlantWithCare, type CareLog, type InsertCareLog } from "@shared/schema";
@@ -19,6 +21,9 @@ import { differenceInDays } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { CareTimeline } from "./CareTimeline";
+import { CareLogForm } from "./CareLogForm";
 
 interface PlantDetailModalProps {
   plant: PlantWithCare | null;
@@ -28,6 +33,9 @@ interface PlantDetailModalProps {
 }
 
 export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetailModalProps) {
+  const [activeTab, setActiveTab] = useState("care-schedule");
+  const [showLogCareForm, setShowLogCareForm] = useState(false);
+
   if (!plant) return null;
 
   const handleLogCare = async (careType: string) => {
@@ -43,6 +51,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/plants'] });
       queryClient.invalidateQueries({ queryKey: ['/api/plants', plant.id.toString()] });
+      queryClient.invalidateQueries({ queryKey: ['/api/plants', plant.id.toString(), 'care-logs'] });
       
       toast({
         title: "Care logged successfully",
@@ -82,6 +91,10 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
 
   const sunlightStatus = getSunlightAdequacy();
   const sunlightAdequate = sunlightStatus === "Adequate";
+
+  const handleCareLogSuccess = () => {
+    setShowLogCareForm(false);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -129,124 +142,179 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
             {plant.notes || (plant.guide?.description || `A beautiful ${plant.type} plant placed in ${plant.location}.`)}
           </p>
 
-          {/* Care Schedule */}
-          <div className="mb-6">
-            <h3 className="font-medium mb-3">Care Schedule</h3>
-            <div className="space-y-3">
-              {/* Water Schedule */}
-              <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
-                <div className="flex items-center">
-                  <div className="p-2 bg-blue-100 rounded-full mr-3">
-                    <WaterDropIcon className="h-4 w-4 text-blue-500" />
+          {/* Tabs Interface */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+            <TabsList className="w-full flex bg-neutral-medium bg-opacity-20 p-0.5 rounded-md">
+              <TabsTrigger 
+                value="care-schedule" 
+                className="flex-1 data-[state=active]:bg-white data-[state=active]:shadow-none"
+              >
+                <WaterDropIcon className="h-4 w-4 mr-2" />
+                Care Schedule
+              </TabsTrigger>
+              <TabsTrigger 
+                value="history" 
+                className="flex-1 data-[state=active]:bg-white data-[state=active]:shadow-none"
+              >
+                <HistoryIcon className="h-4 w-4 mr-2" />
+                History
+              </TabsTrigger>
+            </TabsList>
+            
+            {/* Care Schedule Tab Content */}
+            <TabsContent value="care-schedule" className="mt-4">
+              <div className="space-y-3">
+                {/* Water Schedule */}
+                <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-blue-100 rounded-full mr-3">
+                      <WaterDropIcon className="h-4 w-4 text-blue-500" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Water</p>
+                      <p className="text-xs text-neutral-dark opacity-70">Every {plant.waterFrequency} days</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">Water</p>
-                    <p className="text-xs text-neutral-dark opacity-70">Every {plant.waterFrequency} days</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">
-                    {waterRemainingDays !== null 
-                      ? waterRemainingDays < 0 
-                        ? "Overdue" 
-                        : waterRemainingDays === 0 
-                          ? "Today" 
-                          : waterRemainingDays === 1 
-                            ? "1 day" 
-                            : `${waterRemainingDays} days`
-                      : "Not set"}
-                  </p>
-                  <p className="text-xs text-neutral-dark opacity-70">
-                    {waterRemainingDays !== null && waterRemainingDays >= 0 ? "remaining" : ""}
-                  </p>
-                </div>
-              </div>
-
-              {/* Sunlight Schedule */}
-              <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
-                <div className="flex items-center">
-                  <div className="p-2 bg-yellow-100 rounded-full mr-3">
-                    <SunIcon className="h-4 w-4 text-yellow-500" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Sunlight</p>
+                  <div className="text-right">
+                    <p className="font-medium">
+                      {waterRemainingDays !== null 
+                        ? waterRemainingDays < 0 
+                          ? "Overdue" 
+                          : waterRemainingDays === 0 
+                            ? "Today" 
+                            : waterRemainingDays === 1 
+                              ? "1 day" 
+                              : `${waterRemainingDays} days`
+                        : "Not set"}
+                    </p>
                     <p className="text-xs text-neutral-dark opacity-70">
-                      {plant.sunlightLevel.charAt(0).toUpperCase() + plant.sunlightLevel.slice(1)}, 
-                      {plant.sunlightLevel === "high" ? " direct" : " indirect"}
+                      {waterRemainingDays !== null && waterRemainingDays >= 0 ? "remaining" : ""}
                     </p>
                   </div>
                 </div>
-                <div className={cn(
-                  "text-xs font-medium",
-                  sunlightAdequate ? "text-status-success" : "text-status-warning"
-                )}>
-                  {sunlightAdequate ? <CheckCircleIcon className="h-4 w-4 inline mr-1" /> : null}
-                  {sunlightStatus}
-                </div>
-              </div>
 
-              {/* Fertilizer Schedule */}
-              <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
-                <div className="flex items-center">
-                  <div className="p-2 bg-green-100 rounded-full mr-3">
-                    <SeedlingIcon className="h-4 w-4 text-green-500" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Fertilizer</p>
-                    <p className="text-xs text-neutral-dark opacity-70">
-                      {plant.fertilizerFrequency === 0 
-                        ? "Not needed" 
-                        : `Every ${plant.fertilizerFrequency} days`}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  {plant.fertilizerFrequency > 0 && (
-                    <>
-                      <p className="font-medium">
-                        {fertilizerRemainingDays !== null 
-                          ? fertilizerRemainingDays < 0 
-                            ? "Overdue" 
-                            : fertilizerRemainingDays === 0 
-                              ? "Today" 
-                              : fertilizerRemainingDays < 7 
-                                ? `${fertilizerRemainingDays} days` 
-                                : `${Math.floor(fertilizerRemainingDays / 7)} weeks`
-                          : "Not set"}
-                      </p>
+                {/* Sunlight Schedule */}
+                <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-yellow-100 rounded-full mr-3">
+                      <SunIcon className="h-4 w-4 text-yellow-500" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Sunlight</p>
                       <p className="text-xs text-neutral-dark opacity-70">
-                        {fertilizerRemainingDays !== null && fertilizerRemainingDays >= 0 ? "remaining" : ""}
+                        {plant.sunlightLevel.charAt(0).toUpperCase() + plant.sunlightLevel.slice(1)}, 
+                        {plant.sunlightLevel === "high" ? " direct" : " indirect"}
                       </p>
-                    </>
-                  )}
+                    </div>
+                  </div>
+                  <div className={cn(
+                    "text-xs font-medium",
+                    sunlightAdequate ? "text-status-success" : "text-status-warning"
+                  )}>
+                    {sunlightAdequate ? <CheckCircleIcon className="h-4 w-4 inline mr-1" /> : null}
+                    {sunlightStatus}
+                  </div>
+                </div>
+
+                {/* Fertilizer Schedule */}
+                <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-green-100 rounded-full mr-3">
+                      <SeedlingIcon className="h-4 w-4 text-green-500" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Fertilizer</p>
+                      <p className="text-xs text-neutral-dark opacity-70">
+                        {plant.fertilizerFrequency === 0 
+                          ? "Not needed" 
+                          : `Every ${plant.fertilizerFrequency} days`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    {plant.fertilizerFrequency > 0 && (
+                      <>
+                        <p className="font-medium">
+                          {fertilizerRemainingDays !== null 
+                            ? fertilizerRemainingDays < 0 
+                              ? "Overdue" 
+                              : fertilizerRemainingDays === 0 
+                                ? "Today" 
+                                : fertilizerRemainingDays < 7 
+                                  ? `${fertilizerRemainingDays} days` 
+                                  : `${Math.floor(fertilizerRemainingDays / 7)} weeks`
+                            : "Not set"}
+                        </p>
+                        <p className="text-xs text-neutral-dark opacity-70">
+                          {fertilizerRemainingDays !== null && fertilizerRemainingDays >= 0 ? "remaining" : ""}
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Care Tips */}
-          {plant.guide && (
-            <div className="mb-6">
-              <h3 className="font-medium mb-3">Care Tips</h3>
-              <ul className="text-sm space-y-2">
-                {plant.guide.careTips.split('.').filter(tip => tip.trim()).map((tip, index) => (
-                  <li key={index} className="flex items-start">
-                    <CircleDotIcon className="h-3 w-3 mt-1 mr-2 text-primary" />
-                    <span>{tip.trim()}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+              {/* Care Tips */}
+              {plant.guide && (
+                <div className="mt-6">
+                  <h3 className="font-medium mb-3">Care Tips</h3>
+                  <ul className="text-sm space-y-2">
+                    {plant.guide.careTips.split('.').filter(tip => tip.trim()).map((tip, index) => (
+                      <li key={index} className="flex items-start">
+                        <CircleDotIcon className="h-3 w-3 mt-1 mr-2 text-primary" />
+                        <span>{tip.trim()}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </TabsContent>
+            
+            {/* History Tab Content */}
+            <TabsContent value="history" className="mt-4">
+              {showLogCareForm ? (
+                <div className="mb-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="font-medium">Log Care Activity</h3>
+                    <button 
+                      className="text-sm text-primary"
+                      onClick={() => setShowLogCareForm(false)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  <CareLogForm plantId={plant.id} onSuccess={handleCareLogSuccess} />
+                </div>
+              ) : (
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-medium">Care History</h3>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs"
+                    onClick={() => setShowLogCareForm(true)}
+                  >
+                    <CameraIcon className="h-3 w-3 mr-1" />
+                    Add Log
+                  </Button>
+                </div>
+              )}
+              
+              <CareTimeline plant={plant} />
+            </TabsContent>
+          </Tabs>
 
           {/* Action Buttons */}
           <div className="flex space-x-3">
             <Button 
               variant="outline" 
               className="flex-1"
-              onClick={() => handleLogCare('water')}
+              onClick={() => {
+                setActiveTab("history");
+                setShowLogCareForm(true);
+              }}
             >
-              <HistoryIcon className="h-4 w-4 mr-2" />
+              <LeafIcon className="h-4 w-4 mr-2" />
               Log Care
             </Button>
             <Button className="flex-1">
