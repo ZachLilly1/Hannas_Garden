@@ -163,7 +163,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
       </AlertDialog>
       
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-md mx-auto p-0 rounded-t-xl overflow-hidden max-h-[90vh] overflow-y-auto sm:max-h-[80vh] w-full">
+        <DialogContent className="max-w-md mx-auto p-0 rounded-t-xl overflow-hidden max-h-[90vh] overflow-y-auto sm:max-h-[80vh] w-[95%] max-w-[95%] sm:w-full sm:max-w-md">
           <div className="h-64 relative">
             <img
               src={plant.image || getDefaultPlantImage(plant.type)}
@@ -178,7 +178,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
             </button>
           </div>
 
-          <div className="px-4 py-4 w-full">
+          <div className="px-5 py-4 w-full">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-xl font-medium truncate max-w-[80%]">{plant.name}</h2>
               <div className="flex space-x-3">
@@ -280,8 +280,8 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                         <p className="text-xs text-neutral-dark opacity-70 truncate">Every {plant.waterFrequency} days</p>
                       </div>
                     </div>
-                    <div className="text-right ml-2 flex-shrink-0">
-                      <p className="font-medium">
+                    <div className="text-right ml-3 flex-shrink-0">
+                      <p className="font-medium text-sm">
                         {waterRemainingDays !== null 
                           ? waterRemainingDays < 0 
                             ? "Overdue" 
@@ -313,7 +313,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                       </div>
                     </div>
                     <div className={cn(
-                      "text-xs font-medium ml-2 flex-shrink-0",
+                      "text-xs font-medium ml-3 flex-shrink-0",
                       sunlightAdequate ? "text-status-success" : "text-status-warning"
                     )}>
                       {sunlightAdequate ? <CheckCircleIcon className="h-4 w-4 inline mr-1" /> : null}
@@ -336,10 +336,10 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                         </p>
                       </div>
                     </div>
-                    <div className="text-right ml-2 flex-shrink-0">
+                    <div className="text-right ml-3 flex-shrink-0">
                       {plant.fertilizerFrequency > 0 && (
                         <>
-                          <p className="font-medium">
+                          <p className="font-medium text-sm">
                             {fertilizerRemainingDays !== null 
                               ? fertilizerRemainingDays < 0 
                                 ? "Overdue" 
