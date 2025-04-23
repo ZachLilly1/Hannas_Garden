@@ -75,3 +75,14 @@
     @apply font-playfair;
   }
 }
+
+@layer utilities {
+  .hyphens-auto {
+    hyphens: auto;
+  }
+  
+  .overflow-wrap-anywhere {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}

@@ -219,21 +219,24 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
             
             {/* Extract the scientific name from notes if it exists */}
             {plant.notes && plant.notes.includes("Scientific Name:") ? (
-              <p className="text-sm italic text-neutral-dark mb-2">
-                Scientific Name: {plant.notes.split("Scientific Name:")[1].split("\n")[0].trim()}
-              </p>
+              <div className="text-sm italic text-neutral-dark mb-2 break-words">
+                <span className="font-medium">Scientific Name:</span> 
+                <span className="hyphens-auto overflow-wrap-anywhere">
+                  {plant.notes.split("Scientific Name:")[1].split("\n")[0].trim()}
+                </span>
+              </div>
             ) : null}
 
             {/* Extract and display care tips if they exist in notes */}
             {plant.notes && plant.notes.includes("Care Tips:") ? (
               <div className="mb-6">
                 <p className="text-sm font-medium mb-1">Care Tips:</p>
-                <p className="text-sm text-neutral-dark opacity-90 break-words whitespace-pre-line">
+                <p className="text-sm text-neutral-dark opacity-90 break-words whitespace-pre-line hyphens-auto overflow-wrap-anywhere">
                   {plant.notes.split("Care Tips:")[1].trim()}
                 </p>
               </div>
             ) : (
-              <p className="text-sm text-neutral-dark opacity-90 mb-6 break-words whitespace-pre-line">
+              <p className="text-sm text-neutral-dark opacity-90 mb-6 break-words whitespace-pre-line hyphens-auto overflow-wrap-anywhere">
                 {plant.notes 
                   ? plant.notes
                   : (plant.guide?.description || `A beautiful ${plant.type} plant placed in ${plant.location}.`)}
@@ -366,8 +369,8 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                     <ul className="text-sm space-y-2">
                       {plant.guide.careTips.split('.').filter(tip => tip.trim()).map((tip, index) => (
                         <li key={index} className="flex items-start">
-                          <CircleDotIcon className="h-3 w-3 mt-1 mr-2 text-primary" />
-                          <span>{tip.trim()}</span>
+                          <CircleDotIcon className="h-3 w-3 mt-1 mr-2 flex-shrink-0 text-primary" />
+                          <span className="break-words hyphens-auto overflow-wrap-anywhere">{tip.trim()}</span>
                         </li>
                       ))}
                     </ul>
