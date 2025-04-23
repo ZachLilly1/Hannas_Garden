@@ -163,7 +163,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
       </AlertDialog>
       
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="mx-auto p-0 rounded-t-xl overflow-hidden max-h-[95vh] overflow-y-auto sm:max-h-[80vh] w-[94%] max-w-[94%] sm:w-full sm:max-w-md">
+        <DialogContent className="mx-auto p-0 rounded-t-xl overflow-hidden max-h-[95vh] overflow-y-auto sm:max-h-[80vh] w-[90vw] max-w-[95vw] sm:w-full sm:max-w-md">
           <div className="h-64 relative">
             <img
               src={plant.image || getDefaultPlantImage(plant.type)}
@@ -399,11 +399,12 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="text-xs"
+                      className="text-xs whitespace-nowrap"
                       onClick={() => setShowLogCareForm(true)}
                     >
                       <CameraIcon className="h-3 w-3 mr-1" />
-                      Add Log
+                      <span className="hidden xs:inline">Add Log</span>
+                      <span className="xs:hidden">Add</span>
                     </Button>
                   </div>
                 )}
@@ -436,11 +437,12 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="text-xs"
+                      className="text-xs whitespace-nowrap"
                       onClick={() => setShowReminderForm(true)}
                     >
                       <BellIcon className="h-3 w-3 mr-1" />
-                      Add Reminder
+                      <span className="hidden xs:inline">Add Reminder</span>
+                      <span className="xs:hidden">Add</span>
                     </Button>
                   </div>
                 )}
