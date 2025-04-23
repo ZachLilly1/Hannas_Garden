@@ -10,6 +10,19 @@ import { type PlantWithCare, userProfileSchema } from "@shared/schema";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+
+// Common timezones for selection
+const TIMEZONES = [
+  { value: "UTC", label: "UTC (Coordinated Universal Time)" },
+  { value: "America/New_York", label: "Eastern Time (ET)" },
+  { value: "America/Chicago", label: "Central Time (CT)" },
+  { value: "America/Denver", label: "Mountain Time (MT)" },
+  { value: "America/Los_Angeles", label: "Pacific Time (PT)" },
+  { value: "Europe/London", label: "GMT (Greenwich Mean Time)" },
+  { value: "Europe/Paris", label: "CET (Central European Time)" },
+  { value: "Asia/Tokyo", label: "JST (Japan Standard Time)" },
+  { value: "Australia/Sydney", label: "AEST (Australian Eastern Standard Time)" },
+];
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -40,9 +53,11 @@ import {
 
 const formSchema = z.object({
   displayName: z.string().optional(),
+  email: z.string().email("Please enter a valid email address"),
   preferredUnits: z.enum(["metric", "imperial"]),
   timezone: z.string(),
   notificationsEnabled: z.boolean(),
+  avatarUrl: z.string().url("Please enter a valid URL").optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -64,9 +79,11 @@ export default function Profile() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       displayName: user?.displayName || "",
+      email: user?.email || "",
       preferredUnits: (user?.preferredUnits as "metric" | "imperial") || "metric",
       timezone: user?.timezone || "UTC",
       notificationsEnabled: user?.notificationsEnabled || true,
+      avatarUrl: user?.avatarUrl || "",
     },
   });
 
@@ -185,6 +202,40 @@ export default function Profile() {
                         </FormControl>
                         <FormDescription>
                           This is how we'll address you in the app.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email Address</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="name@example.com" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormDescription>
+                          Email address for notifications and account recovery.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="avatarUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Profile Picture URL</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://example.com/avatar.jpg" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormDescription>
+                          Enter a URL for your profile picture (optional).
                         </FormDescription>
                         <FormMessage />
                       </FormItem>

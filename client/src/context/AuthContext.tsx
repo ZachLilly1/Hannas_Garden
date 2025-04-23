@@ -169,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (data: UpdateProfileData) => {
-      const res = await apiRequest('PUT', '/api/auth/profile', data);
+      const res = await apiRequest('PATCH', '/api/auth/profile', data);
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || 'Profile update failed');
