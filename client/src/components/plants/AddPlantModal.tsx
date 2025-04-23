@@ -126,29 +126,65 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
       const base64Data = selectedImage.split(',')[1];
       
       // Call the identification API
-      const response = await apiRequest('POST', '/api/identify-plant', {
-        imageBase64: base64Data
+      const response = await fetch('/api/identify-plant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageBase64: base64Data
+        }),
       });
       
-      // Type assertion to ensure response is treated as PlantIdentificationResult
-      const result = response as unknown as PlantIdentificationResult;
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}: ${await response.text()}`);
+      }
+      
+      // Parse JSON response
+      const result = await response.json() as PlantIdentificationResult;
+      console.log("Plant identification result:", result);
+      
       setIdentificationResult(result);
       
       // Pre-fill the form with the identification results
-      form.setValue("name", result.commonName);
-      form.setValue("type", result.plantType.toLowerCase());
-      form.setValue("sunlightLevel", result.careRecommendations.sunlightLevel);
-      form.setValue("waterFrequency", result.careRecommendations.waterFrequency);
-      form.setValue("fertilizerFrequency", result.careRecommendations.fertilizerFrequency);
+      if (result.commonName) {
+        form.setValue("name", result.commonName);
+      }
       
-      // Add scientific name and additional care tips to notes
-      const existingNotes = form.getValues("notes") || "";
-      const newNotes = `Scientific Name: ${result.scientificName}\n\nCare Tips: ${result.careRecommendations.additionalCare}${existingNotes ? "\n\n" + existingNotes : ""}`;
-      form.setValue("notes", newNotes);
+      if (result.plantType) {
+        // Make sure the plant type matches one of our options
+        const normalizedType = result.plantType.toLowerCase();
+        const validType = plantTypes.some(t => t.value === normalizedType) 
+          ? normalizedType 
+          : "other";
+        form.setValue("type", validType);
+      }
+      
+      if (result.careRecommendations) {
+        // Set sunlight level
+        if (result.careRecommendations.sunlightLevel) {
+          form.setValue("sunlightLevel", result.careRecommendations.sunlightLevel);
+        }
+        
+        // Set water frequency
+        if (result.careRecommendations.waterFrequency) {
+          form.setValue("waterFrequency", result.careRecommendations.waterFrequency);
+        }
+        
+        // Set fertilizer frequency
+        if (result.careRecommendations.fertilizerFrequency) {
+          form.setValue("fertilizerFrequency", result.careRecommendations.fertilizerFrequency);
+        }
+        
+        // Add scientific name and additional care tips to notes
+        const existingNotes = form.getValues("notes") || "";
+        const newNotes = `Scientific Name: ${result.scientificName || 'Unknown'}\n\nCare Tips: ${result.careRecommendations.additionalCare || 'No specific care tips available.'}${existingNotes ? "\n\n" + existingNotes : ""}`;
+        form.setValue("notes", newNotes);
+      }
       
       toast({
         title: "Plant identified!",
-        description: `Identified as ${result.commonName} with ${result.confidence} confidence.`
+        description: `Identified as ${result.commonName || 'Unknown plant'} with ${result.confidence || 'unknown'} confidence.`
       });
     } catch (error) {
       console.error("Error identifying plant:", error);
