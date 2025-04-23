@@ -23,6 +23,10 @@ export function MainLayout({ children }: MainLayoutProps) {
         return "Plant Guides";
       case "/profile":
         return "My Profile";
+      case "/tools":
+        return "Garden Tools";
+      case "/tools/light-meter":
+        return "Light Meter";
       default:
         return "Hanna's Garden";
     }
