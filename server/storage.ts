@@ -1,13 +1,13 @@
 import { 
-  users, plants, careLogs, plantGuides,
+  users, plants, careLogs, plantGuides, reminders,
   type User, type InsertUser, 
   type Plant, type InsertPlant,
   type CareLog, type InsertCareLog,
   type PlantGuide, type InsertPlantGuide,
-  type PlantWithCare
+  type PlantWithCare, type Reminder, type InsertReminder
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc, sql } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
@@ -37,6 +37,17 @@ export interface IStorage {
     needsWater: PlantWithCare[];
     needsFertilizer: PlantWithCare[];
   }>;
+  
+  // Reminder methods
+  getReminders(userId: number): Promise<Reminder[]>;
+  getRemindersByPlant(plantId: number): Promise<Reminder[]>;
+  getUpcomingReminders(userId: number, days: number): Promise<Reminder[]>;
+  createReminder(reminder: InsertReminder): Promise<Reminder>;
+  updateReminder(id: number, data: Partial<InsertReminder>): Promise<Reminder | undefined>;
+  deleteReminder(id: number): Promise<boolean>;
+  markReminderComplete(id: number): Promise<Reminder | undefined>;
+  markReminderDismissed(id: number): Promise<Reminder | undefined>;
+  getOverdueReminders(userId: number): Promise<Reminder[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -306,6 +317,110 @@ export class DatabaseStorage implements IStorage {
     const guide = await this.getPlantGuideByType(plant.type);
     
     return { ...plant, nextWatering, nextFertilizing, guide };
+  }
+
+  // Reminder methods
+  async getReminders(userId: number): Promise<Reminder[]> {
+    return db
+      .select()
+      .from(reminders)
+      .where(eq(reminders.userId, userId))
+      .orderBy(asc(reminders.dueDate));
+  }
+
+  async getRemindersByPlant(plantId: number): Promise<Reminder[]> {
+    return db
+      .select()
+      .from(reminders)
+      .where(eq(reminders.plantId, plantId))
+      .orderBy(asc(reminders.dueDate));
+  }
+
+  async getUpcomingReminders(userId: number, days: number): Promise<Reminder[]> {
+    const today = new Date();
+    const futureDate = new Date(today);
+    futureDate.setDate(today.getDate() + days);
+    
+    // Format dates as ISO strings for comparison
+    const todayStr = today.toISOString();
+    const futureDateStr = futureDate.toISOString();
+    
+    return db
+      .select()
+      .from(reminders)
+      .where(
+        and(
+          eq(reminders.userId, userId),
+          and(
+            eq(reminders.status, "pending"),
+            sql`${reminders.dueDate} >= ${todayStr} AND ${reminders.dueDate} <= ${futureDateStr}`
+          )
+        )
+      )
+      .orderBy(asc(reminders.dueDate));
+  }
+
+  async createReminder(reminderData: InsertReminder): Promise<Reminder> {
+    const [reminder] = await db
+      .insert(reminders)
+      .values(reminderData)
+      .returning();
+    return reminder;
+  }
+
+  async updateReminder(id: number, data: Partial<InsertReminder>): Promise<Reminder | undefined> {
+    const [updatedReminder] = await db
+      .update(reminders)
+      .set(data)
+      .where(eq(reminders.id, id))
+      .returning();
+    return updatedReminder || undefined;
+  }
+
+  async deleteReminder(id: number): Promise<boolean> {
+    const [deletedReminder] = await db
+      .delete(reminders)
+      .where(eq(reminders.id, id))
+      .returning();
+    return !!deletedReminder;
+  }
+
+  async markReminderComplete(id: number): Promise<Reminder | undefined> {
+    const [updatedReminder] = await db
+      .update(reminders)
+      .set({ status: "completed" })
+      .where(eq(reminders.id, id))
+      .returning();
+    return updatedReminder || undefined;
+  }
+
+  async markReminderDismissed(id: number): Promise<Reminder | undefined> {
+    const [updatedReminder] = await db
+      .update(reminders)
+      .set({ status: "dismissed" })
+      .where(eq(reminders.id, id))
+      .returning();
+    return updatedReminder || undefined;
+  }
+
+  async getOverdueReminders(userId: number): Promise<Reminder[]> {
+    const today = new Date();
+    const todayStr = today.toISOString();
+    
+    return db
+      .select()
+      .from(reminders)
+      .where(
+        and(
+          eq(reminders.userId, userId),
+          and(
+            eq(reminders.status, "pending"),
+            // Due date is before today
+            sql`${reminders.dueDate} < ${todayStr}`
+          )
+        )
+      )
+      .orderBy(asc(reminders.dueDate));
   }
 }
 

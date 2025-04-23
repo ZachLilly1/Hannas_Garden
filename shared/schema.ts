@@ -82,10 +82,32 @@ export type InsertCareLog = z.infer<typeof insertCareLogSchema>;
 export type PlantGuide = typeof plantGuides.$inferSelect;
 export type InsertPlantGuide = z.infer<typeof insertPlantGuideSchema>;
 
+// Reminder schema
+export const reminders = pgTable("reminders", {
+  id: serial("id").primaryKey(),
+  plantId: integer("plant_id").notNull(),
+  userId: integer("user_id").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  dueDate: timestamp("due_date").notNull(),
+  careType: text("care_type").notNull(),
+  status: text("status").notNull().default("pending"), // pending, completed, dismissed
+  recurring: boolean("recurring").notNull().default(false),
+  recurringInterval: integer("recurring_interval"), // days
+  notified: boolean("notified").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertReminderSchema = createInsertSchema(reminders).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Enum-like constants
 export const SUNLIGHT_LEVELS = ['low', 'medium', 'high'] as const;
 export const CARE_TYPES = ['water', 'fertilize', 'repot', 'prune', 'other'] as const;
 export const PLANT_STATUSES = ['healthy', 'needs_water', 'needs_fertilizer', 'unhealthy'] as const;
+export const REMINDER_STATUSES = ['pending', 'completed', 'dismissed'] as const;
 
 // Extended plant type (merged with next care dates)
 export type PlantWithCare = Plant & {
@@ -93,3 +115,7 @@ export type PlantWithCare = Plant & {
   nextFertilizing: Date | null;
   guide?: PlantGuide;
 };
+
+// Type definitions
+export type Reminder = typeof reminders.$inferSelect;
+export type InsertReminder = z.infer<typeof insertReminderSchema>;

@@ -173,6 +173,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const careNeeded = await storage.getPlantsNeedingCare(userId);
     res.json(careNeeded);
   });
+  
+  // Reminder routes
+  apiRouter.get("/api/reminders", async (req, res) => {
+    // For demo, use a fixed userId=1
+    const userId = 1;
+    const reminders = await storage.getReminders(userId);
+    res.json(reminders);
+  });
+  
+  apiRouter.get("/api/reminders/upcoming/:days", async (req, res) => {
+    // For demo, use a fixed userId=1
+    const userId = 1;
+    const days = parseInt(req.params.days);
+    
+    if (isNaN(days)) {
+      return res.status(400).json({ message: "Invalid days parameter" });
+    }
+    
+    const reminders = await storage.getUpcomingReminders(userId, days);
+    res.json(reminders);
+  });
+  
+  apiRouter.get("/api/reminders/overdue", async (req, res) => {
+    // For demo, use a fixed userId=1
+    const userId = 1;
+    const reminders = await storage.getOverdueReminders(userId);
+    res.json(reminders);
+  });
+  
+  apiRouter.get("/api/plants/:id/reminders", async (req, res) => {
+    const plantId = parseInt(req.params.id);
+    if (isNaN(plantId)) {
+      return res.status(400).json({ message: "Invalid plant ID" });
+    }
+    
+    const reminders = await storage.getRemindersByPlant(plantId);
+    res.json(reminders);
+  });
+  
+  apiRouter.post("/api/reminders", async (req, res) => {
+    // We need to bring in the insertReminderSchema
+    const { insertReminderSchema } = await import("@shared/schema");
+    
+    const validation = validateRequest(insertReminderSchema, req, res);
+    if (!validation.success) return;
+    
+    const reminder = await storage.createReminder(validation.data);
+    res.status(201).json(reminder);
+  });
+  
+  apiRouter.patch("/api/reminders/:id", async (req, res) => {
+    const reminderId = parseInt(req.params.id);
+    if (isNaN(reminderId)) {
+      return res.status(400).json({ message: "Invalid reminder ID" });
+    }
+    
+    // We need to bring in the insertReminderSchema
+    const { insertReminderSchema } = await import("@shared/schema");
+    
+    // Allow partial updates
+    const validation = validateRequest(insertReminderSchema.partial(), req, res);
+    if (!validation.success) return;
+    
+    const updatedReminder = await storage.updateReminder(reminderId, validation.data);
+    if (!updatedReminder) {
+      return res.status(404).json({ message: "Reminder not found" });
+    }
+    
+    res.json(updatedReminder);
+  });
+  
+  apiRouter.delete("/api/reminders/:id", async (req, res) => {
+    const reminderId = parseInt(req.params.id);
+    if (isNaN(reminderId)) {
+      return res.status(400).json({ message: "Invalid reminder ID" });
+    }
+    
+    const success = await storage.deleteReminder(reminderId);
+    if (!success) {
+      return res.status(404).json({ message: "Reminder not found" });
+    }
+    
+    res.status(204).send();
+  });
+  
+  apiRouter.post("/api/reminders/:id/complete", async (req, res) => {
+    const reminderId = parseInt(req.params.id);
+    if (isNaN(reminderId)) {
+      return res.status(400).json({ message: "Invalid reminder ID" });
+    }
+    
+    const updatedReminder = await storage.markReminderComplete(reminderId);
+    if (!updatedReminder) {
+      return res.status(404).json({ message: "Reminder not found" });
+    }
+    
+    res.json(updatedReminder);
+  });
+  
+  apiRouter.post("/api/reminders/:id/dismiss", async (req, res) => {
+    const reminderId = parseInt(req.params.id);
+    if (isNaN(reminderId)) {
+      return res.status(400).json({ message: "Invalid reminder ID" });
+    }
+    
+    const updatedReminder = await storage.markReminderDismissed(reminderId);
+    if (!updatedReminder) {
+      return res.status(404).json({ message: "Reminder not found" });
+    }
+    
+    res.json(updatedReminder);
+  });
 
   // Plant identification route
   apiRouter.post("/api/identify-plant", async (req, res) => {
