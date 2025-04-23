@@ -203,7 +203,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
               </div>
             </div>
 
-            <div className="flex mb-4 space-x-2 flex-wrap">
+            <div className="flex mb-3 space-x-2 flex-wrap">
               <Badge variant="outline" className="px-2 py-1 bg-neutral-medium rounded-full text-xs mb-1">
                 {plant.type.charAt(0).toUpperCase() + plant.type.slice(1)}
               </Badge>
@@ -216,10 +216,29 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                 </Badge>
               )}
             </div>
+            
+            {/* Extract the scientific name from notes if it exists */}
+            {plant.notes && plant.notes.includes("Scientific Name:") ? (
+              <p className="text-sm italic text-neutral-dark mb-2">
+                Scientific Name: {plant.notes.split("Scientific Name:")[1].split("\n")[0].trim()}
+              </p>
+            ) : null}
 
-            <p className="text-sm text-neutral-dark opacity-90 mb-6 break-words whitespace-pre-line">
-              {plant.notes || (plant.guide?.description || `A beautiful ${plant.type} plant placed in ${plant.location}.`)}
-            </p>
+            {/* Extract and display care tips if they exist in notes */}
+            {plant.notes && plant.notes.includes("Care Tips:") ? (
+              <div className="mb-6">
+                <p className="text-sm font-medium mb-1">Care Tips:</p>
+                <p className="text-sm text-neutral-dark opacity-90 break-words whitespace-pre-line">
+                  {plant.notes.split("Care Tips:")[1].trim()}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-neutral-dark opacity-90 mb-6 break-words whitespace-pre-line">
+                {plant.notes 
+                  ? plant.notes
+                  : (plant.guide?.description || `A beautiful ${plant.type} plant placed in ${plant.location}.`)}
+              </p>
+            )}
 
             {/* Tabs Interface */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
@@ -252,16 +271,16 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                 <div className="space-y-3">
                   {/* Water Schedule */}
                   <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
-                    <div className="flex items-center">
-                      <div className="p-2 bg-blue-100 rounded-full mr-3">
+                    <div className="flex items-center min-w-0 flex-1">
+                      <div className="p-2 bg-blue-100 rounded-full mr-3 flex-shrink-0">
                         <WaterDropIcon className="h-4 w-4 text-blue-500" />
                       </div>
-                      <div>
-                        <p className="font-medium">Water</p>
-                        <p className="text-xs text-neutral-dark opacity-70">Every {plant.waterFrequency} days</p>
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">Water</p>
+                        <p className="text-xs text-neutral-dark opacity-70 truncate">Every {plant.waterFrequency} days</p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right ml-2 flex-shrink-0">
                       <p className="font-medium">
                         {waterRemainingDays !== null 
                           ? waterRemainingDays < 0 
@@ -281,20 +300,20 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
 
                   {/* Sunlight Schedule */}
                   <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
-                    <div className="flex items-center">
-                      <div className="p-2 bg-yellow-100 rounded-full mr-3">
+                    <div className="flex items-center min-w-0 flex-1">
+                      <div className="p-2 bg-yellow-100 rounded-full mr-3 flex-shrink-0">
                         <SunIcon className="h-4 w-4 text-yellow-500" />
                       </div>
-                      <div>
-                        <p className="font-medium">Sunlight</p>
-                        <p className="text-xs text-neutral-dark opacity-70">
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">Sunlight</p>
+                        <p className="text-xs text-neutral-dark opacity-70 truncate">
                           {plant.sunlightLevel.charAt(0).toUpperCase() + plant.sunlightLevel.slice(1)}, 
                           {plant.sunlightLevel === "high" ? " direct" : " indirect"}
                         </p>
                       </div>
                     </div>
                     <div className={cn(
-                      "text-xs font-medium",
+                      "text-xs font-medium ml-2 flex-shrink-0",
                       sunlightAdequate ? "text-status-success" : "text-status-warning"
                     )}>
                       {sunlightAdequate ? <CheckCircleIcon className="h-4 w-4 inline mr-1" /> : null}
@@ -304,20 +323,20 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
 
                   {/* Fertilizer Schedule */}
                   <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
-                    <div className="flex items-center">
-                      <div className="p-2 bg-green-100 rounded-full mr-3">
+                    <div className="flex items-center min-w-0 flex-1">
+                      <div className="p-2 bg-green-100 rounded-full mr-3 flex-shrink-0">
                         <SeedlingIcon className="h-4 w-4 text-green-500" />
                       </div>
-                      <div>
-                        <p className="font-medium">Fertilizer</p>
-                        <p className="text-xs text-neutral-dark opacity-70">
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">Fertilizer</p>
+                        <p className="text-xs text-neutral-dark opacity-70 truncate">
                           {plant.fertilizerFrequency === 0 
                             ? "Not needed" 
                             : `Every ${plant.fertilizerFrequency} days`}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right ml-2 flex-shrink-0">
                       {plant.fertilizerFrequency > 0 && (
                         <>
                           <p className="font-medium">
