@@ -426,7 +426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Update the plant's last fertilized date
         await storage.updatePlant(plant.id, {
-          lastFertilized: new Date()
+          lastFertilized: new Date().toISOString()
         });
       }
     }

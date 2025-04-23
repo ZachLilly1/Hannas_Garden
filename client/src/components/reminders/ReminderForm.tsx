@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { InsertReminder, Reminder } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/context/AuthContext";
 
 interface ReminderFormProps {
   isOpen: boolean;
@@ -29,6 +30,8 @@ export function ReminderForm({
   existingReminder,
   plantId
 }: ReminderFormProps) {
+  // Get current authenticated user
+  const { user } = useAuth();
   // Create a Zod schema for the form
   const formSchema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -38,7 +41,7 @@ export function ReminderForm({
     }),
     careType: z.string().min(1, "Care type is required"),
     plantId: z.number().optional(),
-    userId: z.number().int().default(1), // Default user ID is 1 for demo
+    userId: z.number().int(), // Will be set from authenticated user
     status: z.string().default("pending"),
     recurring: z.boolean().default(false),
     recurringInterval: z.number().nullable().default(null),
@@ -54,6 +57,7 @@ export function ReminderForm({
     dueDate: existingReminder?.dueDate ? new Date(existingReminder.dueDate) : new Date(),
     careType: existingReminder?.careType || "water",
     plantId: plantId || existingReminder?.plantId,
+    userId: user?.id || existingReminder?.userId,
     status: existingReminder?.status || "pending",
     recurring: existingReminder?.recurring || false,
     recurringInterval: existingReminder?.recurringInterval || null,
