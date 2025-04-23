@@ -85,4 +85,20 @@
     overflow-wrap: anywhere;
     word-break: break-word;
   }
+  
+  .text-wrap-balance {
+    text-wrap: balance;
+  }
+  
+  .text-wrap-pretty {
+    text-wrap: pretty;
+  }
+  
+  .break-all {
+    word-break: break-all;
+  }
+  
+  .break-word {
+    word-break: break-word;
+  }
 }

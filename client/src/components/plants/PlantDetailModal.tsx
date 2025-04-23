@@ -178,7 +178,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
             </button>
           </div>
 
-          <div className="px-3 sm:px-5 py-4 w-full">
+          <div className="px-4 sm:px-6 py-5 w-full">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-xl font-medium truncate max-w-[80%]">{plant.name}</h2>
               <div className="flex space-x-3">
@@ -221,7 +221,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
             {plant.notes && plant.notes.includes("Scientific Name:") ? (
               <div className="text-sm italic text-neutral-dark mb-2 break-words">
                 <span className="font-medium block mb-1">Scientific Name:</span> 
-                <span className="hyphens-auto overflow-wrap-anywhere inline-block">
+                <span className="hyphens-auto overflow-wrap-anywhere inline-block text-wrap-balance break-word">
                   {plant.notes.split("Scientific Name:")[1].split("\n")[0].trim()}
                 </span>
               </div>
@@ -231,12 +231,12 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
             {plant.notes && plant.notes.includes("Care Tips:") ? (
               <div className="mb-6">
                 <p className="text-sm font-medium mb-1">Care Tips:</p>
-                <p className="text-sm text-neutral-dark opacity-90 break-words whitespace-pre-line hyphens-auto overflow-wrap-anywhere">
+                <p className="text-sm text-neutral-dark opacity-90 break-words whitespace-pre-line hyphens-auto overflow-wrap-anywhere text-wrap-pretty break-word">
                   {plant.notes.split("Care Tips:")[1].trim()}
                 </p>
               </div>
             ) : (
-              <p className="text-sm text-neutral-dark opacity-90 mb-6 break-words whitespace-pre-line hyphens-auto overflow-wrap-anywhere">
+              <p className="text-sm text-neutral-dark opacity-90 mb-6 break-words whitespace-pre-line hyphens-auto overflow-wrap-anywhere text-wrap-pretty break-word">
                 {plant.notes 
                   ? plant.notes
                   : (plant.guide?.description || `A beautiful ${plant.type} plant placed in ${plant.location}.`)}
