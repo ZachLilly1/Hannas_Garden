@@ -16,7 +16,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const getPageTitle = () => {
     switch (location) {
       case "/":
-        return "GreenThumb";
+        return "Hanna's Garden";
       case "/schedule":
         return "Care Schedule";
       case "/guides":
@@ -24,7 +24,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       case "/profile":
         return "My Profile";
       default:
-        return "GreenThumb";
+        return "Hanna's Garden";
     }
   };
 
