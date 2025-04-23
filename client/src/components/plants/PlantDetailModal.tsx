@@ -163,7 +163,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
       </AlertDialog>
       
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="mx-auto p-0 rounded-t-xl overflow-hidden max-h-[95vh] overflow-y-auto sm:max-h-[80vh] w-[90vw] max-w-[95vw] sm:w-full sm:max-w-md">
+        <DialogContent className="mx-auto p-0 rounded-t-xl overflow-hidden max-h-[95vh] overflow-y-auto sm:max-h-[80vh] w-[90vw] max-w-[95vw] sm:w-full sm:max-w-md overflow-visible">
           <div className="h-64 relative">
             <img
               src={plant.image || getDefaultPlantImage(plant.type)}
