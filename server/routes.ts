@@ -10,6 +10,7 @@ import {
 import { z } from "zod";
 import { identifyPlantFromImage, type PlantIdentificationResult } from "./services/openai";
 import fs from "fs";
+import path from "path";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
@@ -126,12 +127,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const imageBuffer = Buffer.from(careLogData.photoBase64, 'base64');
         
         // Save the image to public/uploads
-        const uploadDir = './public/uploads';
+        const uploadDir = path.join(process.cwd(), 'public/uploads');
         if (!fs.existsSync(uploadDir)) {
           fs.mkdirSync(uploadDir, { recursive: true });
         }
         
-        fs.writeFileSync(`${uploadDir}/${filename}`, imageBuffer);
+        fs.writeFileSync(path.join(uploadDir, filename), imageBuffer);
         
         // Set photo URL in database
         careLogData.photo = `/uploads/${filename}`;
