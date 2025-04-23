@@ -283,7 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(updatedPlant);
   });
 
-  apiRouter.delete("/api/plants/:id", async (req, res) => {
+  apiRouter.delete("/api/plants/:id", isAuthenticated, async (req, res) => {
     const plantId = parseInt(req.params.id);
     if (isNaN(plantId)) {
       return res.status(400).json({ message: "Invalid plant ID" });
@@ -298,7 +298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Care log routes
-  apiRouter.get("/api/plants/:id/care-logs", async (req, res) => {
+  apiRouter.get("/api/plants/:id/care-logs", isAuthenticated, async (req, res) => {
     const plantId = parseInt(req.params.id);
     if (isNaN(plantId)) {
       return res.status(400).json({ message: "Invalid plant ID" });
@@ -308,7 +308,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(logs);
   });
 
-  apiRouter.post("/api/care-logs", async (req, res) => {
+  apiRouter.post("/api/care-logs", isAuthenticated, async (req, res) => {
     const validation = validateRequest(insertCareLogSchema, req, res);
     if (!validation.success) return;
     
@@ -452,24 +452,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard summary route
-  apiRouter.get("/api/dashboard/care-needed", async (req, res) => {
-    // For demo, use a fixed userId=1
-    const userId = 1;
+  apiRouter.get("/api/dashboard/care-needed", isAuthenticated, async (req, res) => {
+    const userId = req.user!.id;
     const careNeeded = await storage.getPlantsNeedingCare(userId);
     res.json(careNeeded);
   });
   
   // Reminder routes
-  apiRouter.get("/api/reminders", async (req, res) => {
-    // For demo, use a fixed userId=1
-    const userId = 1;
+  apiRouter.get("/api/reminders", isAuthenticated, async (req, res) => {
+    const userId = req.user!.id;
     const reminders = await storage.getReminders(userId);
     res.json(reminders);
   });
   
-  apiRouter.get("/api/reminders/upcoming/:days", async (req, res) => {
-    // For demo, use a fixed userId=1
-    const userId = 1;
+  apiRouter.get("/api/reminders/upcoming/:days", isAuthenticated, async (req, res) => {
+    const userId = req.user!.id;
     const days = parseInt(req.params.days);
     
     if (isNaN(days)) {
@@ -480,14 +477,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(reminders);
   });
   
-  apiRouter.get("/api/reminders/overdue", async (req, res) => {
-    // For demo, use a fixed userId=1
-    const userId = 1;
+  apiRouter.get("/api/reminders/overdue", isAuthenticated, async (req, res) => {
+    const userId = req.user!.id;
     const reminders = await storage.getOverdueReminders(userId);
     res.json(reminders);
   });
   
-  apiRouter.get("/api/plants/:id/reminders", async (req, res) => {
+  apiRouter.get("/api/plants/:id/reminders", isAuthenticated, async (req, res) => {
     const plantId = parseInt(req.params.id);
     if (isNaN(plantId)) {
       return res.status(400).json({ message: "Invalid plant ID" });
@@ -497,7 +493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(reminders);
   });
   
-  apiRouter.post("/api/reminders", async (req, res) => {
+  apiRouter.post("/api/reminders", isAuthenticated, async (req, res) => {
     // We need to bring in the insertReminderSchema
     const { insertReminderSchema } = await import("@shared/schema");
     
@@ -508,7 +504,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(201).json(reminder);
   });
   
-  apiRouter.patch("/api/reminders/:id", async (req, res) => {
+  apiRouter.patch("/api/reminders/:id", isAuthenticated, async (req, res) => {
     const reminderId = parseInt(req.params.id);
     if (isNaN(reminderId)) {
       return res.status(400).json({ message: "Invalid reminder ID" });
@@ -529,7 +525,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(updatedReminder);
   });
   
-  apiRouter.delete("/api/reminders/:id", async (req, res) => {
+  apiRouter.delete("/api/reminders/:id", isAuthenticated, async (req, res) => {
     const reminderId = parseInt(req.params.id);
     if (isNaN(reminderId)) {
       return res.status(400).json({ message: "Invalid reminder ID" });
@@ -543,7 +539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(204).send();
   });
   
-  apiRouter.post("/api/reminders/:id/complete", async (req, res) => {
+  apiRouter.post("/api/reminders/:id/complete", isAuthenticated, async (req, res) => {
     const reminderId = parseInt(req.params.id);
     if (isNaN(reminderId)) {
       return res.status(400).json({ message: "Invalid reminder ID" });
@@ -557,7 +553,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(updatedReminder);
   });
   
-  apiRouter.post("/api/reminders/:id/dismiss", async (req, res) => {
+  apiRouter.post("/api/reminders/:id/dismiss", isAuthenticated, async (req, res) => {
     const reminderId = parseInt(req.params.id);
     if (isNaN(reminderId)) {
       return res.status(400).json({ message: "Invalid reminder ID" });
