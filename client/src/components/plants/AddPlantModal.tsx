@@ -188,9 +188,23 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
       });
     } catch (error) {
       console.error("Error identifying plant:", error);
+      let errorMessage = "Unable to identify the plant.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes("entity too large")) {
+          errorMessage = "The image is too large. Please try with a smaller image or resize it.";
+        } else if (error.message.includes("NetworkError") || error.message.includes("Failed to fetch")) {
+          errorMessage = "Network connection issue. Please check your internet connection.";
+        } else if (error.message.includes("timeout")) {
+          errorMessage = "The request timed out. Please try with a smaller image or try again later.";
+        } else {
+          errorMessage = `${errorMessage} ${error.message}`;
+        }
+      }
+      
       toast({
         title: "Identification failed",
-        description: "Unable to identify the plant. Please try again or fill in the details manually.",
+        description: errorMessage + " You can still fill in the details manually.",
         variant: "destructive"
       });
     } finally {
