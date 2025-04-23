@@ -36,9 +36,11 @@ export const loginSchema = z.object({
 
 export const userProfileSchema = createInsertSchema(users).pick({
   displayName: true,
+  email: true,
   preferredUnits: true,
   timezone: true,
   notificationsEnabled: true,
+  avatarUrl: true,
 });
 
 // Plant schema
