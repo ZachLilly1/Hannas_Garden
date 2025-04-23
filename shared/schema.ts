@@ -7,11 +7,38 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  email: text("email").notNull().unique(),
+  displayName: text("display_name"),
+  avatarUrl: text("avatar_url"),
+  preferredUnits: text("preferred_units").default("metric"),
+  timezone: text("timezone").default("UTC"),
+  notificationsEnabled: boolean("notifications_enabled").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  lastLogin: timestamp("last_login"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  email: true,
+  displayName: true,
+}).extend({
+  confirmPassword: z.string()
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+export const loginSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export const userProfileSchema = createInsertSchema(users).pick({
+  displayName: true,
+  preferredUnits: true,
+  timezone: true,
+  notificationsEnabled: true,
 });
 
 // Plant schema
