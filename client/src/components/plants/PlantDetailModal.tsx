@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { 
   WaterDropIcon, 
@@ -26,6 +26,16 @@ import { CareTimeline } from "./CareTimeline";
 import { CareLogForm } from "./CareLogForm";
 import { ReminderList } from "../reminders/ReminderList";
 import { ReminderForm } from "../reminders/ReminderForm";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface PlantDetailModalProps {
   plant: PlantWithCare | null;
@@ -38,8 +48,38 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
   const [activeTab, setActiveTab] = useState("care-schedule");
   const [showLogCareForm, setShowLogCareForm] = useState(false);
   const [showReminderForm, setShowReminderForm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   if (!plant) return null;
+  
+  const handleDeletePlant = async () => {
+    try {
+      setIsDeleting(true);
+      await apiRequest('DELETE', `/api/plants/${plant.id}`);
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/plants'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/care-needed'] });
+      
+      toast({
+        title: "Plant deleted",
+        description: `${plant.name} has been removed from your garden.`,
+      });
+      
+      // Close both the confirm dialog and the plant detail modal
+      setShowDeleteConfirm(false);
+      onClose();
+    } catch (error) {
+      toast({
+        title: "Failed to delete plant",
+        description: "An error occurred while deleting the plant. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const handleLogCare = async (careType: string) => {
     try {
@@ -118,13 +158,27 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
 
         <div className="px-4 py-4 w-full">
           <div className="flex justify-between items-center mb-3">
-            <h2 className="text-xl font-medium">{plant.name}</h2>
-            <button 
-              className="text-neutral-dark opacity-70"
-              onClick={() => onEdit(plant)}
-            >
-              <EditIcon className="h-5 w-5" />
-            </button>
+            <h2 className="text-xl font-medium truncate max-w-[80%]">{plant.name}</h2>
+            <div className="flex space-x-3">
+              <button 
+                className="text-neutral-dark opacity-70"
+                onClick={() => onEdit(plant)}
+                aria-label="Edit plant"
+              >
+                <EditIcon className="h-5 w-5" />
+              </button>
+              <button 
+                className="text-red-500 opacity-70 hover:opacity-100"
+                onClick={() => setShowDeleteConfirm(true)}
+                aria-label="Delete plant"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6h18"></path>
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                </svg>
+              </button>
+            </div>
           </div>
 
           <div className="flex mb-4 space-x-2 flex-wrap">
