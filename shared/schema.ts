@@ -44,11 +44,14 @@ export const careLogs = pgTable("care_logs", {
   careType: text("care_type").notNull(), // water, fertilize, etc.
   timestamp: timestamp("timestamp").defaultNow(),
   notes: text("notes"),
+  photo: text("photo"),
 });
 
 export const insertCareLogSchema = createInsertSchema(careLogs).omit({
   id: true,
   timestamp: true,
+}).extend({
+  photoBase64: z.string().optional(),
 });
 
 // Plant guide schema

@@ -9,6 +9,7 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { identifyPlantFromImage, type PlantIdentificationResult } from "./services/openai";
+import fs from "fs";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
@@ -112,7 +113,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const validation = validateRequest(insertCareLogSchema, req, res);
     if (!validation.success) return;
     
-    const careLog = await storage.createCareLog(validation.data);
+    const careLogData = { ...validation.data };
+    
+    // Handle photoBase64 if provided
+    if (careLogData.photoBase64) {
+      try {
+        // Generate a unique filename
+        const timestamp = Date.now();
+        const filename = `care_log_${careLogData.plantId}_${timestamp}.jpg`;
+        
+        // Convert base64 to buffer
+        const imageBuffer = Buffer.from(careLogData.photoBase64, 'base64');
+        
+        // Save the image to public/uploads
+        const uploadDir = './public/uploads';
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        
+        fs.writeFileSync(`${uploadDir}/${filename}`, imageBuffer);
+        
+        // Set photo URL in database
+        careLogData.photo = `/uploads/${filename}`;
+        
+        // Remove base64 data before storing in DB
+        delete careLogData.photoBase64;
+      } catch (error) {
+        console.error('Error saving care log photo:', error);
+        return res.status(500).json({ message: 'Failed to save photo' });
+      }
+    }
+    
+    const careLog = await storage.createCareLog(careLogData);
     res.status(201).json(careLog);
   });
 
