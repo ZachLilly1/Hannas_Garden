@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { 
   WaterDropIcon, 
@@ -140,298 +140,321 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md mx-auto p-0 rounded-t-xl overflow-hidden max-h-[90vh] overflow-y-auto sm:max-h-[80vh] w-full" onInteractOutside={onClose}>
-        <div className="h-64 relative">
-          <img
-            src={plant.image || getDefaultPlantImage(plant.type)}
-            alt={plant.name}
-            className="w-full h-full object-cover"
-          />
-          <button 
-            className="absolute top-4 right-4 bg-black bg-opacity-20 text-white rounded-full p-2"
-            onClick={onClose}
-          >
-            <CloseIcon className="h-5 w-5" />
-          </button>
-        </div>
+    <>
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent className="max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Plant</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove <span className="font-semibold">{plant.name}</span> from your garden? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeletePlant} 
+              disabled={isDeleting}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-md mx-auto p-0 rounded-t-xl overflow-hidden max-h-[90vh] overflow-y-auto sm:max-h-[80vh] w-full">
+          <div className="h-64 relative">
+            <img
+              src={plant.image || getDefaultPlantImage(plant.type)}
+              alt={plant.name}
+              className="w-full h-full object-cover"
+            />
+            <button 
+              className="absolute top-4 right-4 bg-black bg-opacity-20 text-white rounded-full p-2"
+              onClick={onClose}
+            >
+              <CloseIcon className="h-5 w-5" />
+            </button>
+          </div>
 
-        <div className="px-4 py-4 w-full">
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-xl font-medium truncate max-w-[80%]">{plant.name}</h2>
-            <div className="flex space-x-3">
-              <button 
-                className="text-neutral-dark opacity-70"
-                onClick={() => onEdit(plant)}
-                aria-label="Edit plant"
-              >
-                <EditIcon className="h-5 w-5" />
-              </button>
-              <button 
-                className="text-red-500 opacity-70 hover:opacity-100"
-                onClick={() => setShowDeleteConfirm(true)}
-                aria-label="Delete plant"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 6h18"></path>
-                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                </svg>
-              </button>
+          <div className="px-4 py-4 w-full">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-xl font-medium truncate max-w-[80%]">{plant.name}</h2>
+              <div className="flex space-x-3">
+                <button 
+                  className="text-neutral-dark opacity-70 hover:opacity-100"
+                  onClick={() => onEdit(plant)}
+                  aria-label="Edit plant"
+                >
+                  <EditIcon className="h-5 w-5" />
+                </button>
+                <button 
+                  className="text-red-500 opacity-70 hover:opacity-100"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  aria-label="Delete plant"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                  </svg>
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div className="flex mb-4 space-x-2 flex-wrap">
-            <Badge variant="outline" className="px-2 py-1 bg-neutral-medium rounded-full text-xs">
-              {plant.type.charAt(0).toUpperCase() + plant.type.slice(1)}
-            </Badge>
-            <Badge variant="outline" className="px-2 py-1 bg-neutral-medium rounded-full text-xs">
-              {plant.sunlightLevel.charAt(0).toUpperCase() + plant.sunlightLevel.slice(1)} Light
-            </Badge>
-            {plant.guide && (
-              <Badge variant="outline" className="px-2 py-1 bg-neutral-medium rounded-full text-xs">
-                Water every {plant.guide.idealWaterFrequency} days
+            <div className="flex mb-4 space-x-2 flex-wrap">
+              <Badge variant="outline" className="px-2 py-1 bg-neutral-medium rounded-full text-xs mb-1">
+                {plant.type.charAt(0).toUpperCase() + plant.type.slice(1)}
               </Badge>
-            )}
-          </div>
+              <Badge variant="outline" className="px-2 py-1 bg-neutral-medium rounded-full text-xs mb-1">
+                {plant.sunlightLevel.charAt(0).toUpperCase() + plant.sunlightLevel.slice(1)} Light
+              </Badge>
+              {plant.guide && (
+                <Badge variant="outline" className="px-2 py-1 bg-neutral-medium rounded-full text-xs mb-1">
+                  Water every {plant.guide.idealWaterFrequency} days
+                </Badge>
+              )}
+            </div>
 
-          <p className="text-sm text-neutral-dark opacity-90 mb-6">
-            {plant.notes || (plant.guide?.description || `A beautiful ${plant.type} plant placed in ${plant.location}.`)}
-          </p>
+            <p className="text-sm text-neutral-dark opacity-90 mb-6">
+              {plant.notes || (plant.guide?.description || `A beautiful ${plant.type} plant placed in ${plant.location}.`)}
+            </p>
 
-          {/* Tabs Interface */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-            <TabsList className="w-full flex bg-neutral-medium bg-opacity-20 p-0.5 rounded-md">
-              <TabsTrigger 
-                value="care-schedule" 
-                className="flex-1 data-[state=active]:bg-white data-[state=active]:shadow-none"
+            {/* Tabs Interface */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+              <TabsList className="w-full flex bg-neutral-medium bg-opacity-20 p-0.5 rounded-md">
+                <TabsTrigger 
+                  value="care-schedule" 
+                  className="flex-1 data-[state=active]:bg-white data-[state=active]:shadow-none"
+                >
+                  <WaterDropIcon className="h-4 w-4 mr-2" />
+                  Care Schedule
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="history" 
+                  className="flex-1 data-[state=active]:bg-white data-[state=active]:shadow-none"
+                >
+                  <HistoryIcon className="h-4 w-4 mr-2" />
+                  History
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="reminders" 
+                  className="flex-1 data-[state=active]:bg-white data-[state=active]:shadow-none"
+                >
+                  <BellIcon className="h-4 w-4 mr-2" />
+                  Reminders
+                </TabsTrigger>
+              </TabsList>
+              
+              {/* Care Schedule Tab Content */}
+              <TabsContent value="care-schedule" className="mt-4">
+                <div className="space-y-3">
+                  {/* Water Schedule */}
+                  <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-blue-100 rounded-full mr-3">
+                        <WaterDropIcon className="h-4 w-4 text-blue-500" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Water</p>
+                        <p className="text-xs text-neutral-dark opacity-70">Every {plant.waterFrequency} days</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">
+                        {waterRemainingDays !== null 
+                          ? waterRemainingDays < 0 
+                            ? "Overdue" 
+                            : waterRemainingDays === 0 
+                              ? "Today" 
+                              : waterRemainingDays === 1 
+                                ? "1 day" 
+                                : `${waterRemainingDays} days`
+                          : "Not set"}
+                      </p>
+                      <p className="text-xs text-neutral-dark opacity-70">
+                        {waterRemainingDays !== null && waterRemainingDays >= 0 ? "remaining" : ""}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Sunlight Schedule */}
+                  <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-yellow-100 rounded-full mr-3">
+                        <SunIcon className="h-4 w-4 text-yellow-500" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Sunlight</p>
+                        <p className="text-xs text-neutral-dark opacity-70">
+                          {plant.sunlightLevel.charAt(0).toUpperCase() + plant.sunlightLevel.slice(1)}, 
+                          {plant.sunlightLevel === "high" ? " direct" : " indirect"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className={cn(
+                      "text-xs font-medium",
+                      sunlightAdequate ? "text-status-success" : "text-status-warning"
+                    )}>
+                      {sunlightAdequate ? <CheckCircleIcon className="h-4 w-4 inline mr-1" /> : null}
+                      {sunlightStatus}
+                    </div>
+                  </div>
+
+                  {/* Fertilizer Schedule */}
+                  <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-green-100 rounded-full mr-3">
+                        <SeedlingIcon className="h-4 w-4 text-green-500" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Fertilizer</p>
+                        <p className="text-xs text-neutral-dark opacity-70">
+                          {plant.fertilizerFrequency === 0 
+                            ? "Not needed" 
+                            : `Every ${plant.fertilizerFrequency} days`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      {plant.fertilizerFrequency > 0 && (
+                        <>
+                          <p className="font-medium">
+                            {fertilizerRemainingDays !== null 
+                              ? fertilizerRemainingDays < 0 
+                                ? "Overdue" 
+                                : fertilizerRemainingDays === 0 
+                                  ? "Today" 
+                                  : fertilizerRemainingDays < 7 
+                                    ? `${fertilizerRemainingDays} days` 
+                                    : `${Math.floor(fertilizerRemainingDays / 7)} weeks`
+                              : "Not set"}
+                          </p>
+                          <p className="text-xs text-neutral-dark opacity-70">
+                            {fertilizerRemainingDays !== null && fertilizerRemainingDays >= 0 ? "remaining" : ""}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Care Tips */}
+                {plant.guide && (
+                  <div className="mt-6">
+                    <h3 className="font-medium mb-3">Care Tips</h3>
+                    <ul className="text-sm space-y-2">
+                      {plant.guide.careTips.split('.').filter(tip => tip.trim()).map((tip, index) => (
+                        <li key={index} className="flex items-start">
+                          <CircleDotIcon className="h-3 w-3 mt-1 mr-2 text-primary" />
+                          <span>{tip.trim()}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </TabsContent>
+              
+              {/* History Tab Content */}
+              <TabsContent value="history" className="mt-4">
+                {showLogCareForm ? (
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="font-medium">Log Care Activity</h3>
+                      <button 
+                        className="text-sm text-primary"
+                        onClick={() => setShowLogCareForm(false)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    <CareLogForm plantId={plant.id} onSuccess={handleCareLogSuccess} />
+                  </div>
+                ) : (
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-medium">Care History</h3>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs"
+                      onClick={() => setShowLogCareForm(true)}
+                    >
+                      <CameraIcon className="h-3 w-3 mr-1" />
+                      Add Log
+                    </Button>
+                  </div>
+                )}
+                
+                <CareTimeline plant={plant} />
+              </TabsContent>
+              
+              {/* Reminders Tab Content */}
+              <TabsContent value="reminders" className="mt-4">
+                {showReminderForm ? (
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="font-medium">New Reminder</h3>
+                      <button 
+                        className="text-sm text-primary"
+                        onClick={() => setShowReminderForm(false)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    <ReminderForm 
+                      isOpen={showReminderForm} 
+                      onClose={() => setShowReminderForm(false)} 
+                      plantId={plant.id} 
+                    />
+                  </div>
+                ) : (
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-medium">Plant Reminders</h3>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs"
+                      onClick={() => setShowReminderForm(true)}
+                    >
+                      <BellIcon className="h-3 w-3 mr-1" />
+                      Add Reminder
+                    </Button>
+                  </div>
+                )}
+                
+                <ReminderList type="plant" plantId={plant.id} onAddReminder={() => setShowReminderForm(true)} />
+              </TabsContent>
+            </Tabs>
+
+            {/* Action Buttons */}
+            <div className="flex space-x-3">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => {
+                  setActiveTab("history");
+                  setShowLogCareForm(true);
+                }}
               >
-                <WaterDropIcon className="h-4 w-4 mr-2" />
-                Care Schedule
-              </TabsTrigger>
-              <TabsTrigger 
-                value="history" 
-                className="flex-1 data-[state=active]:bg-white data-[state=active]:shadow-none"
-              >
-                <HistoryIcon className="h-4 w-4 mr-2" />
-                History
-              </TabsTrigger>
-              <TabsTrigger 
-                value="reminders" 
-                className="flex-1 data-[state=active]:bg-white data-[state=active]:shadow-none"
+                <LeafIcon className="h-4 w-4 mr-2" />
+                Log Care
+              </Button>
+              <Button 
+                className="flex-1"
+                onClick={() => {
+                  setActiveTab("reminders");
+                  setShowReminderForm(true);
+                }}
               >
                 <BellIcon className="h-4 w-4 mr-2" />
-                Reminders
-              </TabsTrigger>
-            </TabsList>
-            
-            {/* Care Schedule Tab Content */}
-            <TabsContent value="care-schedule" className="mt-4">
-              <div className="space-y-3">
-                {/* Water Schedule */}
-                <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
-                  <div className="flex items-center">
-                    <div className="p-2 bg-blue-100 rounded-full mr-3">
-                      <WaterDropIcon className="h-4 w-4 text-blue-500" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Water</p>
-                      <p className="text-xs text-neutral-dark opacity-70">Every {plant.waterFrequency} days</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">
-                      {waterRemainingDays !== null 
-                        ? waterRemainingDays < 0 
-                          ? "Overdue" 
-                          : waterRemainingDays === 0 
-                            ? "Today" 
-                            : waterRemainingDays === 1 
-                              ? "1 day" 
-                              : `${waterRemainingDays} days`
-                        : "Not set"}
-                    </p>
-                    <p className="text-xs text-neutral-dark opacity-70">
-                      {waterRemainingDays !== null && waterRemainingDays >= 0 ? "remaining" : ""}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Sunlight Schedule */}
-                <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
-                  <div className="flex items-center">
-                    <div className="p-2 bg-yellow-100 rounded-full mr-3">
-                      <SunIcon className="h-4 w-4 text-yellow-500" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Sunlight</p>
-                      <p className="text-xs text-neutral-dark opacity-70">
-                        {plant.sunlightLevel.charAt(0).toUpperCase() + plant.sunlightLevel.slice(1)}, 
-                        {plant.sunlightLevel === "high" ? " direct" : " indirect"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className={cn(
-                    "text-xs font-medium",
-                    sunlightAdequate ? "text-status-success" : "text-status-warning"
-                  )}>
-                    {sunlightAdequate ? <CheckCircleIcon className="h-4 w-4 inline mr-1" /> : null}
-                    {sunlightStatus}
-                  </div>
-                </div>
-
-                {/* Fertilizer Schedule */}
-                <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
-                  <div className="flex items-center">
-                    <div className="p-2 bg-green-100 rounded-full mr-3">
-                      <SeedlingIcon className="h-4 w-4 text-green-500" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Fertilizer</p>
-                      <p className="text-xs text-neutral-dark opacity-70">
-                        {plant.fertilizerFrequency === 0 
-                          ? "Not needed" 
-                          : `Every ${plant.fertilizerFrequency} days`}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    {plant.fertilizerFrequency > 0 && (
-                      <>
-                        <p className="font-medium">
-                          {fertilizerRemainingDays !== null 
-                            ? fertilizerRemainingDays < 0 
-                              ? "Overdue" 
-                              : fertilizerRemainingDays === 0 
-                                ? "Today" 
-                                : fertilizerRemainingDays < 7 
-                                  ? `${fertilizerRemainingDays} days` 
-                                  : `${Math.floor(fertilizerRemainingDays / 7)} weeks`
-                            : "Not set"}
-                        </p>
-                        <p className="text-xs text-neutral-dark opacity-70">
-                          {fertilizerRemainingDays !== null && fertilizerRemainingDays >= 0 ? "remaining" : ""}
-                        </p>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Care Tips */}
-              {plant.guide && (
-                <div className="mt-6">
-                  <h3 className="font-medium mb-3">Care Tips</h3>
-                  <ul className="text-sm space-y-2">
-                    {plant.guide.careTips.split('.').filter(tip => tip.trim()).map((tip, index) => (
-                      <li key={index} className="flex items-start">
-                        <CircleDotIcon className="h-3 w-3 mt-1 mr-2 text-primary" />
-                        <span>{tip.trim()}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </TabsContent>
-            
-            {/* History Tab Content */}
-            <TabsContent value="history" className="mt-4">
-              {showLogCareForm ? (
-                <div className="mb-4">
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="font-medium">Log Care Activity</h3>
-                    <button 
-                      className="text-sm text-primary"
-                      onClick={() => setShowLogCareForm(false)}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                  <CareLogForm plantId={plant.id} onSuccess={handleCareLogSuccess} />
-                </div>
-              ) : (
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-medium">Care History</h3>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="text-xs"
-                    onClick={() => setShowLogCareForm(true)}
-                  >
-                    <CameraIcon className="h-3 w-3 mr-1" />
-                    Add Log
-                  </Button>
-                </div>
-              )}
-              
-              <CareTimeline plant={plant} />
-            </TabsContent>
-            
-            {/* Reminders Tab Content */}
-            <TabsContent value="reminders" className="mt-4">
-              {showReminderForm ? (
-                <div className="mb-4">
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="font-medium">New Reminder</h3>
-                    <button 
-                      className="text-sm text-primary"
-                      onClick={() => setShowReminderForm(false)}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                  <ReminderForm 
-                    isOpen={showReminderForm} 
-                    onClose={() => setShowReminderForm(false)} 
-                    plantId={plant.id} 
-                  />
-                </div>
-              ) : (
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-medium">Plant Reminders</h3>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="text-xs"
-                    onClick={() => setShowReminderForm(true)}
-                  >
-                    <BellIcon className="h-3 w-3 mr-1" />
-                    Add Reminder
-                  </Button>
-                </div>
-              )}
-              
-              <ReminderList type="plant" plantId={plant.id} onAddReminder={() => setShowReminderForm(true)} />
-            </TabsContent>
-          </Tabs>
-
-          {/* Action Buttons */}
-          <div className="flex space-x-3">
-            <Button 
-              variant="outline" 
-              className="flex-1"
-              onClick={() => {
-                setActiveTab("history");
-                setShowLogCareForm(true);
-              }}
-            >
-              <LeafIcon className="h-4 w-4 mr-2" />
-              Log Care
-            </Button>
-            <Button 
-              className="flex-1"
-              onClick={() => {
-                setActiveTab("reminders");
-                setShowReminderForm(true);
-              }}
-            >
-              <BellIcon className="h-4 w-4 mr-2" />
-              Remind Me
-            </Button>
+                Remind Me
+              </Button>
+            </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
