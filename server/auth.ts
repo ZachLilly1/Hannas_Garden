@@ -149,7 +149,21 @@ function setupAuthRoutes(app: Express) {
         res.status(201).json(userInfo);
       });
     } catch (error) {
-      next(error);
+      console.error("Registration error:", error);
+      // Provide a more specific error message for database issues
+      if (error instanceof Error) {
+        if (error.message.includes("column") && error.message.includes("does not exist")) {
+          return res.status(500).json({ 
+            message: "Database schema error. Please try again or contact support.",
+            error: error.message
+          });
+        }
+      }
+      
+      return res.status(500).json({ 
+        message: "Failed to register user", 
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 

@@ -204,7 +204,7 @@ export function LightMeter() {
         
         <div 
           onClick={handleImageClick}
-          className="h-56 bg-neutral-100 rounded-lg flex flex-col items-center justify-center cursor-pointer relative overflow-hidden"
+          className="h-56 bg-neutral-medium bg-opacity-30 rounded-lg flex flex-col items-center justify-center cursor-pointer relative overflow-hidden"
         >
           {selectedImage ? (
             <>
@@ -220,8 +220,8 @@ export function LightMeter() {
             </>
           ) : (
             <>
-              <CameraIcon className="h-12 w-12 text-neutral-500 mb-2" />
-              <p className="text-neutral-500">Tap to take or upload a photo</p>
+              <CameraIcon className="h-12 w-12 text-neutral-dark opacity-60 mb-2" />
+              <p className="text-neutral-dark opacity-70">Tap to take or upload a plant photo</p>
             </>
           )}
         </div>
@@ -243,40 +243,42 @@ export function LightMeter() {
       {isProcessing && (
         <div className="mb-6 space-y-3">
           <Progress value={66} className="h-2" />
-          <p className="text-sm text-center text-neutral-500">
+          <p className="text-sm text-center text-neutral-dark">
             Measuring light level... This may take a few seconds.
           </p>
         </div>
       )}
       
       {currentLevel && lightValue !== null && (
-        <Card className="p-6 mb-6">
-          <div className="text-center mb-4">
-            <SunIcon className="w-16 h-16 mx-auto mb-2 text-yellow-500" />
-            <h3 className="text-2xl font-bold">{currentLevel.name}</h3>
-            <p className="text-3xl font-bold text-primary">{lightValue} lux</p>
-          </div>
-          
-          <div className="space-y-4 mt-4">
-            <div>
-              <h4 className="font-medium mb-1">Description</h4>
-              <p className="text-sm">{currentLevel.description}</p>
+        <div className="space-y-4 mb-6">
+          <Card className="p-4 overflow-hidden">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
+              <div>
+                <h3 className="text-xl font-medium">{currentLevel.name}</h3>
+                <p className="text-sm text-neutral-dark">{lightValue} lux</p>
+                <p className="text-sm mt-1">{currentLevel.description}</p>
+              </div>
+              <SunIcon className="w-10 h-10 text-yellow-500 self-start sm:self-center" />
             </div>
             
-            <div>
-              <h4 className="font-medium mb-1">Suitable Plants</h4>
-              <p className="text-sm">{currentLevel.suitable}</p>
+            <div className="mt-4">
+              <h4 className="font-medium mb-2">Suitable Plants:</h4>
+              <div className="p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
+                <p className="text-sm">{currentLevel.suitable}</p>
+              </div>
             </div>
-          </div>
-          
-          <Button 
-            variant="outline" 
-            className="w-full mt-6"
-            onClick={resetMeasurement}
-          >
-            Take Another Reading
-          </Button>
-        </Card>
+            
+            <div className="mt-6 flex gap-3">
+              <Button 
+                onClick={resetMeasurement}
+                variant="outline"
+                className="flex-1"
+              >
+                Take Another Reading
+              </Button>
+            </div>
+          </Card>
+        </div>
       )}
       
       {errorMessage && (
