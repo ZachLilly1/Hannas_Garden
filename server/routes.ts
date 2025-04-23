@@ -11,7 +11,7 @@ import { z } from "zod";
 import { identifyPlantFromImage, type PlantIdentificationResult } from "./services/openai";
 import fs from "fs";
 import path from "path";
-import { setupAuth, isAuthenticated } from "./auth";
+import { setupAuth, isAuthenticated, hashPassword } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
@@ -35,15 +35,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
 
+  // User profile routes
+  apiRouter.get("/api/auth/user", (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    res.json(req.user);
+  });
+  
+  apiRouter.patch("/api/auth/profile", isAuthenticated, async (req, res) => {
+    const userId = req.user!.id;
+    const { displayName, email, preferredUnits, timezone, notificationsEnabled } = req.body;
+    
+    // Only allow these fields to be updated
+    const updateData: any = {};
+    if (displayName !== undefined) updateData.displayName = displayName;
+    if (email !== undefined) updateData.email = email;
+    if (preferredUnits !== undefined) updateData.preferredUnits = preferredUnits;
+    if (timezone !== undefined) updateData.timezone = timezone;
+    if (notificationsEnabled !== undefined) updateData.notificationsEnabled = notificationsEnabled;
+    
+    try {
+      const updatedUser = await storage.updateUserProfile(userId, updateData);
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(updatedUser);
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Failed to update profile", error: error.message });
+    }
+  });
+  
+  apiRouter.post("/api/auth/change-password", isAuthenticated, async (req, res) => {
+    const userId = req.user!.id;
+    const { currentPassword, newPassword } = req.body;
+    
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current password and new password are required" });
+    }
+    
+    try {
+      // Verify current password
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Hash the new password
+      const hashedPassword = await hashPassword(newPassword);
+      
+      // Update the password
+      const success = await storage.updateUserPassword(userId, hashedPassword);
+      if (!success) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({ message: "Password updated successfully" });
+    } catch (error: any) {
+      console.error("Error changing password:", error);
+      res.status(500).json({ message: "Failed to change password", error: error.message });
+    }
+  });
+  
   // Plant routes
-  apiRouter.get("/api/plants", async (req, res) => {
-    // For demo, use a fixed userId=1
-    const userId = 1;
+  apiRouter.get("/api/plants", isAuthenticated, async (req, res) => {
+    const userId = req.user!.id;
     const plants = await storage.getPlants(userId);
     res.json(plants);
   });
 
-  apiRouter.get("/api/plants/:id", async (req, res) => {
+  apiRouter.get("/api/plants/:id", isAuthenticated, async (req, res) => {
     const plantId = parseInt(req.params.id);
     if (isNaN(plantId)) {
       return res.status(400).json({ message: "Invalid plant ID" });
@@ -54,15 +116,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Plant not found" });
     }
     
+    // Ensure the plant belongs to the authenticated user
+    if (plant.userId !== req.user!.id) {
+      return res.status(403).json({ message: "You don't have permission to access this plant" });
+    }
+    
     res.json(plant);
   });
 
-  apiRouter.post("/api/plants", async (req, res) => {
+  apiRouter.post("/api/plants", isAuthenticated, async (req, res) => {
     const validation = validateRequest(insertPlantSchema, req, res);
     if (!validation.success) return;
     
-    // For demo, use a fixed userId=1
-    const userId = 1;
+    const userId = req.user!.id;
     const plantData: InsertPlant = {
       ...validation.data,
       userId
@@ -110,7 +176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(201).json(plant);
   });
 
-  apiRouter.patch("/api/plants/:id", async (req, res) => {
+  apiRouter.patch("/api/plants/:id", isAuthenticated, async (req, res) => {
     const plantId = parseInt(req.params.id);
     if (isNaN(plantId)) {
       return res.status(400).json({ message: "Invalid plant ID" });
