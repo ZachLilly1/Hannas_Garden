@@ -43,7 +43,7 @@ export function LightMeter() {
   const [lightValue, setLightValue] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [currentLevel, setCurrentLevel] = useState<LightLevel | null>(null);
-  const [useManualMode, setUseManualMode] = useState(false);
+  const [useManualMode, setUseManualMode] = useState(true); // Start in manual mode by default
   const [manualLightValue, setManualLightValue] = useState<number>(2500); // Default to medium light
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -203,15 +203,24 @@ export function LightMeter() {
     setCurrentLevel(level);
     setLightValue(value);
   }, []);
+  
+  // Initialize manual mode settings when component loads
+  useEffect(() => {
+    if (useManualMode) {
+      updateManualLightLevel(manualLightValue);
+    }
+  }, [useManualMode, manualLightValue, updateManualLightLevel]);
 
   // Switch to manual mode if camera error occurs
+  // Automatically switch to manual mode when camera error occurs
   useEffect(() => {
     if (errorMessage && !useManualMode) {
+      console.log("Switching to manual mode due to camera error");
       setUseManualMode(true);
       // Set initial manual reading
       updateManualLightLevel(manualLightValue);
     }
-  }, [errorMessage, useManualMode, manualLightValue]);
+  }, [errorMessage, useManualMode, manualLightValue, updateManualLightLevel]);
 
   return (
     <div className="p-4">
