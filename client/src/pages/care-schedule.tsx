@@ -50,19 +50,13 @@ export default function CareSchedule() {
       return new Date(a.nextFertilizing).getTime() - new Date(b.nextFertilizing).getTime();
     });
     
-    // Sunlight changes needed
-    const sunlightPlants = plants.filter(plant => {
-      if (!plant.guide) return false;
-      return plant.guide.idealSunlight !== plant.sunlightLevel;
-    });
-    
-    return { wateringPlants, fertilizingPlants, sunlightPlants };
+    return { wateringPlants, fertilizingPlants };
   };
 
-  const { wateringPlants, fertilizingPlants, sunlightPlants } = groupPlantsByCare();
+  const { wateringPlants, fertilizingPlants } = groupPlantsByCare();
 
   // Render a plant item in the care schedule
-  const renderPlantItem = (plant: PlantWithCare, careType: 'water' | 'fertilize' | 'sunlight') => {
+  const renderPlantItem = (plant: PlantWithCare, careType: 'water' | 'fertilize') => {
     let statusText = '';
     let isUrgent = false;
     
@@ -72,11 +66,6 @@ export default function CareSchedule() {
     } else if (careType === 'fertilize') {
       statusText = plant.nextFertilizing ? formatRelativeDate(plant.nextFertilizing) : 'Not set';
       isUrgent = isCareNeededToday(plant.nextFertilizing);
-    } else if (careType === 'sunlight') {
-      const currentLevel = plant.sunlightLevel;
-      const idealLevel = plant.guide?.idealSunlight;
-      statusText = `${currentLevel} → ${idealLevel}`;
-      isUrgent = true; // Sunlight issues are always somewhat urgent
     }
 
     return (
@@ -120,12 +109,9 @@ export default function CareSchedule() {
     <>
       <div className="p-4">
         <Tabs defaultValue="water" className="w-full">
-          <TabsList className="grid grid-cols-3 mb-4">
+          <TabsList className="grid grid-cols-2 mb-4">
             <TabsTrigger value="water" className="flex items-center gap-1">
               <WaterDropIcon className="h-4 w-4" /> Water
-            </TabsTrigger>
-            <TabsTrigger value="sunlight" className="flex items-center gap-1">
-              <SunIcon className="h-4 w-4" /> Sunlight
             </TabsTrigger>
             <TabsTrigger value="fertilize" className="flex items-center gap-1">
               <SeedlingIcon className="h-4 w-4" /> Fertilize

@@ -36,11 +36,6 @@ export function CareTaskSummary({ userId }: CareSummaryProps) {
             <div className="h-3 w-12 bg-gray-200 mb-1"></div>
             <div className="h-4 w-8 bg-gray-300"></div>
           </div>
-          <div className="flex flex-col items-center bg-yellow-50 p-3 rounded-lg flex-1 animate-pulse">
-            <div className="h-6 w-6 bg-yellow-200 rounded-full mb-1"></div>
-            <div className="h-3 w-12 bg-gray-200 mb-1"></div>
-            <div className="h-4 w-8 bg-gray-300"></div>
-          </div>
           <div className="flex flex-col items-center bg-green-50 p-3 rounded-lg flex-1 animate-pulse">
             <div className="h-6 w-6 bg-green-200 rounded-full mb-1"></div>
             <div className="h-3 w-12 bg-gray-200 mb-1"></div>
@@ -65,13 +60,6 @@ export function CareTaskSummary({ userId }: CareSummaryProps) {
           </div>
           <span className="text-xs text-neutral-dark opacity-70">Water</span>
           <span className="font-medium text-sm">{waterCount} plant{waterCount !== 1 ? 's' : ''}</span>
-        </div>
-        <div className="flex flex-col items-center bg-yellow-50 p-3 rounded-lg flex-1">
-          <div className="text-yellow-500 mb-1">
-            <SunIcon className="h-6 w-6" />
-          </div>
-          <span className="text-xs text-neutral-dark opacity-70">Sunlight</span>
-          <span className="font-medium text-sm">{sunlightCount} plant{sunlightCount !== 1 ? 's' : ''}</span>
         </div>
         <div className="flex flex-col items-center bg-green-50 p-3 rounded-lg flex-1">
           <div className="text-green-500 mb-1">
