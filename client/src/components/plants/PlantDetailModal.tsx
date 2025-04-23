@@ -163,7 +163,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
       </AlertDialog>
       
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="mx-auto p-0 rounded-t-xl overflow-hidden max-h-[90vh] overflow-y-auto sm:max-h-[80vh] w-[92%] max-w-[92%] sm:w-full sm:max-w-md">
+        <DialogContent className="mx-auto p-0 rounded-t-xl overflow-hidden max-h-[95vh] overflow-y-auto sm:max-h-[80vh] w-[94%] max-w-[94%] sm:w-full sm:max-w-md">
           <div className="h-64 relative">
             <img
               src={plant.image || getDefaultPlantImage(plant.type)}
@@ -178,7 +178,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
             </button>
           </div>
 
-          <div className="px-5 py-4 w-full">
+          <div className="px-3 sm:px-5 py-4 w-full">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-xl font-medium truncate max-w-[80%]">{plant.name}</h2>
               <div className="flex space-x-3">
@@ -220,8 +220,8 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
             {/* Extract the scientific name from notes if it exists */}
             {plant.notes && plant.notes.includes("Scientific Name:") ? (
               <div className="text-sm italic text-neutral-dark mb-2 break-words">
-                <span className="font-medium">Scientific Name:</span> 
-                <span className="hyphens-auto overflow-wrap-anywhere">
+                <span className="font-medium block mb-1">Scientific Name:</span> 
+                <span className="hyphens-auto overflow-wrap-anywhere inline-block">
                   {plant.notes.split("Scientific Name:")[1].split("\n")[0].trim()}
                 </span>
               </div>
