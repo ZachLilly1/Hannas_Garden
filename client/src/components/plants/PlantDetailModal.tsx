@@ -1,0 +1,263 @@
+import React from "react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { 
+  WaterDropIcon, 
+  SunIcon, 
+  SeedlingIcon, 
+  EditIcon, 
+  CloseIcon, 
+  HistoryIcon, 
+  BellIcon, 
+  CircleDotIcon, 
+  CheckCircleIcon 
+} from "@/lib/icons";
+import { cn, formatRelativeDate, getDefaultPlantImage } from "@/lib/utils";
+import { type PlantWithCare, type CareLog, type InsertCareLog } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
+import { differenceInDays } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
+
+interface PlantDetailModalProps {
+  plant: PlantWithCare | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onEdit: (plant: PlantWithCare) => void;
+}
+
+export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetailModalProps) {
+  if (!plant) return null;
+
+  const handleLogCare = async (careType: string) => {
+    try {
+      const careLog: InsertCareLog = {
+        plantId: plant.id,
+        careType,
+        notes: `Logged ${careType} care for ${plant.name}`
+      };
+
+      await apiRequest('POST', '/api/care-logs', careLog);
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/plants'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/plants', plant.id.toString()] });
+      
+      toast({
+        title: "Care logged successfully",
+        description: `${careType.charAt(0).toUpperCase() + careType.slice(1)} care logged for ${plant.name}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to log care",
+        description: "An error occurred while logging care",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Calculate water status and remaining days
+  const waterRemainingDays = plant.nextWatering 
+    ? differenceInDays(new Date(plant.nextWatering), new Date())
+    : null;
+    
+  // Calculate fertilizer status and remaining days
+  const fertilizerRemainingDays = plant.nextFertilizing 
+    ? differenceInDays(new Date(plant.nextFertilizing), new Date()) 
+    : null;
+
+  const getSunlightAdequacy = () => {
+    const plantGuide = plant.guide;
+    if (!plantGuide) return "Unknown";
+    
+    if (plantGuide.idealSunlight === plant.sunlightLevel) {
+      return "Adequate";
+    } else {
+      return plant.sunlightLevel === "high" 
+        ? "Too much" 
+        : "Not enough";
+    }
+  };
+
+  const sunlightStatus = getSunlightAdequacy();
+  const sunlightAdequate = sunlightStatus === "Adequate";
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md mx-auto p-0 rounded-t-xl overflow-hidden max-h-[90vh] overflow-y-auto sm:max-h-[80vh]" onInteractOutside={onClose}>
+        <div className="h-64 relative">
+          <img
+            src={plant.image || getDefaultPlantImage(plant.type)}
+            alt={plant.name}
+            className="w-full h-full object-cover"
+          />
+          <button 
+            className="absolute top-4 right-4 bg-black bg-opacity-20 text-white rounded-full p-2"
+            onClick={onClose}
+          >
+            <CloseIcon className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="p-4">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-xl font-medium">{plant.name}</h2>
+            <button 
+              className="text-neutral-dark opacity-70"
+              onClick={() => onEdit(plant)}
+            >
+              <EditIcon className="h-5 w-5" />
+            </button>
+          </div>
+
+          <div className="flex mb-4 space-x-2 flex-wrap">
+            <Badge variant="outline" className="px-2 py-1 bg-neutral-medium rounded-full text-xs">
+              {plant.type.charAt(0).toUpperCase() + plant.type.slice(1)}
+            </Badge>
+            <Badge variant="outline" className="px-2 py-1 bg-neutral-medium rounded-full text-xs">
+              {plant.sunlightLevel.charAt(0).toUpperCase() + plant.sunlightLevel.slice(1)} Light
+            </Badge>
+            {plant.guide && (
+              <Badge variant="outline" className="px-2 py-1 bg-neutral-medium rounded-full text-xs">
+                Water every {plant.guide.idealWaterFrequency} days
+              </Badge>
+            )}
+          </div>
+
+          <p className="text-sm text-neutral-dark opacity-90 mb-6">
+            {plant.notes || (plant.guide?.description || `A beautiful ${plant.type} plant placed in ${plant.location}.`)}
+          </p>
+
+          {/* Care Schedule */}
+          <div className="mb-6">
+            <h3 className="font-medium mb-3">Care Schedule</h3>
+            <div className="space-y-3">
+              {/* Water Schedule */}
+              <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
+                <div className="flex items-center">
+                  <div className="p-2 bg-blue-100 rounded-full mr-3">
+                    <WaterDropIcon className="h-4 w-4 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Water</p>
+                    <p className="text-xs text-neutral-dark opacity-70">Every {plant.waterFrequency} days</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium">
+                    {waterRemainingDays !== null 
+                      ? waterRemainingDays < 0 
+                        ? "Overdue" 
+                        : waterRemainingDays === 0 
+                          ? "Today" 
+                          : waterRemainingDays === 1 
+                            ? "1 day" 
+                            : `${waterRemainingDays} days`
+                      : "Not set"}
+                  </p>
+                  <p className="text-xs text-neutral-dark opacity-70">
+                    {waterRemainingDays !== null && waterRemainingDays >= 0 ? "remaining" : ""}
+                  </p>
+                </div>
+              </div>
+
+              {/* Sunlight Schedule */}
+              <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
+                <div className="flex items-center">
+                  <div className="p-2 bg-yellow-100 rounded-full mr-3">
+                    <SunIcon className="h-4 w-4 text-yellow-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Sunlight</p>
+                    <p className="text-xs text-neutral-dark opacity-70">
+                      {plant.sunlightLevel.charAt(0).toUpperCase() + plant.sunlightLevel.slice(1)}, 
+                      {plant.sunlightLevel === "high" ? " direct" : " indirect"}
+                    </p>
+                  </div>
+                </div>
+                <div className={cn(
+                  "text-xs font-medium",
+                  sunlightAdequate ? "text-status-success" : "text-status-warning"
+                )}>
+                  {sunlightAdequate ? <CheckCircleIcon className="h-4 w-4 inline mr-1" /> : null}
+                  {sunlightStatus}
+                </div>
+              </div>
+
+              {/* Fertilizer Schedule */}
+              <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
+                <div className="flex items-center">
+                  <div className="p-2 bg-green-100 rounded-full mr-3">
+                    <SeedlingIcon className="h-4 w-4 text-green-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Fertilizer</p>
+                    <p className="text-xs text-neutral-dark opacity-70">
+                      {plant.fertilizerFrequency === 0 
+                        ? "Not needed" 
+                        : `Every ${plant.fertilizerFrequency} days`}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  {plant.fertilizerFrequency > 0 && (
+                    <>
+                      <p className="font-medium">
+                        {fertilizerRemainingDays !== null 
+                          ? fertilizerRemainingDays < 0 
+                            ? "Overdue" 
+                            : fertilizerRemainingDays === 0 
+                              ? "Today" 
+                              : fertilizerRemainingDays < 7 
+                                ? `${fertilizerRemainingDays} days` 
+                                : `${Math.floor(fertilizerRemainingDays / 7)} weeks`
+                          : "Not set"}
+                      </p>
+                      <p className="text-xs text-neutral-dark opacity-70">
+                        {fertilizerRemainingDays !== null && fertilizerRemainingDays >= 0 ? "remaining" : ""}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Care Tips */}
+          {plant.guide && (
+            <div className="mb-6">
+              <h3 className="font-medium mb-3">Care Tips</h3>
+              <ul className="text-sm space-y-2">
+                {plant.guide.careTips.split('.').filter(tip => tip.trim()).map((tip, index) => (
+                  <li key={index} className="flex items-start">
+                    <CircleDotIcon className="h-3 w-3 mt-1 mr-2 text-primary" />
+                    <span>{tip.trim()}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex space-x-3">
+            <Button 
+              variant="outline" 
+              className="flex-1"
+              onClick={() => handleLogCare('water')}
+            >
+              <HistoryIcon className="h-4 w-4 mr-2" />
+              Log Care
+            </Button>
+            <Button className="flex-1">
+              <BellIcon className="h-4 w-4 mr-2" />
+              Remind Me
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export default PlantDetailModal;

@@ -1,0 +1,47 @@
+/* Custom styling for the water drop progress indicator */
+.water-drop-shape {
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+/* Font definitions */
+.font-poppins {
+  font-family: 'Poppins', sans-serif;
+}
+
+.font-playfair {
+  font-family: 'Playfair Display', serif;
+}
+
+/* These color classes are now handled by Tailwind config */
+
+/* Common form styling */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+/* Container width for mobile optimization */
+.max-w-md {
+  max-width: 28rem;
+}
+
+/* Transitions */
+.transition {
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Additional animation classes */
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
