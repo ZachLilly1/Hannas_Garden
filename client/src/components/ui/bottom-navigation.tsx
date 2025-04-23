@@ -64,17 +64,19 @@ export function BottomNavigation({ onAddPlant }: BottomNavigationProps) {
 
           const isActive = location === item.href;
           return (
-            <Link href={item.href} key={index}>
-              <a
-                className={cn(
-                  "flex flex-col items-center p-2",
-                  isActive ? "text-primary" : "text-neutral-dark opacity-60"
-                )}
-              >
-                {item.icon}
-                <span className="text-xs mt-1">{item.label}</span>
-              </a>
-            </Link>
+            <div key={index}>
+              <Link href={item.href}>
+                <div
+                  className={cn(
+                    "flex flex-col items-center p-2 cursor-pointer",
+                    isActive ? "text-primary" : "text-neutral-dark opacity-60"
+                  )}
+                >
+                  {item.icon}
+                  <span className="text-xs mt-1">{item.label}</span>
+                </div>
+              </Link>
+            </div>
           );
         })}
       </div>
