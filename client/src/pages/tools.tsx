@@ -25,8 +25,8 @@ export default function Tools() {
 
         <div className="grid gap-4">
           {tools.map((tool, index) => (
-            <Link key={index} href={tool.path}>
-              <a className="block w-full">
+            <div key={index} className="w-full">
+              <Link href={tool.path}>
                 <Card className="p-4 flex items-center cursor-pointer shadow-sm hover:shadow-md transition-shadow">
                   <div className={`${tool.color} p-3 rounded-full mr-4`}>
                     {tool.icon}
@@ -36,8 +36,8 @@ export default function Tools() {
                     <p className="text-sm text-neutral-dark opacity-70">{tool.description}</p>
                   </div>
                 </Card>
-              </a>
-            </Link>
+              </Link>
+            </div>
           ))}
         </div>
       </div>
