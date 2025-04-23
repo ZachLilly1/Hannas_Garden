@@ -8,6 +8,7 @@ import {
   type InsertCareLog
 } from "@shared/schema";
 import { z } from "zod";
+import { identifyPlantFromImage, type PlantIdentificationResult } from "./services/openai";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
@@ -138,6 +139,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const userId = 1;
     const careNeeded = await storage.getPlantsNeedingCare(userId);
     res.json(careNeeded);
+  });
+
+  // Plant identification route
+  apiRouter.post("/api/identify-plant", async (req, res) => {
+    try {
+      // Validate request
+      const identifySchema = z.object({
+        imageBase64: z.string().min(1),
+      });
+      
+      const validation = validateRequest(identifySchema, req, res);
+      if (!validation.success) return;
+      
+      // Extract base64 image data
+      const { imageBase64 } = validation.data;
+      
+      // Process with OpenAI
+      const result = await identifyPlantFromImage(imageBase64);
+      
+      // Return identification results
+      res.json(result);
+    } catch (error) {
+      console.error("Error identifying plant:", error);
+      res.status(500).json({
+        message: "Failed to identify plant",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   });
 
   const httpServer = createServer(app);
