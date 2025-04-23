@@ -1,7 +1,7 @@
 import React from "react";
 import { usePlants } from "@/context/PlantContext";
 import { Card, CardContent } from "@/components/ui/card";
-import { WaterDropIcon, SunIcon, SeedlingIcon } from "@/lib/icons";
+import { WaterDropIcon, SeedlingIcon } from "@/lib/icons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatRelativeDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -131,23 +131,6 @@ export default function CareSchedule() {
                 </Card>
               ) : (
                 wateringPlants.map(plant => renderPlantItem(plant, 'water'))
-              )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="sunlight" className="mt-0">
-            <h2 className="text-lg font-medium mb-3">Sunlight Adjustments</h2>
-            <div className="space-y-1">
-              {isLoading ? (
-                renderSkeletonItems(2)
-              ) : sunlightPlants.length === 0 ? (
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <p className="text-neutral-dark opacity-70">All plants have ideal sunlight</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                sunlightPlants.map(plant => renderPlantItem(plant, 'sunlight'))
               )}
             </div>
           </TabsContent>
