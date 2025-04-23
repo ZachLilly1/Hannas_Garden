@@ -29,8 +29,11 @@ export interface PlantIdentificationResult {
  */
 export async function identifyPlantFromImage(base64Image: string): Promise<PlantIdentificationResult> {
   try {
+    console.log("Starting plant identification process");
+    
     // Prefix for base64 encoded images
     const imageUrl = `data:image/jpeg;base64,${base64Image}`;
+    console.log("Image URL prepared");
 
     // System prompt for plant identification
     const systemPrompt = `
@@ -46,6 +49,15 @@ export async function identifyPlantFromImage(base64Image: string): Promise<Plant
         - additionalCare: A short string with special care instructions
       - confidence: "high", "medium", or "low" based on your confidence in the identification
     `;
+
+    // Verify API key is set
+    if (!process.env.OPENAI_API_KEY) {
+      console.error("OPENAI_API_KEY is not set");
+      throw new Error("OpenAI API key is not configured");
+    }
+    
+    console.log("OpenAI API key is configured");
+    console.log("Making request to OpenAI API...");
 
     // Query OpenAI Vision model
     const response = await openai.chat.completions.create({
@@ -75,11 +87,35 @@ export async function identifyPlantFromImage(base64Image: string): Promise<Plant
       max_tokens: 1000,
     });
 
+    console.log("Received response from OpenAI");
+    
+    // Check if we got a valid response
+    if (!response.choices || response.choices.length === 0) {
+      console.error("No choices returned from OpenAI");
+      throw new Error("Invalid response from OpenAI");
+    }
+    
+    if (!response.choices[0].message.content) {
+      console.error("Empty content in OpenAI response");
+      throw new Error("Empty response from OpenAI");
+    }
+    
+    const rawContent = response.choices[0].message.content;
+    console.log("Raw OpenAI response:", rawContent);
+
     // Parse the JSON response
-    const result = JSON.parse(response.choices[0].message.content || "{}");
+    const result = JSON.parse(rawContent);
+    
+    // Validate the result
+    if (!result.plantType || !result.commonName || !result.careRecommendations) {
+      console.error("Incomplete plant identification result:", result);
+      throw new Error("Incomplete plant identification result");
+    }
+    
+    console.log("Successfully parsed plant identification result:", result);
     return result as PlantIdentificationResult;
   } catch (error) {
     console.error("Error identifying plant:", error);
-    throw new Error("Failed to identify plant. Please try again.");
+    throw new Error(error instanceof Error ? error.message : "Failed to identify plant. Please try again.");
   }
 }
