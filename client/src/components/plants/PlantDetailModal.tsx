@@ -217,7 +217,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
               )}
             </div>
 
-            <p className="text-sm text-neutral-dark opacity-90 mb-6">
+            <p className="text-sm text-neutral-dark opacity-90 mb-6 break-words whitespace-pre-line">
               {plant.notes || (plant.guide?.description || `A beautiful ${plant.type} plant placed in ${plant.location}.`)}
             </p>
 
