@@ -37,6 +37,7 @@ interface PlantDetailModalProps {
 export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetailModalProps) {
   const [activeTab, setActiveTab] = useState("care-schedule");
   const [showLogCareForm, setShowLogCareForm] = useState(false);
+  const [showReminderForm, setShowReminderForm] = useState(false);
 
   if (!plant) return null;
 
@@ -160,6 +161,13 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
               >
                 <HistoryIcon className="h-4 w-4 mr-2" />
                 History
+              </TabsTrigger>
+              <TabsTrigger 
+                value="reminders" 
+                className="flex-1 data-[state=active]:bg-white data-[state=active]:shadow-none"
+              >
+                <BellIcon className="h-4 w-4 mr-2" />
+                Reminders
               </TabsTrigger>
             </TabsList>
             
@@ -304,6 +312,43 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
               
               <CareTimeline plant={plant} />
             </TabsContent>
+            
+            {/* Reminders Tab Content */}
+            <TabsContent value="reminders" className="mt-4">
+              {showReminderForm ? (
+                <div className="mb-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="font-medium">New Reminder</h3>
+                    <button 
+                      className="text-sm text-primary"
+                      onClick={() => setShowReminderForm(false)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  <ReminderForm 
+                    isOpen={showReminderForm} 
+                    onClose={() => setShowReminderForm(false)} 
+                    plantId={plant.id} 
+                  />
+                </div>
+              ) : (
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-medium">Plant Reminders</h3>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs"
+                    onClick={() => setShowReminderForm(true)}
+                  >
+                    <BellIcon className="h-3 w-3 mr-1" />
+                    Add Reminder
+                  </Button>
+                </div>
+              )}
+              
+              <ReminderList type="plant" plantId={plant.id} onAddReminder={() => setShowReminderForm(true)} />
+            </TabsContent>
           </Tabs>
 
           {/* Action Buttons */}
@@ -319,7 +364,13 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
               <LeafIcon className="h-4 w-4 mr-2" />
               Log Care
             </Button>
-            <Button className="flex-1">
+            <Button 
+              className="flex-1"
+              onClick={() => {
+                setActiveTab("reminders");
+                setShowReminderForm(true);
+              }}
+            >
               <BellIcon className="h-4 w-4 mr-2" />
               Remind Me
             </Button>

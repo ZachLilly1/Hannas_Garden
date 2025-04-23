@@ -101,6 +101,9 @@ export const reminders = pgTable("reminders", {
 export const insertReminderSchema = createInsertSchema(reminders).omit({
   id: true,
   createdAt: true,
+}).extend({
+  dueDate: z.string(), // Allow string for ISO format
+  plantId: z.number().int(), // Ensure it's a number
 });
 
 // Enum-like constants

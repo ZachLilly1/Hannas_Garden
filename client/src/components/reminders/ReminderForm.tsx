@@ -32,7 +32,7 @@ export function ReminderForm({
   // Create a Zod schema for the form
   const formSchema = z.object({
     title: z.string().min(1, "Title is required"),
-    description: z.string().optional(),
+    message: z.string().optional(),
     dueDate: z.date({
       required_error: "Due date is required",
     }),
@@ -40,6 +40,9 @@ export function ReminderForm({
     plantId: z.number().optional(),
     userId: z.number().int().default(1), // Default user ID is 1 for demo
     status: z.string().default("pending"),
+    recurring: z.boolean().default(false),
+    recurringInterval: z.number().nullable().default(null),
+    notified: z.boolean().default(false)
   });
   
   type FormValues = z.infer<typeof formSchema>;
@@ -47,11 +50,14 @@ export function ReminderForm({
   // Default values for the form
   const defaultValues: Partial<FormValues> = {
     title: existingReminder?.title || "",
-    description: existingReminder?.description || "",
+    message: existingReminder?.message || "",
     dueDate: existingReminder?.dueDate ? new Date(existingReminder.dueDate) : new Date(),
     careType: existingReminder?.careType || "water",
     plantId: plantId || existingReminder?.plantId,
     status: existingReminder?.status || "pending",
+    recurring: existingReminder?.recurring || false,
+    recurringInterval: existingReminder?.recurringInterval || null,
+    notified: existingReminder?.notified || false
   };
   
   // Initialize the form
@@ -63,31 +69,22 @@ export function ReminderForm({
   // Handle form submission
   const onSubmit = async (data: FormValues) => {
     try {
-      // Convert date to ISO string
+      // Convert date to ISO string and prepare data
+      const dueDate = data.dueDate.toISOString();
+      const plantId = data.plantId || 0; // Default to 0 if not provided
+      
       const reminderData: InsertReminder = {
         ...data,
-        dueDate: data.dueDate.toISOString(),
-        plantId: data.plantId || null,
+        dueDate,
+        plantId,
       };
       
       if (existingReminder) {
         // Update existing reminder
-        await apiRequest(`/api/reminders/${existingReminder.id}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(reminderData),
-        });
+        await apiRequest("PATCH", `/api/reminders/${existingReminder.id}`, reminderData);
       } else {
         // Create new reminder
-        await apiRequest("/api/reminders", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(reminderData),
-        });
+        await apiRequest("POST", "/api/reminders", reminderData);
       }
       
       // Invalidate reminders queries
@@ -131,10 +128,10 @@ export function ReminderForm({
             
             <FormField
               control={form.control}
-              name="description"
+              name="message"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description (optional)</FormLabel>
+                  <FormLabel>Message (optional)</FormLabel>
                   <FormControl>
                     <Textarea placeholder="Add details here..." {...field} />
                   </FormControl>
