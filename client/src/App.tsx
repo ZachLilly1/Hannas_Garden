@@ -12,6 +12,7 @@ import Guides from "@/pages/guides";
 import Profile from "@/pages/profile";
 import Tools from "@/pages/tools";
 import LightMeterPage from "@/pages/light-meter";
+import PlantIdentifierPage from "@/pages/tools/plant-identifier";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -24,6 +25,7 @@ function Router() {
         <Route path="/guides" component={Guides} />
         <Route path="/tools" component={Tools} />
         <Route path="/tools/light-meter" component={LightMeterPage} />
+        <Route path="/tools/plant-identifier" component={PlantIdentifierPage} />
         <Route path="/profile" component={Profile} />
         <Route component={NotFound} />
       </Switch>

@@ -139,7 +139,7 @@ export function PlantIdentifier() {
   };
 
   return (
-    <div className="p-4">
+    <div>
       <p className="text-sm mb-6">
         Take or upload a photo of any plant to identify it and get detailed care instructions.
       </p>
