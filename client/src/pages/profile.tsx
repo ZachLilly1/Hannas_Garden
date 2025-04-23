@@ -1,23 +1,106 @@
-import React from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { LeafIcon, BellIcon, UserIcon } from "@/lib/icons";
+import { LeafIcon, UserIcon, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
-import { type PlantWithCare } from "@shared/schema";
+import { type PlantWithCare, userProfileSchema } from "@shared/schema";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const formSchema = z.object({
+  displayName: z.string().optional(),
+  preferredUnits: z.enum(["metric", "imperial"]),
+  timezone: z.string(),
+  notificationsEnabled: z.boolean(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 export default function Profile() {
-  // For demo purpose, we're using user ID 1
-  const userId = 1;
+  const { user, logout, updateProfile } = useAuth();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   
   // Get plants count
-  const { data: plants } = useQuery<PlantWithCare[]>({
+  const { data: plants, isLoading: isLoadingPlants } = useQuery<PlantWithCare[]>({
     queryKey: ['/api/plants'],
   });
 
   const plantsCount = plants?.length || 0;
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      displayName: user?.displayName || "",
+      preferredUnits: (user?.preferredUnits as "metric" | "imperial") || "metric",
+      timezone: user?.timezone || "UTC",
+      notificationsEnabled: user?.notificationsEnabled || true,
+    },
+  });
+
+  async function onSubmit(data: FormValues) {
+    setIsSubmitting(true);
+    try {
+      await updateProfile(data);
+      setIsEditProfileOpen(false);
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Update failed",
+        description: error instanceof Error ? error.message : "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      toast({
+        title: "Logout failed",
+        description: error instanceof Error ? error.message : "Please try again",
+        variant: "destructive",
+      });
+    }
+  }
 
   return (
     <div className="p-4 space-y-4">
@@ -32,28 +115,152 @@ export default function Profile() {
               <UserIcon className="h-8 w-8" />
             </div>
             <div>
-              <h3 className="font-medium">Plant Enthusiast</h3>
-              <p className="text-sm text-muted-foreground">user@example.com</p>
+              <h3 className="font-medium">{user?.displayName || user?.username}</h3>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
           </div>
           
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm">Plants in your garden</span>
-            <Badge variant="outline" className="bg-primary/10 text-primary">
-              {plantsCount}
-            </Badge>
+            {isLoadingPlants ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Badge variant="outline" className="bg-primary/10 text-primary">
+                {plantsCount}
+              </Badge>
+            )}
           </div>
           
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm">Care logs recorded</span>
-            <Badge variant="outline" className="bg-primary/10 text-primary">
-              {plantsCount > 0 ? plantsCount * 2 : 0}
-            </Badge>
+            {isLoadingPlants ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Badge variant="outline" className="bg-primary/10 text-primary">
+                {plantsCount > 0 ? plantsCount * 2 : 0}
+              </Badge>
+            )}
           </div>
           
-          <div className="mt-4">
-            <Button variant="outline" className="w-full">Edit Profile</Button>
+          <div className="mt-4 space-y-2">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => setIsEditProfileOpen(true)}
+            >
+              Edit Profile
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full text-red-500 hover:text-red-700 hover:bg-red-50"
+              onClick={handleLogout}
+            >
+              Log Out
+            </Button>
           </div>
+          
+          {/* Edit Profile Dialog */}
+          <Dialog 
+            open={isEditProfileOpen} 
+            onOpenChange={setIsEditProfileOpen}
+          >
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Edit Profile</DialogTitle>
+                <DialogDescription>
+                  Update your profile information and preferences.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                  <FormField
+                    control={form.control}
+                    name="displayName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Display Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter your display name" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormDescription>
+                          This is how we'll address you in the app.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="preferredUnits"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Measurement Units</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select measurement units" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="metric">Metric</SelectItem>
+                            <SelectItem value="imperial">Imperial</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Choose your preferred measurement system.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="notificationsEnabled"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">
+                            Care Reminders
+                          </FormLabel>
+                          <FormDescription>
+                            Receive notifications for plant care.
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <DialogFooter>
+                    <Button 
+                      type="submit"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        "Save Changes"
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
       
@@ -68,7 +275,7 @@ export default function Profile() {
               <p className="font-medium">Care Reminders</p>
               <p className="text-sm text-muted-foreground">Get notified when your plants need care</p>
             </div>
-            <Switch defaultChecked />
+            <Switch checked={user?.notificationsEnabled} />
           </div>
           
           <Separator />
@@ -88,7 +295,7 @@ export default function Profile() {
               <p className="font-medium">Measurement Units</p>
               <p className="text-sm text-muted-foreground">Choose between metric or imperial</p>
             </div>
-            <div className="text-sm font-medium">Metric</div>
+            <div className="text-sm font-medium capitalize">{user?.preferredUnits || "Metric"}</div>
           </div>
         </CardContent>
       </Card>
@@ -96,7 +303,7 @@ export default function Profile() {
       {/* About */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg">About GreenThumb</CardTitle>
+          <CardTitle className="text-lg">About Hanna's Garden</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex justify-center mb-4">
@@ -105,7 +312,7 @@ export default function Profile() {
             </div>
           </div>
           
-          <p className="text-center text-sm mb-2">GreenThumb v1.0.0</p>
+          <p className="text-center text-sm mb-2">Hanna's Garden v1.0.0</p>
           <p className="text-center text-xs text-muted-foreground mb-4">
             Your personal plant care companion
           </p>
