@@ -44,10 +44,11 @@ export function LightMeter() {
   const [lightValue, setLightValue] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [currentLevel, setCurrentLevel] = useState<LightLevel | null>(null);
-  const [useManualMode, setUseManualMode] = useState(false); // Start with camera mode to request permissions
+  const [useManualMode, setUseManualMode] = useState(false);
   const [manualLightValue, setManualLightValue] = useState<number>(2500); // Default to medium light
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [cameraMode, setCameraMode] = useState(false); // Start without trying to access camera
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -213,11 +214,11 @@ export function LightMeter() {
     if (useManualMode) {
       // Initialize manual mode
       updateManualLightLevel(manualLightValue);
-    } else {
-      // Auto-start camera mode to request permissions immediately
+    } else if (cameraMode) {
+      // Only start camera when explicitly requested
       startCapture();
     }
-  }, [useManualMode, manualLightValue, updateManualLightLevel, startCapture]);
+  }, [useManualMode, cameraMode, manualLightValue, updateManualLightLevel, startCapture]);
 
   // Switch to manual mode if camera error occurs
   // Automatically switch to manual mode when camera error occurs
@@ -323,8 +324,10 @@ export function LightMeter() {
   return (
     <div>
       <p className="text-sm mb-6">
-        This tool {!useManualMode ? "uses your phone's camera to" : "helps you"} estimate the light level in your plant's location.
-        {!useManualMode && " Take a photo or upload an image of the area where your plant is (or will be) placed."}
+        This tool helps estimate the light level in your plant's location. 
+        {!useManualMode ? 
+          "Upload an image of the area where your plant is located, or use your camera if available." : 
+          "Use the slider to manually indicate the brightness level in your plant's location."}
       </p>
       
       <div className="flex flex-col items-center justify-center">
@@ -419,7 +422,10 @@ export function LightMeter() {
             <div className="flex flex-wrap gap-3 mb-6">
               <Button 
                 size="lg"
-                onClick={isCapturing ? stopCapture : startCapture}
+                onClick={isCapturing ? stopCapture : () => {
+                  setCameraMode(true);
+                  startCapture();
+                }}
               >
                 {isCapturing ? "Cancel" : lightValue !== null ? "Take New Reading" : "Start Camera"}
               </Button>
@@ -518,9 +524,10 @@ export function LightMeter() {
                   setUseManualMode(false);
                   setLightValue(null);
                   setCurrentLevel(null);
+                  setCameraMode(false); // Don't auto-start camera
                 }}
               >
-                Use Camera Instead
+                Use Image Upload Instead
               </Button>
             )}
           </>
