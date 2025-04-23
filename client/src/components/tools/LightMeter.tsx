@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CameraIcon, SunIcon } from '@/lib/icons';
@@ -43,6 +43,8 @@ export function LightMeter() {
   const [lightValue, setLightValue] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [currentLevel, setCurrentLevel] = useState<LightLevel | null>(null);
+  const [useManualMode, setUseManualMode] = useState(false);
+  const [manualLightValue, setManualLightValue] = useState<number>(2500); // Default to medium light
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -52,13 +54,14 @@ export function LightMeter() {
     setIsCapturing(true);
     
     try {
-      // Request camera access
+      // Check if MediaDevices API is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera API is not supported in this browser');
+      }
+      
+      // Request camera access with more permissive constraints
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: {
-          facingMode: 'environment', // Use the back camera
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        } 
+        video: true  // Simplified constraints for better compatibility
       });
       
       streamRef.current = stream;
@@ -67,9 +70,28 @@ export function LightMeter() {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
-    } catch (error) {
+    } catch (error: any) { // Type assertion for error
       console.error('Error accessing camera:', error);
-      setErrorMessage('Could not access camera. Please allow camera permissions and ensure no other app is using it.');
+      let errorMsg = 'Could not access camera. ';
+      
+      // Check error properties with proper type handling
+      if (error.name && typeof error.name === 'string') {
+        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+          errorMsg += 'Please allow camera permissions in your browser settings.';
+        } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+          errorMsg += 'No camera found on this device.';
+        } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+          errorMsg += 'Camera is already in use by another application.';
+        } else if (error.name === 'OverconstrainedError') {
+          errorMsg += 'Camera does not meet the required constraints.';
+        } else {
+          errorMsg += 'Try using a different browser or device.';
+        }
+      } else {
+        errorMsg += 'Try using a different browser or device.';
+      }
+      
+      setErrorMessage(errorMsg);
       setIsCapturing(false);
     }
   };
@@ -170,63 +192,173 @@ export function LightMeter() {
     };
   }, [isCapturing]);
 
+  // Function to update manual light value and level
+  const updateManualLightLevel = useCallback((value: number) => {
+    setManualLightValue(value);
+    // Find the corresponding light level
+    const level = LIGHT_LEVELS.find(level => 
+      value >= level.range[0] && value <= level.range[1]
+    ) || LIGHT_LEVELS[LIGHT_LEVELS.length - 1];
+    
+    setCurrentLevel(level);
+    setLightValue(value);
+  }, []);
+
+  // Switch to manual mode if camera error occurs
+  useEffect(() => {
+    if (errorMessage && !useManualMode) {
+      setUseManualMode(true);
+      // Set initial manual reading
+      updateManualLightLevel(manualLightValue);
+    }
+  }, [errorMessage, useManualMode, manualLightValue]);
+
   return (
     <div className="p-4">
       <h2 className="text-xl font-medium mb-4">Light Meter</h2>
       <p className="text-sm mb-6">
-        This tool uses your phone's camera to estimate the light level in your plant's location.
-        Point your camera at the area where your plant is (or will be) placed for an accurate reading.
+        This tool {!useManualMode ? "uses your phone's camera to" : "helps you"} estimate the light level in your plant's location.
+        {!useManualMode && " Point your camera at the area where your plant is (or will be) placed for an accurate reading."}
       </p>
       
       <div className="flex flex-col items-center justify-center">
-        {errorMessage && (
+        {errorMessage && !useManualMode && (
           <div className="rounded-md bg-red-50 p-4 mb-4 w-full">
             <p className="text-sm text-red-700">{errorMessage}</p>
+            <button 
+              className="text-sm font-medium text-primary mt-2"
+              onClick={() => setUseManualMode(true)}
+            >
+              Switch to Manual Mode
+            </button>
           </div>
         )}
         
-        <div className="relative w-full max-w-md mb-4">
-          <video 
-            ref={videoRef} 
-            className={cn(
-              "w-full aspect-video rounded-md bg-neutral-100",
-              isCapturing ? "block" : "hidden"
-            )} 
-            playsInline
-          />
-          
-          <canvas 
-            ref={canvasRef} 
-            className="hidden"
-          />
-          
-          {!isCapturing && lightValue !== null && (
-            <div className="w-full aspect-video rounded-md bg-neutral-100 flex items-center justify-center">
-              <div className="text-center">
-                <SunIcon className="w-12 h-12 mx-auto mb-2 text-yellow-500" />
-                <span className="block text-3xl font-bold">{lightValue} lux</span>
-                <span className="block text-lg font-medium">{currentLevel?.name}</span>
+        {!useManualMode ? (
+          // Camera-based light meter UI
+          <>
+            <div className="relative w-full max-w-md mb-4">
+              <video 
+                ref={videoRef} 
+                className={cn(
+                  "w-full aspect-video rounded-md bg-neutral-100",
+                  isCapturing ? "block" : "hidden"
+                )} 
+                playsInline
+              />
+              
+              <canvas 
+                ref={canvasRef} 
+                className="hidden"
+              />
+              
+              {!isCapturing && lightValue !== null && (
+                <div className="w-full aspect-video rounded-md bg-neutral-100 flex items-center justify-center">
+                  <div className="text-center">
+                    <SunIcon className="w-12 h-12 mx-auto mb-2 text-yellow-500" />
+                    <span className="block text-3xl font-bold">{lightValue} lux</span>
+                    <span className="block text-lg font-medium">{currentLevel?.name}</span>
+                  </div>
+                </div>
+              )}
+              
+              {!isCapturing && lightValue === null && (
+                <div className="w-full aspect-video rounded-md bg-neutral-100 flex items-center justify-center">
+                  <div className="text-center text-neutral-500">
+                    <CameraIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>Press the button below to measure light</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex space-x-3 mb-6">
+              <Button 
+                size="lg"
+                onClick={isCapturing ? stopCapture : startCapture}
+              >
+                {isCapturing ? "Cancel" : lightValue !== null ? "Take New Reading" : "Start Light Meter"}
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                size="lg"
+                onClick={() => {
+                  stopCapture();
+                  setUseManualMode(true);
+                  updateManualLightLevel(manualLightValue);
+                }}
+              >
+                Manual Mode
+              </Button>
+            </div>
+          </>
+        ) : (
+          // Manual light meter UI
+          <>
+            <div className="w-full max-w-md mb-4">
+              <div className="w-full aspect-video rounded-md bg-neutral-100 flex items-center justify-center">
+                <div className="text-center">
+                  <SunIcon className="w-12 h-12 mx-auto mb-2 text-yellow-500" />
+                  <span className="block text-3xl font-bold">{lightValue} lux</span>
+                  <span className="block text-lg font-medium">{currentLevel?.name}</span>
+                </div>
               </div>
             </div>
-          )}
-          
-          {!isCapturing && lightValue === null && (
-            <div className="w-full aspect-video rounded-md bg-neutral-100 flex items-center justify-center">
-              <div className="text-center text-neutral-500">
-                <CameraIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>Press the button below to measure light</p>
+            
+            <div className="w-full max-w-md mb-6">
+              <label className="text-sm font-medium mb-2 block">
+                Adjust Light Level:
+              </label>
+              <div className="grid grid-cols-4 gap-2 mb-3">
+                {LIGHT_LEVELS.map((level, index) => (
+                  <button
+                    key={index}
+                    className={cn(
+                      "text-xs py-1 px-2 rounded border",
+                      currentLevel?.name === level.name 
+                        ? "bg-primary text-white border-primary" 
+                        : "bg-white border-neutral-medium"
+                    )}
+                    onClick={() => updateManualLightLevel((level.range[0] + level.range[1]) / 2)}
+                  >
+                    {level.name}
+                  </button>
+                ))}
+              </div>
+              
+              <input 
+                type="range" 
+                min="0" 
+                max="10000" 
+                step="100" 
+                value={manualLightValue} 
+                onChange={(e) => updateManualLightLevel(parseInt(e.target.value))}
+                className="w-full"
+              />
+              
+              <div className="flex justify-between text-xs text-neutral-dark">
+                <span>Dark</span>
+                <span>Bright</span>
               </div>
             </div>
-          )}
-        </div>
-        
-        <Button 
-          size="lg"
-          onClick={isCapturing ? stopCapture : startCapture}
-          className="mb-6"
-        >
-          {isCapturing ? "Cancel" : lightValue !== null ? "Take New Reading" : "Start Light Meter"}
-        </Button>
+            
+            {!errorMessage && (
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="mb-6"
+                onClick={() => {
+                  setUseManualMode(false);
+                  setLightValue(null);
+                  setCurrentLevel(null);
+                }}
+              >
+                Use Camera Instead
+              </Button>
+            )}
+          </>
+        )}
         
         {currentLevel && (
           <Card className="w-full p-4 mb-4">
