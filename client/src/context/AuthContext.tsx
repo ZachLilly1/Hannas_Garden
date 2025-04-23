@@ -23,6 +23,7 @@ type UpdateProfileData = {
   preferredUnits?: string;
   timezone?: string;
   notificationsEnabled?: boolean;
+  avatarUrl?: string;
 };
 
 type AuthContextType = {
@@ -33,7 +34,7 @@ type AuthContextType = {
   logout: () => Promise<void>;
   login: (data: LoginData) => Promise<User>;
   register: (data: RegisterData) => Promise<User>;
-  updateProfile: (data: Partial<User>) => Promise<User>;
+  updateProfile: (data: UpdateProfileData) => Promise<User>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -212,7 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user,
+        user: user || null,
         isLoading,
         isAuthenticated: !!user,
         error,

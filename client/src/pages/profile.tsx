@@ -128,12 +128,29 @@ export default function Profile() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center mb-4">
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mr-4">
-              <UserIcon className="h-8 w-8" />
-            </div>
-            <div>
-              <h3 className="font-medium">{user?.displayName || user?.username}</h3>
-              <p className="text-sm text-muted-foreground">{user?.email}</p>
+            {user?.avatarUrl ? (
+              <div className="h-16 w-16 rounded-full overflow-hidden mr-4 flex-shrink-0">
+                <img 
+                  src={user.avatarUrl} 
+                  alt={user.displayName || user.username} 
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = ""; // Clear the broken image
+                    const parent = e.currentTarget.parentElement;
+                    if (parent) {
+                      parent.innerHTML = `<div class="h-full w-full flex items-center justify-center bg-primary/10 text-primary"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>`;
+                    }
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mr-4 flex-shrink-0">
+                <UserIcon className="h-8 w-8" />
+              </div>
+            )}
+            <div className="min-w-0">
+              <h3 className="font-medium truncate">{user?.displayName || user?.username}</h3>
+              <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
             </div>
           </div>
           
@@ -272,6 +289,37 @@ export default function Profile() {
                   
                   <FormField
                     control={form.control}
+                    name="timezone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Timezone</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select your timezone" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {TIMEZONES.map(timezone => (
+                              <SelectItem key={timezone.value} value={timezone.value}>
+                                {timezone.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Used for scheduling reminders and care logs.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
                     name="notificationsEnabled"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
@@ -326,7 +374,7 @@ export default function Profile() {
               <p className="font-medium">Care Reminders</p>
               <p className="text-sm text-muted-foreground">Get notified when your plants need care</p>
             </div>
-            <Switch checked={user?.notificationsEnabled} />
+            <Switch checked={user?.notificationsEnabled === true} />
           </div>
           
           <Separator />
