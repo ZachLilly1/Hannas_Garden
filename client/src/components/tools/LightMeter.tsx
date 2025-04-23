@@ -43,7 +43,7 @@ export function LightMeter() {
   const [lightValue, setLightValue] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [currentLevel, setCurrentLevel] = useState<LightLevel | null>(null);
-  const [useManualMode, setUseManualMode] = useState(true); // Start in manual mode by default
+  const [useManualMode, setUseManualMode] = useState(false); // Start with camera mode to request permissions
   const [manualLightValue, setManualLightValue] = useState<number>(2500); // Default to medium light
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -204,12 +204,16 @@ export function LightMeter() {
     setLightValue(value);
   }, []);
   
-  // Initialize manual mode settings when component loads
+  // Initialize mode settings when component loads
   useEffect(() => {
     if (useManualMode) {
+      // Initialize manual mode
       updateManualLightLevel(manualLightValue);
+    } else {
+      // Auto-start camera mode to request permissions immediately
+      startCapture();
     }
-  }, [useManualMode, manualLightValue, updateManualLightLevel]);
+  }, [useManualMode, manualLightValue, updateManualLightLevel, startCapture]);
 
   // Switch to manual mode if camera error occurs
   // Automatically switch to manual mode when camera error occurs
@@ -231,15 +235,20 @@ export function LightMeter() {
       </p>
       
       <div className="flex flex-col items-center justify-center">
-        {errorMessage && !useManualMode && (
+        {errorMessage && (
           <div className="rounded-md bg-red-50 p-4 mb-4 w-full">
             <p className="text-sm text-red-700">{errorMessage}</p>
-            <button 
-              className="text-sm font-medium text-primary mt-2"
-              onClick={() => setUseManualMode(true)}
-            >
-              Switch to Manual Mode
-            </button>
+            {!useManualMode && (
+              <button 
+                className="text-sm font-medium text-primary mt-2"
+                onClick={() => setUseManualMode(true)}
+              >
+                Switch to Manual Mode
+              </button>
+            )}
+            {useManualMode && (
+              <p className="text-sm mt-2">Using manual mode instead. You can adjust the light level using the slider below.</p>
+            )}
           </div>
         )}
         
