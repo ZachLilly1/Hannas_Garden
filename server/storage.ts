@@ -148,12 +148,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserProfile(id: number, data: Partial<User>): Promise<User | undefined> {
-    // Make sure we don't update sensitive fields
-    const { password, username, email, id: userId, ...safeData } = data;
+    // Extract fields we handle specially
+    const { password, username, id: userId, email, ...otherData } = data;
+    
+    // Handle email updates separately (with validation)
+    if (email) {
+      // Check if email is already taken by another user
+      const existingUser = await this.getUserByEmail(email);
+      if (existingUser && existingUser.id !== id) {
+        throw new Error("Email is already in use by another account");
+      }
+    }
+    
+    // Combine email with other data if it exists
+    const updateData = email ? { ...otherData, email } : otherData;
     
     const [updatedUser] = await db
       .update(users)
-      .set(safeData)
+      .set(updateData)
       .where(eq(users.id, id))
       .returning();
     
