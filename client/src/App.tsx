@@ -10,6 +10,8 @@ import Plants from "@/pages/plants";
 import CareSchedule from "@/pages/care-schedule";
 import Guides from "@/pages/guides";
 import Profile from "@/pages/profile";
+import Tools from "@/pages/tools";
+import LightMeterPage from "@/pages/light-meter";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,6 +22,8 @@ function Router() {
         <Route path="/plants" component={Plants} />
         <Route path="/schedule" component={CareSchedule} />
         <Route path="/guides" component={Guides} />
+        <Route path="/tools" component={Tools} />
+        <Route path="/tools/light-meter" component={LightMeterPage} />
         <Route path="/profile" component={Profile} />
         <Route component={NotFound} />
       </Switch>
