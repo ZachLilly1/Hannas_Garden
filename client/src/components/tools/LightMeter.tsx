@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CameraIcon, SunIcon } from '@/lib/icons';
 import { cn } from '@/lib/utils';
+import { Progress } from '@/components/ui/progress';
 
 type LightLevel = {
   name: string;
@@ -45,9 +46,12 @@ export function LightMeter() {
   const [currentLevel, setCurrentLevel] = useState<LightLevel | null>(null);
   const [useManualMode, setUseManualMode] = useState(false); // Start with camera mode to request permissions
   const [manualLightValue, setManualLightValue] = useState<number>(2500); // Default to medium light
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const startCapture = async () => {
     setErrorMessage(null);
@@ -226,11 +230,101 @@ export function LightMeter() {
     }
   }, [errorMessage, useManualMode, manualLightValue, updateManualLightLevel]);
 
+  // Handle image file selection
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      
+      // Create a preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          setSelectedImage(e.target.result as string);
+          processImageForLightLevel(e.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Trigger file input click
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+  
+  // Process an image to estimate light level
+  const processImageForLightLevel = (imageUrl: string) => {
+    setIsProcessing(true);
+    
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      
+      if (!context) {
+        setIsProcessing(false);
+        setErrorMessage("Failed to process image. Browser may not support canvas.");
+        return;
+      }
+      
+      // Set canvas size to match image
+      canvas.width = img.width;
+      canvas.height = img.height;
+      
+      // Draw the image onto the canvas
+      context.drawImage(img, 0, 0, canvas.width, canvas.height);
+      
+      // Get image data
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      const pixels = imageData.data;
+      
+      // Calculate average brightness
+      let totalBrightness = 0;
+      let pixelCount = 0;
+      
+      for (let i = 0; i < pixels.length; i += 4) {
+        const r = pixels[i];
+        const g = pixels[i + 1];
+        const b = pixels[i + 2];
+        
+        // Calculate perceived brightness
+        // Using the formula: 0.299R + 0.587G + 0.114B
+        const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+        
+        totalBrightness += brightness;
+        pixelCount++;
+      }
+      
+      const averageBrightness = totalBrightness / pixelCount;
+      
+      // Convert brightness to estimated lux
+      // This is a rough approximation
+      const estimatedLux = Math.round(averageBrightness * 100);
+      
+      setLightValue(estimatedLux);
+      
+      // Find the corresponding light level
+      const level = LIGHT_LEVELS.find(level => 
+        estimatedLux >= level.range[0] && estimatedLux <= level.range[1]
+      ) || LIGHT_LEVELS[LIGHT_LEVELS.length - 1];
+      
+      setCurrentLevel(level);
+      setIsProcessing(false);
+    };
+    
+    img.onerror = () => {
+      setIsProcessing(false);
+      setErrorMessage("Failed to load image. Please try a different image.");
+    };
+    
+    img.src = imageUrl;
+  };
+
   return (
     <div>
       <p className="text-sm mb-6">
         This tool {!useManualMode ? "uses your phone's camera to" : "helps you"} estimate the light level in your plant's location.
-        {!useManualMode && " Point your camera at the area where your plant is (or will be) placed for an accurate reading."}
+        {!useManualMode && " Take a photo or upload an image of the area where your plant is (or will be) placed."}
       </p>
       
       <div className="flex flex-col items-center justify-center">
@@ -251,6 +345,15 @@ export function LightMeter() {
           </div>
         )}
         
+        {/* Hidden file input for photo upload */}
+        <input 
+          type="file" 
+          ref={fileInputRef}
+          accept="image/*"
+          className="hidden"
+          onChange={handleImageChange}
+        />
+        
         {!useManualMode ? (
           // Camera-based light meter UI
           <>
@@ -269,7 +372,7 @@ export function LightMeter() {
                 className="hidden"
               />
               
-              {!isCapturing && lightValue !== null && (
+              {!isCapturing && lightValue !== null && !selectedImage && (
                 <div className="w-full aspect-video rounded-md bg-neutral-100 flex items-center justify-center">
                   <div className="text-center">
                     <SunIcon className="w-12 h-12 mx-auto mb-2 text-yellow-500" />
@@ -279,26 +382,58 @@ export function LightMeter() {
                 </div>
               )}
               
-              {!isCapturing && lightValue === null && (
-                <div className="w-full aspect-video rounded-md bg-neutral-100 flex items-center justify-center">
+              {selectedImage && (
+                <div className="w-full aspect-video rounded-md overflow-hidden relative">
+                  <img 
+                    src={selectedImage}
+                    alt="Light measurement image" 
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-0 right-0 p-2 bg-white bg-opacity-75 rounded-bl-md">
+                    <span className="font-bold">{lightValue} lux</span>
+                  </div>
+                </div>
+              )}
+              
+              {!isCapturing && lightValue === null && !selectedImage && (
+                <div 
+                  onClick={handleImageClick}
+                  className="w-full aspect-video rounded-md bg-neutral-100 flex flex-col items-center justify-center cursor-pointer"
+                >
                   <div className="text-center text-neutral-500">
                     <CameraIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>Press the button below to measure light</p>
+                    <p>Upload an image or take a photo</p>
+                    <p className="text-xs mt-1">Click to browse files</p>
                   </div>
+                </div>
+              )}
+              
+              {isProcessing && (
+                <div className="mt-3 space-y-2">
+                  <Progress value={66} className="h-2" />
+                  <p className="text-xs text-center text-neutral-dark">Processing image for light level...</p>
                 </div>
               )}
             </div>
             
-            <div className="flex space-x-3 mb-6">
+            <div className="flex flex-wrap gap-3 mb-6">
               <Button 
                 size="lg"
                 onClick={isCapturing ? stopCapture : startCapture}
               >
-                {isCapturing ? "Cancel" : lightValue !== null ? "Take New Reading" : "Start Light Meter"}
+                {isCapturing ? "Cancel" : lightValue !== null ? "Take New Reading" : "Start Camera"}
               </Button>
               
               <Button 
                 variant="outline" 
+                size="lg"
+                onClick={handleImageClick}
+              >
+                Upload Image
+              </Button>
+              
+              <Button 
+                variant="secondary" 
                 size="lg"
                 onClick={() => {
                   stopCapture();
@@ -308,6 +443,20 @@ export function LightMeter() {
               >
                 Manual Mode
               </Button>
+              
+              {selectedImage && (
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={() => {
+                    setSelectedImage(null);
+                    setLightValue(null);
+                    setCurrentLevel(null);
+                  }}
+                >
+                  Clear Image
+                </Button>
+              )}
             </div>
           </>
         ) : (
