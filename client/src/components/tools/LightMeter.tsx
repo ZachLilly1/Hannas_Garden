@@ -227,7 +227,7 @@ export function LightMeter() {
   }, [errorMessage, useManualMode, manualLightValue, updateManualLightLevel]);
 
   return (
-    <div className="p-4">
+    <div>
       <p className="text-sm mb-6">
         This tool {!useManualMode ? "uses your phone's camera to" : "helps you"} estimate the light level in your plant's location.
         {!useManualMode && " Point your camera at the area where your plant is (or will be) placed for an accurate reading."}
