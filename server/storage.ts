@@ -14,7 +14,11 @@ export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserProfile(id: number, data: Partial<User>): Promise<User | undefined>;
+  updateUserPassword(id: number, hashedPassword: string): Promise<boolean>;
+  updateUserLastLogin(id: number): Promise<boolean>;
   
   // Plant methods
   getPlants(userId: number): Promise<PlantWithCare[]>;
@@ -127,12 +131,53 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email));
+    return user || undefined;
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
       .values(insertUser)
       .returning();
     return user;
+  }
+
+  async updateUserProfile(id: number, data: Partial<User>): Promise<User | undefined> {
+    // Make sure we don't update sensitive fields
+    const { password, username, email, id: userId, ...safeData } = data;
+    
+    const [updatedUser] = await db
+      .update(users)
+      .set(safeData)
+      .where(eq(users.id, id))
+      .returning();
+    
+    return updatedUser || undefined;
+  }
+
+  async updateUserPassword(id: number, hashedPassword: string): Promise<boolean> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, id))
+      .returning();
+    
+    return !!updatedUser;
+  }
+
+  async updateUserLastLogin(id: number): Promise<boolean> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ lastLogin: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    
+    return !!updatedUser;
   }
 
   // Plant methods

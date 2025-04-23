@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
@@ -11,8 +11,12 @@ import { z } from "zod";
 import { identifyPlantFromImage, type PlantIdentificationResult } from "./services/openai";
 import fs from "fs";
 import path from "path";
+import { setupAuth, isAuthenticated } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up authentication
+  setupAuth(app);
+  
   // API routes
   const apiRouter = app;
 
