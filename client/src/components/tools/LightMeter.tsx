@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CameraIcon, SunIcon } from '@/lib/icons';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
+import { toast } from '@/hooks/use-toast';
 
 type LightLevel = {
   name: string;
@@ -40,18 +41,16 @@ const LIGHT_LEVELS: LightLevel[] = [
 ];
 
 export function LightMeter() {
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [lightValue, setLightValue] = useState<number | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [currentLevel, setCurrentLevel] = useState<LightLevel | null>(null);
-  const [useManualMode, setUseManualMode] = useState(false);
-  const [manualLightValue, setManualLightValue] = useState<number>(2500); // Default to medium light
+  // State
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [lightValue, setLightValue] = useState<number | null>(null);
+  const [currentLevel, setCurrentLevel] = useState<LightLevel | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [cameraMode, setCameraMode] = useState(false); // Start without trying to access camera
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const [mode, setMode] = useState<'upload' | 'manual' | 'camera'>('upload');
+  const [manualLightValue, setManualLightValue] = useState<number>(2500); // Default to medium light
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const startCapture = async () => {
