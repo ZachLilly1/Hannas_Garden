@@ -361,17 +361,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createReminder(reminderData: InsertReminder): Promise<Reminder> {
+    // Convert string date to Date object for database
+    const dbReminderData = {
+      ...reminderData,
+      dueDate: new Date(reminderData.dueDate)
+    };
+    
     const [reminder] = await db
       .insert(reminders)
-      .values(reminderData)
+      .values(dbReminderData)
       .returning();
     return reminder;
   }
 
   async updateReminder(id: number, data: Partial<InsertReminder>): Promise<Reminder | undefined> {
+    // Handle date conversion if dueDate is included
+    const dbData = { ...data };
+    if (dbData.dueDate) {
+      dbData.dueDate = new Date(dbData.dueDate);
+    }
+    
     const [updatedReminder] = await db
       .update(reminders)
-      .set(data)
+      .set(dbData)
       .where(eq(reminders.id, id))
       .returning();
     return updatedReminder || undefined;
