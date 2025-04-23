@@ -90,6 +90,9 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
       const file = event.target.files[0];
       setImageFile(file);
       
+      // Reset identification result when new image is selected
+      setIdentificationResult(null);
+      
       // Create a preview URL
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -105,6 +108,9 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
 
   // Trigger file input click
   const handleImageClick = () => {
+    if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
+      fileInputRef.current?.setAttribute('capture', 'environment');
+    }
     fileInputRef.current?.click();
   };
 
@@ -293,13 +299,14 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
                   type="file" 
                   ref={fileInputRef}
                   accept="image/*"
+                  capture="environment"
                   className="hidden"
                   onChange={handleImageChange}
                 />
                 
                 <div 
                   onClick={handleImageClick}
-                  className="h-44 bg-neutral-medium bg-opacity-30 rounded-lg flex flex-col items-center justify-center cursor-pointer relative overflow-hidden"
+                  className="h-56 bg-neutral-medium bg-opacity-30 rounded-lg flex flex-col items-center justify-center cursor-pointer relative overflow-hidden"
                 >
                   {selectedImage ? (
                     <>
@@ -308,29 +315,28 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
                         alt="Selected plant" 
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                      <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                         <CameraIcon className="h-8 w-8 text-white mb-2" />
                         <p className="text-sm text-white">Change photo</p>
                       </div>
                     </>
                   ) : (
                     <>
-                      <CameraIcon className="h-8 w-8 text-neutral-dark opacity-60 mb-2" />
-                      <p className="text-sm text-neutral-dark opacity-70">Add a photo of your plant</p>
+                      <CameraIcon className="h-12 w-12 text-neutral-dark opacity-60 mb-2" />
+                      <p className="text-neutral-dark opacity-70">Tap to take or upload a plant photo</p>
                     </>
                   )}
                 </div>
                 
                 {selectedImage && !isIdentifying && !identificationResult && (
-                  <div className="mt-2 flex justify-center">
+                  <div className="mt-4 flex justify-center">
                     <Button 
                       type="button" 
                       onClick={identifyPlant} 
-                      variant="outline" 
-                      size="sm"
+                      size="lg"
                       className="flex items-center gap-2"
                     >
-                      <LeafIcon className="h-4 w-4" />
+                      <LeafIcon className="h-5 w-5" />
                       Identify Plant
                     </Button>
                   </div>
