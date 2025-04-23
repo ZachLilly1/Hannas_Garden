@@ -151,14 +151,9 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
         form.setValue("name", result.commonName);
       }
       
-      if (result.plantType) {
-        // Make sure the plant type matches one of our options
-        const normalizedType = result.plantType.toLowerCase();
-        const validType = plantTypes.some(t => t.value === normalizedType) 
-          ? normalizedType 
-          : "other";
-        form.setValue("type", validType);
-      }
+      // Always set a plant type, defaulting to "other" if not recognized
+      const plantType = result.plantType ? result.plantType.toLowerCase() : "other";
+      form.setValue("type", plantType);
       
       if (result.careRecommendations) {
         // Set sunlight level
@@ -384,32 +379,12 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
                 )}
               />
 
-              {/* Plant Type */}
+              {/* Hidden Plant Type - automatically set from identification */}
               <FormField
                 control={form.control}
                 name="type"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Plant Type</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select plant type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {plantTypes.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
+                  <input type="hidden" {...field} />
                 )}
               />
 
