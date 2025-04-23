@@ -31,6 +31,15 @@ export async function identifyPlantFromImage(base64Image: string): Promise<Plant
   try {
     console.log("Starting plant identification process");
     
+    // Check image size
+    const imageSizeInBytes = Buffer.from(base64Image, 'base64').length;
+    const imageSizeInMB = imageSizeInBytes / (1024 * 1024);
+    console.log(`Image size: ${imageSizeInMB.toFixed(2)} MB`);
+    
+    if (imageSizeInMB > 20) {
+      throw new Error(`Image size (${imageSizeInMB.toFixed(2)} MB) exceeds the recommended limit of 20 MB. Please resize the image.`);
+    }
+    
     // Prefix for base64 encoded images
     const imageUrl = `data:image/jpeg;base64,${base64Image}`;
     console.log("Image URL prepared");
