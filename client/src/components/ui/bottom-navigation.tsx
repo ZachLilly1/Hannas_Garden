@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { LeafIcon, CalendarIcon, BookIcon, UserIcon, PlusIcon } from "@/lib/icons";
+import { LeafIcon, CalendarIcon, BookIcon, UserIcon, PlusIcon, SunIcon } from "@/lib/icons";
 
 type NavItem = {
   href: string;
@@ -38,9 +38,9 @@ export function BottomNavigation({ onAddPlant }: BottomNavigationProps) {
       icon: <BookIcon className="text-lg" />,
     },
     {
-      href: "/profile",
-      label: "Profile",
-      icon: <UserIcon className="text-lg" />,
+      href: "/tools",
+      label: "Tools",
+      icon: <SunIcon className="text-lg" />,
     },
   ];
 
