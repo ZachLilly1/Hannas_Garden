@@ -88,7 +88,7 @@ export const reminders = pgTable("reminders", {
   plantId: integer("plant_id").notNull(),
   userId: integer("user_id").notNull(),
   title: text("title").notNull(),
-  message: text("message").notNull(),
+  message: text("message").default(""), // Allow empty message
   dueDate: timestamp("due_date").notNull(),
   careType: text("care_type").notNull(),
   status: text("status").notNull().default("pending"), // pending, completed, dismissed

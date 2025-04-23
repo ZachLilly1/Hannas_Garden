@@ -101,7 +101,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md mx-auto p-0 rounded-t-xl overflow-hidden max-h-[90vh] overflow-y-auto sm:max-h-[80vh]" onInteractOutside={onClose}>
+      <DialogContent className="max-w-md mx-auto p-0 rounded-t-xl overflow-hidden max-h-[90vh] overflow-y-auto sm:max-h-[80vh] w-full" onInteractOutside={onClose}>
         <div className="h-64 relative">
           <img
             src={plant.image || getDefaultPlantImage(plant.type)}
@@ -116,7 +116,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
           </button>
         </div>
 
-        <div className="p-4">
+        <div className="px-4 py-4 w-full">
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-xl font-medium">{plant.name}</h2>
             <button 
