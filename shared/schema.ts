@@ -131,7 +131,7 @@ export const insertReminderSchema = createInsertSchema(reminders).omit({
 }).extend({
   dueDate: z.string(), // Allow string for ISO format
   plantId: z.number().int(), // Ensure it's a number
-  message: z.string().optional().default(""), // Make message optional
+  message: z.string().optional().default(""), // Make message optional with empty default
 });
 
 // Enum-like constants
