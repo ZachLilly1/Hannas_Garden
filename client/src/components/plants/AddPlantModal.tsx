@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,12 +15,15 @@ import {
   FormMessage
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CameraIcon } from "@/lib/icons";
+import { CameraIcon, LeafIcon } from "@/lib/icons";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { insertPlantSchema } from "@shared/schema";
 import { toast } from "@/hooks/use-toast";
 import { type PlantWithCare } from "@shared/schema";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 
 interface AddPlantModalProps {
   isOpen: boolean;
