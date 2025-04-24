@@ -87,23 +87,32 @@ export function PlantCard({ plant, onClick }: PlantCardProps) {
   const isFertilizerUrgent = fertilizerRemainingText === "Now";
 
   return (
-    <Card className="bg-white rounded-lg shadow-sm overflow-hidden" onClick={onClick}>
+    <Card 
+      className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden" 
+      onClick={onClick}
+    >
       <div className="flex">
-        <div className="w-24 h-24 overflow-hidden">
-          <img
-            src={plant.image || getDefaultPlantImage(plant.type)}
-            alt={plant.name}
-            className="h-full w-full object-cover"
-          />
+        <div className="w-24 h-24 overflow-hidden bg-neutral-100 dark:bg-gray-700">
+          {plant.image ? (
+            <img
+              src={plant.image}
+              alt={plant.name}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center text-neutral-400 dark:text-gray-500">
+              No Image
+            </div>
+          )}
         </div>
         <div className="flex-1 p-3">
           <div className="flex justify-between items-start">
-            <h3 className="font-medium">{plant.name}</h3>
+            <h3 className="font-medium dark:text-white">{plant.name}</h3>
             <span className={`text-xs flex items-center gap-1 ${statusClassName}`}>
               <HeartPulseIcon className="h-3 w-3" /> {getStatusLabel(plant.status)}
             </span>
           </div>
-          <p className="text-xs text-neutral-dark opacity-70 mb-2">{plant.location}</p>
+          <p className="text-xs text-neutral-dark dark:text-gray-400 opacity-70 mb-2">{plant.location}</p>
 
           {/* Plant Care Indicators */}
           <div className="flex space-x-4 mt-1">
