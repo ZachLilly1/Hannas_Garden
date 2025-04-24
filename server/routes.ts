@@ -400,32 +400,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
     
-    // Handle photoBase64 if provided
+    // Handle photoBase64 if provided - store directly in the database for persistence
     if (careLogData.photoBase64) {
       try {
-        // Generate a unique filename
-        const timestamp = Date.now();
-        const filename = `care_log_${careLogData.plantId}_${timestamp}.jpg`;
-        
-        // Convert base64 to buffer
-        const imageBuffer = Buffer.from(careLogData.photoBase64, 'base64');
-        
-        // Save the image to public/uploads
-        const uploadDir = path.join(process.cwd(), 'public/uploads');
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
+        // Store the base64 image data directly in the photo field
+        // Add data URL prefix if it doesn't already have one
+        if (!careLogData.photoBase64.startsWith('data:image/')) {
+          careLogData.photo = `data:image/jpeg;base64,${careLogData.photoBase64}`;
+        } else {
+          careLogData.photo = careLogData.photoBase64;
         }
         
-        fs.writeFileSync(path.join(uploadDir, filename), imageBuffer);
-        
-        // Set photo URL in database
-        careLogData.photo = `/uploads/${filename}`;
-        
-        // Remove base64 data before storing in DB
+        // Remove base64 data from the separate field before storing in DB
         delete careLogData.photoBase64;
       } catch (error) {
-        console.error('Error saving care log photo:', error);
-        return res.status(500).json({ message: 'Failed to save photo' });
+        console.error('Error processing photo data:', error);
+        return res.status(500).json({ message: 'Failed to process photo' });
       }
     }
     
