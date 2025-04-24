@@ -891,7 +891,7 @@ export async function generateJournalEntry(
           role: "user",
           content: `Create a detailed journal entry about ${careLog.careType} for my ${plant.name} (${plant.scientificName || "scientific name unknown"}).
             Care log details:
-            - Date: ${new Date(careLog.timestamp).toISOString().split('T')[0]}
+            - Date: ${careLog.timestamp ? new Date(careLog.timestamp).toISOString().split('T')[0] : 'Unknown'}
             - Care type: ${careLog.careType}
             - Original notes: "${careLog.notes || "No notes provided"}"
             
