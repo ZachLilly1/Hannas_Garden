@@ -163,7 +163,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
       </AlertDialog>
       
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="mx-auto p-0 rounded-xl overflow-y-auto max-h-[90vh] w-[90vw] max-w-[450px]">
+        <DialogContent className="mx-auto p-0 rounded-xl overflow-y-auto overflow-x-hidden max-h-[90vh] w-[95vw] max-w-[450px]">
           <div className="h-64 relative">
             <img
               src={plant.image || getDefaultPlantImage(plant.type)}
@@ -281,7 +281,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                       <p className="text-xs text-neutral-dark opacity-70">Every {plant.waterFrequency} days</p>
                     </div>
                     <div className="text-right ml-2">
-                      <p className="font-medium text-sm whitespace-nowrap">
+                      <p className="font-medium text-sm sm:whitespace-nowrap">
                         {waterRemainingDays !== null 
                           ? waterRemainingDays < 0 
                             ? "Overdue" 
@@ -311,7 +311,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                       </p>
                     </div>
                     <div className={cn(
-                      "text-xs font-medium text-right ml-2 whitespace-nowrap",
+                      "text-xs font-medium text-right ml-2 sm:whitespace-nowrap",
                       sunlightAdequate ? "text-status-success" : "text-status-warning"
                     )}>
                       {sunlightAdequate ? <CheckCircleIcon className="h-4 w-4 inline mr-1" /> : null}
@@ -335,7 +335,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                     <div className="text-right ml-2">
                       {plant.fertilizerFrequency > 0 && (
                         <>
-                          <p className="font-medium text-sm whitespace-nowrap">
+                          <p className="font-medium text-sm sm:whitespace-nowrap">
                             {fertilizerRemainingDays !== null 
                               ? fertilizerRemainingDays < 0 
                                 ? "Overdue" 
