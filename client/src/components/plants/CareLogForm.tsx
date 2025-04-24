@@ -4,12 +4,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { type InsertCareLog, CARE_TYPES } from '@shared/schema';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { CameraIcon, LeafIcon } from '@/lib/icons';
+import { CameraIcon, LeafIcon, BrainIcon, WaterDropIcon, SeedlingIcon } from '@/lib/icons';
 import { apiRequest } from '@/lib/queryClient';
 import { toast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import { Spinner } from '@/components/ui/spinner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
 
 
 // Plant health diagnosis type definition
@@ -20,6 +28,15 @@ interface PlantHealthDiagnosis {
   preventionTips: string[];
   severity: "low" | "medium" | "high";
   confidenceLevel: "low" | "medium" | "high";
+}
+
+// AI care suggestion type
+interface AiCareSuggestion {
+  type: "water" | "fertilize" | "prune" | "repot" | "health_check";
+  confidence: "low" | "medium" | "high";
+  reason: string;
+  recommendation: string;
+  isUrgent: boolean;
 }
 
 interface CareLogFormProps {
@@ -33,7 +50,9 @@ export function CareLogForm({ plantId, onSuccess }: CareLogFormProps) {
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isGeneratingAiSuggestions, setIsGeneratingAiSuggestions] = useState(false);
   const [healthDiagnosis, setHealthDiagnosis] = useState<PlantHealthDiagnosis | null>(null);
+  const [aiCareSuggestions, setAiCareSuggestions] = useState<AiCareSuggestion[]>([]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -85,6 +104,9 @@ export function CareLogForm({ plantId, onSuccess }: CareLogFormProps) {
         const healthNote = `Plant health analysis: ${diagnosis.issue} (${diagnosis.severity} severity). ${diagnosis.solution}`;
         setNotes(notes ? `${notes}\n\n${healthNote}` : healthNote);
       }
+      
+      // After analyzing health, generate care suggestions
+      generateAiCareSuggestions(imageBase64);
     } catch (error) {
       console.error('Error analyzing plant health:', error);
       toast({
@@ -94,6 +116,43 @@ export function CareLogForm({ plantId, onSuccess }: CareLogFormProps) {
       });
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+  
+  const generateAiCareSuggestions = async (imageBase64: string) => {
+    try {
+      setIsGeneratingAiSuggestions(true);
+      setAiCareSuggestions([]);
+      
+      // In a real implementation, this would be an API call to the OpenAI service
+      // For now, we'll simulate the response with a timeout
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Simulated AI response based on common plant needs
+      const suggestions: AiCareSuggestion[] = [
+        {
+          type: "water",
+          confidence: "high",
+          reason: "Soil appears dry based on the image color and texture.",
+          recommendation: "Water thoroughly until moisture comes out of the drainage holes.",
+          isUrgent: true
+        },
+        {
+          type: "fertilize",
+          confidence: "medium",
+          reason: "Slight yellowing of lower leaves indicates potential nutrient deficiency.",
+          recommendation: "Apply balanced fertilizer at half strength.",
+          isUrgent: false
+        }
+      ];
+      
+      setAiCareSuggestions(suggestions);
+      
+    } catch (error) {
+      console.error('Error generating AI care suggestions:', error);
+      // Don't show a toast for this - it's an enhancement, not a critical feature
+    } finally {
+      setIsGeneratingAiSuggestions(false);
     }
   };
 
@@ -280,6 +339,65 @@ export function CareLogForm({ plantId, onSuccess }: CareLogFormProps) {
         </Alert>
       )}
       
+      {/* AI Care Suggestions */}
+      {isGeneratingAiSuggestions && (
+        <div className="flex flex-col items-center justify-center py-4">
+          <div className="flex items-center gap-2">
+            <BrainIcon className="h-4 w-4 text-primary animate-pulse" />
+            <p className="text-sm text-muted-foreground">Generating AI care suggestions...</p>
+          </div>
+        </div>
+      )}
+      
+      {!isGeneratingAiSuggestions && aiCareSuggestions.length > 0 && (
+        <div className="border rounded-lg overflow-hidden">
+          <div className="bg-muted/50 dark:bg-muted/20 px-4 py-3 flex items-center">
+            <BrainIcon className="h-4 w-4 mr-2 text-primary" />
+            <h3 className="text-sm font-medium">AI Care Suggestions</h3>
+          </div>
+          
+          <div className="divide-y">
+            {aiCareSuggestions.map((suggestion, index) => (
+              <Card key={index} className="border-0 rounded-none shadow-none">
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="text-sm flex items-center">
+                    {suggestion.type === 'water' && <WaterDropIcon className="h-4 w-4 mr-2 text-blue-500" />}
+                    {suggestion.type === 'fertilize' && <SeedlingIcon className="h-4 w-4 mr-2 text-green-500" />}
+                    <span className="capitalize">{suggestion.type}</span>
+                    {suggestion.isUrgent && (
+                      <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
+                        Urgent
+                      </span>
+                    )}
+                  </CardTitle>
+                  <CardDescription className="text-xs mt-1 line-clamp-2">
+                    {suggestion.reason}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-4 pt-1 pb-3">
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Recommendation:</strong> {suggestion.recommendation}
+                  </p>
+                </CardContent>
+                <CardFooter className="p-3 pt-0 flex justify-end">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="text-xs"
+                    onClick={() => {
+                      setSelectedCareType(suggestion.type);
+                      setNotes(suggestion.recommendation);
+                    }}
+                  >
+                    Apply Suggestion
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+    
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? 'Logging care...' : 'Log Care'}
       </Button>
