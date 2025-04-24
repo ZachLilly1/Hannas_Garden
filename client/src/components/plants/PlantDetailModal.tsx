@@ -181,6 +181,11 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
     }
   };
 
+  const navigateToHealthCheck = () => {
+    onClose();
+    window.location.href = '/tools/plant-health-diagnostic';
+  };
+
   return (
     <>
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
@@ -561,6 +566,18 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
               >
                 <BellIcon className="h-4 w-4 mr-2" />
                 Remind Me
+              </Button>
+            </div>
+            
+            {/* Health Check Button */}
+            <div className="mt-3">
+              <Button 
+                variant="outline" 
+                className="w-full bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-800/30 text-amber-800 dark:text-amber-400 border-amber-300 dark:border-amber-700"
+                onClick={navigateToHealthCheck}
+              >
+                <ActivityIcon className="h-4 w-4 mr-2" />
+                Check Plant Health
               </Button>
             </div>
           </div>
