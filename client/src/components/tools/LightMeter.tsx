@@ -88,7 +88,6 @@ export function LightMeter() {
     fileInputRef.current?.click();
   };
   
-  // Reset the measurement process
   // Handle tab changes
   const handleTabChange = (value: string) => {
     // Clear any previous errors
@@ -258,9 +257,6 @@ export function LightMeter() {
 
     try {
       setIsProcessing(true);
-      
-      // Extract base64 data from the data URL
-      const base64Data = selectedImage.split(',')[1];
       
       // Process the image
       processImageForLightLevel(selectedImage);
@@ -503,12 +499,6 @@ export function LightMeter() {
               </Button>
             </div>
           </Card>
-        </div>
-      )}
-      
-      {errorMessage && (
-        <div className="rounded-md bg-red-50 p-4 mb-4">
-          <p className="text-sm text-red-700">{errorMessage}</p>
         </div>
       )}
     </div>
