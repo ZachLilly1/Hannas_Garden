@@ -85,13 +85,18 @@ export function getSunlightLabel(level: string): string {
   }
 }
 
-export function getDefaultPlantImage(type: string): string {
+export function getDefaultPlantImage(type: string | null): string {
+  if (!type) {
+    return "https://images.pexels.com/photos/1084199/pexels-photo-1084199.jpeg"; // Default image
+  }
+  
   const typeMap: Record<string, string> = {
     "tropical": "https://images.pexels.com/photos/1084199/pexels-photo-1084199.jpeg",
     "succulent": "https://images.pexels.com/photos/1445419/pexels-photo-1445419.jpeg",
     "herb": "https://images.pexels.com/photos/1213859/pexels-photo-1213859.jpeg",
     "flowering": "https://images.pexels.com/photos/1005715/pexels-photo-1005715.jpeg",
-    "fern": "https://images.pexels.com/photos/1084188/pexels-photo-1084188.jpeg"
+    "fern": "https://images.pexels.com/photos/1084188/pexels-photo-1084188.jpeg",
+    "identified": "https://images.pexels.com/photos/1084199/pexels-photo-1084199.jpeg" // For plants identified via API
   };
   
   return typeMap[type.toLowerCase()] || "https://images.pexels.com/photos/1084199/pexels-photo-1084199.jpeg";
