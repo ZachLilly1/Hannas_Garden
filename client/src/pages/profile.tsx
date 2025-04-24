@@ -57,7 +57,7 @@ const formSchema = z.object({
   preferredUnits: z.enum(["metric", "imperial"]),
   timezone: z.string(),
   notificationsEnabled: z.boolean(),
-  avatarUrl: z.string().url("Please enter a valid URL").optional(),
+  avatarUrl: z.union([z.string().url("Please enter a valid URL"), z.string().length(0)]).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
