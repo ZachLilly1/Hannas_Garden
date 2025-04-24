@@ -185,9 +185,14 @@ export default function HealthDiagnosisDemo() {
                 Click the "Add Sample Health Check" button above to create a sample health diagnosis 
                 log for this plant. This demonstrates how health issues would appear in the care timeline.
               </p>
+              <p className="text-amber-700 mb-2">
+                Use the "Refresh Data" button if you'd like to reload the timeline after adding health logs.
+              </p>
               <p className="text-amber-700 text-xs">
-                The sample health diagnosis shows a fungal infection with medium severity, 
-                including information about the cause, solution, and prevention tips.
+                Each click will randomly generate one of several sample health diagnoses - including fungal infections, 
+                pest infestations, and nutrient deficiencies - with varying severity levels. Each diagnosis includes 
+                detailed information about the cause, recommended solution, and prevention tips.
+                In a real scenario, these diagnoses would be generated from photos of your actual plants.
               </p>
             </div>
             

@@ -734,20 +734,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(403).json({ message: "You don't have permission to access this plant" });
     }
     
-    // Sample health diagnosis data
-    const healthDiagnosis: PlantHealthDiagnosis = {
-      issue: "Leaf Yellowing with Brown Spots",
-      cause: "The yellowing leaves with brown spots indicate a fungal infection, likely caused by overwatering and poor air circulation around the plant.",
-      solution: "Trim affected leaves with clean, sterilized scissors. Reduce watering frequency and ensure the soil dries between waterings. Improve air circulation around the plant and avoid wetting the leaves when watering.",
-      preventionTips: [
-        "Water at the base of the plant, not from above",
-        "Ensure proper drainage in the pot",
-        "Maintain good air circulation around plants",
-        "Clean gardening tools between uses to prevent spreading infection"
-      ],
-      severity: "medium",
-      confidenceLevel: "high"
-    };
+    // Sample health diagnosis data - we'll randomly choose one of several possible issues
+    const sampleDiagnoses: PlantHealthDiagnosis[] = [
+      {
+        issue: "Leaf Yellowing with Brown Spots",
+        cause: "The yellowing leaves with brown spots indicate a fungal infection, likely caused by overwatering and poor air circulation around the plant.",
+        solution: "Trim affected leaves with clean, sterilized scissors. Reduce watering frequency and ensure the soil dries between waterings. Improve air circulation around the plant and avoid wetting the leaves when watering.",
+        preventionTips: [
+          "Water at the base of the plant, not from above",
+          "Ensure proper drainage in the pot",
+          "Maintain good air circulation around plants",
+          "Clean gardening tools between uses to prevent spreading infection"
+        ],
+        severity: "medium",
+        confidenceLevel: "high"
+      },
+      {
+        issue: "Spider Mite Infestation",
+        cause: "The fine webbing and stippled appearance on leaves indicate spider mites, which thrive in dry, warm conditions and can quickly spread throughout the plant.",
+        solution: "Isolate the plant from others immediately. Spray leaves (including undersides) with insecticidal soap or neem oil. For severe infestations, consider a miticide specific to spider mites. Increase humidity around the plant.",
+        preventionTips: [
+          "Regularly mist plants to increase humidity, as spider mites prefer dry conditions",
+          "Inspect new plants carefully before bringing them home",
+          "Keep plants dust-free by occasionally wiping leaves",
+          "Maintain adequate spacing between plants to improve air circulation"
+        ],
+        severity: "high",
+        confidenceLevel: "high"
+      },
+      {
+        issue: "Nutrient Deficiency",
+        cause: "The interveinal chlorosis (yellowing between leaf veins) suggests a magnesium or iron deficiency, often due to improper soil pH or nutrient imbalance.",
+        solution: "Apply a balanced fertilizer with micronutrients. For magnesium deficiency, add Epsom salts (1 tbsp per gallon of water). For iron deficiency, use a chelated iron supplement and adjust soil pH if needed.",
+        preventionTips: [
+          "Use a high-quality potting mix when repotting",
+          "Follow a regular fertilization schedule appropriate for the plant",
+          "Test and adjust soil pH as needed for proper nutrient absorption",
+          "Avoid overwatering which can leach nutrients from the soil"
+        ],
+        severity: "low",
+        confidenceLevel: "medium"
+      }
+    ];
+    
+    // Randomly select one of the sample diagnoses
+    const healthDiagnosis = sampleDiagnoses[Math.floor(Math.random() * sampleDiagnoses.length)];
     
     try {
       // Create the care log with health diagnosis data
