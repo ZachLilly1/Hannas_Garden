@@ -3,6 +3,8 @@ import { useLocation } from "wouter";
 import { LeafIcon, SearchIcon, BellIcon } from "@/lib/icons";
 import BottomNavigation from "@/components/ui/bottom-navigation";
 import AddPlantModal from "@/components/plants/AddPlantModal";
+import { useOnboarding } from "@/hooks/use-onboarding";
+import { useTheme } from "@/context/ThemeContext";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -11,6 +13,8 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const [location] = useLocation();
   const [isAddPlantModalOpen, setIsAddPlantModalOpen] = useState(false);
+  const { isDarkMode } = useTheme();
+  const { OnboardingComponent } = useOnboarding();
 
   // Function to determine page title based on current route
   const getPageTitle = () => {
