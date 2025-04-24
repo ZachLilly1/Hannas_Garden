@@ -4,7 +4,6 @@ import { Card } from "@/components/ui/card";
 import { CameraIcon, SunIcon } from "@/lib/icons";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type LightLevel = {
   name: string;
@@ -41,20 +40,18 @@ const LIGHT_LEVELS: LightLevel[] = [
 ];
 
 export function LightMeter() {
-  // State for image upload and identification
+  // State for image capture and identification
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [lightValue, setLightValue] = useState<number | null>(null);
   const [currentLevel, setCurrentLevel] = useState<LightLevel | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<string>("upload");
   
   // Camera states
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   
   // Refs
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
@@ -67,43 +64,10 @@ export function LightMeter() {
     };
   }, [stream]);
   
-  // Handle image file selection
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      
-      // Create a preview URL
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          setSelectedImage(e.target.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Trigger file input click
-  const handleImageClick = () => {
-    fileInputRef.current?.click();
-  };
-  
-  // Handle tab changes
-  const handleTabChange = (value: string) => {
-    // Clear any previous errors
-    setErrorMessage(null);
-    setActiveTab(value);
-    
-    // Stop camera if switching from camera tab
-    if (value !== "camera" && isCameraActive) {
-      stopCamera();
-    }
-    
-    // Switch to camera mode if needed
-    if (value === "camera") {
-      startCamera();
-    }
-  };
+  // Start camera automatically on load
+  useEffect(() => {
+    startCamera();
+  }, []);
 
   // Start camera access
   const startCamera = async () => {
@@ -142,8 +106,6 @@ export function LightMeter() {
       }
       
       setErrorMessage(errorMsg);
-      // Switch to upload tab if camera fails
-      setActiveTab("upload");
     }
   };
 
@@ -241,120 +203,13 @@ export function LightMeter() {
     setLightValue(null);
     setCurrentLevel(null);
     setErrorMessage(null);
-    stopCamera();
-  };
-
-  // Measure light from image
-  const measureLight = async () => {
-    if (!selectedImage) {
-      toast({
-        title: "No image selected",
-        description: "Please upload an image of your plant's location first.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      setIsProcessing(true);
-      
-      // Process the image
-      processImageForLightLevel(selectedImage);
-      
-    } catch (error) {
-      console.error("Error measuring light:", error);
-      let errorMessage = "Unable to process the image.";
-      
-      if (error instanceof Error) {
-        errorMessage = `${errorMessage} ${error.message}`;
-      }
-      
-      toast({
-        title: "Measurement failed",
-        description: errorMessage,
-        variant: "destructive"
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // Process an image to estimate light level
-  const processImageForLightLevel = (imageUrl: string) => {
-    const img = new Image();
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        
-        if (!context) {
-          throw new Error("Failed to get canvas context");
-        }
-        
-        // Set canvas size to match image
-        canvas.width = img.width;
-        canvas.height = img.height;
-        
-        // Draw the image onto the canvas
-        context.drawImage(img, 0, 0, canvas.width, canvas.height);
-        
-        // Get image data
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-        const pixels = imageData.data;
-        
-        // Calculate average brightness
-        let totalBrightness = 0;
-        let pixelCount = 0;
-        
-        for (let i = 0; i < pixels.length; i += 4) {
-          const r = pixels[i];
-          const g = pixels[i + 1];
-          const b = pixels[i + 2];
-          
-          // Calculate perceived brightness using formula: 0.299R + 0.587G + 0.114B
-          const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
-          
-          totalBrightness += brightness;
-          pixelCount++;
-        }
-        
-        const averageBrightness = totalBrightness / pixelCount;
-        
-        // Convert brightness to estimated lux (rough approximation)
-        const estimatedLux = Math.round(averageBrightness * 100);
-        
-        // Find the corresponding light level
-        const level = LIGHT_LEVELS.find(level => 
-          estimatedLux >= level.range[0] && estimatedLux <= level.range[1]
-        ) || LIGHT_LEVELS[LIGHT_LEVELS.length - 1];
-        
-        setLightValue(estimatedLux);
-        setCurrentLevel(level);
-        
-        toast({
-          title: "Light measured!",
-          description: `Detected ${level.name} (${estimatedLux} lux) - ideal for ${level.suitable}.`
-        });
-      } catch (error) {
-        console.error("Error processing image:", error);
-        setErrorMessage("Failed to analyze the image. Please try again.");
-      } finally {
-        setIsProcessing(false);
-      }
-    };
-    
-    img.onerror = () => {
-      setIsProcessing(false);
-      setErrorMessage("Failed to load image. Please try a different image.");
-    };
-    
-    img.src = imageUrl;
+    startCamera();
   };
 
   return (
     <div className="w-full max-w-md mx-auto">
       <p className="text-sm mb-6">
-        Take or upload a photo of your plant's location to measure the light level and get plant recommendations.
+        Use your camera to measure the light level at your plant's location and get plant recommendations.
       </p>
       
       {errorMessage && (
@@ -363,102 +218,52 @@ export function LightMeter() {
         </div>
       )}
       
-      {/* Only show tabs if we don't have a result yet */}
+      {/* Show camera view if no result yet */}
       {(!lightValue || !currentLevel) && (
-        <Tabs 
-          value={activeTab} 
-          onValueChange={handleTabChange}
-          className="w-full"
-        >
-          <TabsList className="grid grid-cols-2 mb-4">
-            <TabsTrigger value="upload">Upload Image</TabsTrigger>
-            <TabsTrigger value="camera">Use Camera</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="upload" className="space-y-4">
-            {/* Hidden file input */}
-            <input 
-              type="file" 
-              ref={fileInputRef}
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageChange}
-            />
-            
-            <div 
-              onClick={handleImageClick}
-              className="h-56 bg-neutral-medium bg-opacity-30 rounded-lg flex flex-col items-center justify-center cursor-pointer relative overflow-hidden"
-            >
-              {selectedImage ? (
-                <>
-                  <img 
-                    src={selectedImage}
-                    alt="Selected location" 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                    <CameraIcon className="h-8 w-8 text-white mb-2" />
-                    <p className="text-sm text-white">Change image</p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <CameraIcon className="h-12 w-12 text-neutral-dark opacity-60 mb-2" />
-                  <p className="text-neutral-dark opacity-70">Tap to upload a photo of your plant's location</p>
-                </>
-              )}
-            </div>
-            
-            {selectedImage && !isProcessing && !currentLevel && (
-              <div className="flex justify-center">
-                <Button 
-                  onClick={measureLight} 
-                  size="lg"
-                  className="flex items-center gap-2"
+        <div className="space-y-4">
+          <div className="relative w-full aspect-video bg-neutral-medium bg-opacity-30 rounded-lg overflow-hidden">
+            {isCameraActive ? (
+              <>
+                <video 
+                  ref={videoRef} 
+                  className="w-full h-full object-cover"
+                  playsInline
+                  autoPlay
+                />
+                <Button
+                  onClick={captureAndMeasureLight}
+                  className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2"
+                  disabled={isProcessing}
                 >
-                  <SunIcon className="h-5 w-5" />
-                  Measure Light Level
+                  <CameraIcon className="h-5 w-5" />
+                  {isProcessing ? "Processing..." : "Capture Light Level"}
                 </Button>
+              </>
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center">
+                <CameraIcon className="h-12 w-12 text-neutral-dark opacity-60 mb-2" />
+                <p className="text-neutral-dark opacity-70 text-center px-4">
+                  {!errorMessage ? "Starting camera..." : "Camera access needed. Tap to try again."}
+                </p>
+                {!isCameraActive && errorMessage && (
+                  <Button
+                    onClick={startCamera}
+                    className="mt-4"
+                    variant="outline"
+                  >
+                    Try Again
+                  </Button>
+                )}
               </div>
             )}
-          </TabsContent>
+          </div>
           
-          <TabsContent value="camera" className="space-y-4">
-            <div className="relative w-full aspect-video bg-neutral-medium bg-opacity-30 rounded-lg overflow-hidden">
-              {isCameraActive ? (
-                <>
-                  <video 
-                    ref={videoRef} 
-                    className="w-full h-full object-cover"
-                    playsInline
-                    autoPlay
-                  />
-                  <Button
-                    onClick={captureAndMeasureLight}
-                    className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2"
-                    disabled={isProcessing}
-                  >
-                    <CameraIcon className="h-5 w-5" />
-                    {isProcessing ? "Processing..." : "Capture Light Level"}
-                  </Button>
-                </>
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center">
-                  <CameraIcon className="h-12 w-12 text-neutral-dark opacity-60 mb-2" />
-                  <p className="text-neutral-dark opacity-70 text-center px-4">
-                    Camera access needed. You'll be prompted to allow camera access.
-                  </p>
-                </div>
-              )}
-            </div>
-            
-            {/* Hidden canvas for processing camera image */}
-            <canvas 
-              ref={canvasRef} 
-              className="hidden"
-            />
-          </TabsContent>
-        </Tabs>
+          {/* Hidden canvas for processing camera image */}
+          <canvas 
+            ref={canvasRef} 
+            className="hidden"
+          />
+        </div>
       )}
       
       {isProcessing && (
