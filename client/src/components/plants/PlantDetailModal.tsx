@@ -247,24 +247,24 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
               <TabsList className="w-full flex bg-neutral-medium bg-opacity-20 p-0.5 rounded-md">
                 <TabsTrigger 
                   value="care-schedule" 
-                  className="flex-1 data-[state=active]:bg-white data-[state=active]:shadow-none"
+                  className="flex-1 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-none px-1 sm:px-2"
                 >
-                  <WaterDropIcon className="h-4 w-4 mr-2" />
-                  Care Schedule
+                  <WaterDropIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="whitespace-nowrap overflow-hidden text-ellipsis">Care</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="history" 
-                  className="flex-1 data-[state=active]:bg-white data-[state=active]:shadow-none"
+                  className="flex-1 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-none px-1 sm:px-2"
                 >
-                  <HistoryIcon className="h-4 w-4 mr-2" />
-                  History
+                  <HistoryIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="whitespace-nowrap overflow-hidden text-ellipsis">History</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="reminders" 
-                  className="flex-1 data-[state=active]:bg-white data-[state=active]:shadow-none"
+                  className="flex-1 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-none px-1 sm:px-2"
                 >
-                  <BellIcon className="h-4 w-4 mr-2" />
-                  Reminders
+                  <BellIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="whitespace-nowrap overflow-hidden text-ellipsis">Reminders</span>
                 </TabsTrigger>
               </TabsList>
               

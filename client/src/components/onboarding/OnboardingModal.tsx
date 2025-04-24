@@ -15,19 +15,19 @@ const onboardingSteps = [
     title: "Welcome to Hanna's Garden",
     description: "Your personal plant care assistant that helps you keep your plants happy and healthy.",
     icon: <LeafIcon className="h-16 w-16 text-primary mb-4" />,
-    image: "/onboarding-welcome.svg",
+    image: "onboarding-welcome.svg",
   },
   {
     title: "Track Your Plants",
     description: "Add your plants and we'll help you track when they need water, fertilizer, and other care.",
     icon: <WaterDropIcon className="h-16 w-16 text-blue-500 mb-4" />,
-    image: "/onboarding-track.svg",
+    image: "onboarding-track.svg",
   },
   {
     title: "Get Smart Reminders",
     description: "Receive care reminders based on each plant's specific needs and your local conditions.",
     icon: <SunIcon className="h-16 w-16 text-yellow-500 mb-4" />,
-    image: "/onboarding-remind.svg",
+    image: "onboarding-remind.svg",
   }
 ];
 
