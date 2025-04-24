@@ -92,6 +92,13 @@ function Router() {
           </MainLayout>
         </ProtectedRoute>
       </Route>
+      <Route path="/tools/personalized-advice">
+        <ProtectedRoute>
+          <MainLayout>
+            <PersonalizedAdvicePage />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
       <Route path="/profile">
         <ProtectedRoute>
           <MainLayout>

@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import type { SubmitHandler } from 'react-hook-form';
 
 // Interface for the OpenAI response
 interface PersonalizedAdvice {
@@ -41,12 +42,20 @@ const userEnvironmentSchema = z.object({
     required_error: "Please select a plant",
   }),
   location: z.string().optional(),
-  indoorTemperature: z.string().optional().transform(val => val ? Number(val) : undefined),
-  humidity: z.string().optional().transform(val => val ? Number(val) : undefined),
+  indoorTemperature: z.string().optional(),
+  humidity: z.string().optional(),
   lightConditions: z.string().optional(),
 });
 
 type UserEnvironmentFormValues = z.infer<typeof userEnvironmentSchema>;
+
+// Interface for the API request
+interface PersonalizedAdviceRequest {
+  location?: string;
+  indoorTemperature?: number;
+  humidity?: number;
+  lightConditions?: string;
+}
 
 export function PersonalizedPlantAdvisor() {
   const { toast } = useToast();
@@ -73,15 +82,17 @@ export function PersonalizedPlantAdvisor() {
   // Mutation to get personalized advice
   const adviceMutation = useMutation({
     mutationFn: async (data: UserEnvironmentFormValues) => {
+      const payload: PersonalizedAdviceRequest = {
+        location: data.location,
+        indoorTemperature: data.indoorTemperature ? Number(data.indoorTemperature) : undefined,
+        humidity: data.humidity ? Number(data.humidity) : undefined,
+        lightConditions: data.lightConditions
+      };
+      
       const res = await apiRequest(
         "POST", 
         `/api/ai/personalized-advice/${data.plantId}`, 
-        {
-          location: data.location,
-          indoorTemperature: data.indoorTemperature,
-          humidity: data.humidity,
-          lightConditions: data.lightConditions,
-        }
+        payload
       );
       return res.json();
     },
@@ -105,9 +116,9 @@ export function PersonalizedPlantAdvisor() {
     },
   });
   
-  function onSubmit(data: UserEnvironmentFormValues) {
-    adviceMutation.mutate(data);
-  }
+  const onSubmit: SubmitHandler<UserEnvironmentFormValues> = (values) => {
+    adviceMutation.mutate(values);
+  };
   
   return (
     <div className="space-y-6">
