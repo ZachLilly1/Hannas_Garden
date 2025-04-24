@@ -309,11 +309,77 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPlantGuideByType(plantType: string): Promise<PlantGuide | undefined> {
+    // First, try to find by plant type
     const [guide] = await db
       .select()
       .from(plantGuides)
       .where(eq(plantGuides.plantType, plantType));
-    return guide || undefined;
+    
+    if (guide) return guide;
+    
+    // If no guide found by type, try to match based on keywords in the scientific name
+    if (plantType.toLowerCase().includes("monstera") || 
+        plantType.toLowerCase().includes("philodendron") || 
+        plantType.toLowerCase().includes("palm")) {
+      const [tropicalGuide] = await db
+        .select()
+        .from(plantGuides)
+        .where(eq(plantGuides.plantType, "tropical"));
+      return tropicalGuide;
+    }
+    
+    if (plantType.toLowerCase().includes("cactus") || 
+        plantType.toLowerCase().includes("succulent") || 
+        plantType.toLowerCase().includes("aloe") || 
+        plantType.toLowerCase().includes("echeveria")) {
+      const [succulentGuide] = await db
+        .select()
+        .from(plantGuides)
+        .where(eq(plantGuides.plantType, "succulent"));
+      return succulentGuide;
+    }
+    
+    if (plantType.toLowerCase().includes("herb") || 
+        plantType.toLowerCase().includes("mint") || 
+        plantType.toLowerCase().includes("basil") || 
+        plantType.toLowerCase().includes("thyme") || 
+        plantType.toLowerCase().includes("rosemary") || 
+        plantType.toLowerCase().includes("sage")) {
+      const [herbGuide] = await db
+        .select()
+        .from(plantGuides)
+        .where(eq(plantGuides.plantType, "herb"));
+      return herbGuide;
+    }
+    
+    if (plantType.toLowerCase().includes("flower") || 
+        plantType.toLowerCase().includes("rosa") || 
+        plantType.toLowerCase().includes("tulip") || 
+        plantType.toLowerCase().includes("lily") || 
+        plantType.toLowerCase().includes("orchid")) {
+      const [floweringGuide] = await db
+        .select()
+        .from(plantGuides)
+        .where(eq(plantGuides.plantType, "flowering"));
+      return floweringGuide;
+    }
+    
+    if (plantType.toLowerCase().includes("fern") || 
+        plantType.toLowerCase().includes("nephrolepis") || 
+        plantType.toLowerCase().includes("pteridophyta")) {
+      const [fernGuide] = await db
+        .select()
+        .from(plantGuides)
+        .where(eq(plantGuides.plantType, "fern"));
+      return fernGuide;
+    }
+    
+    // Default fallback to the "other" plant guide
+    const [otherGuide] = await db
+      .select()
+      .from(plantGuides)
+      .where(eq(plantGuides.plantType, "other"));
+    return otherGuide;
   }
 
   async createPlantGuide(guideData: InsertPlantGuide): Promise<PlantGuide> {
@@ -378,8 +444,17 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
-    // Get guide information if available
-    const guide = await this.getPlantGuideByType(plant.type);
+    // Get guide information if available, preferring scientific name when available
+    let guide: PlantGuide | undefined;
+
+    if (plant.scientificName) {
+      guide = await this.getPlantGuideByType(plant.scientificName);
+    }
+    
+    // Fall back to plant type if no scientific name or no guide found by scientific name
+    if (!guide && plant.type) {
+      guide = await this.getPlantGuideByType(plant.type);
+    }
     
     return { ...plant, nextWatering, nextFertilizing, guide };
   }
