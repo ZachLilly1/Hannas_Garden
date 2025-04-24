@@ -16,6 +16,50 @@ export default function HealthDiagnosisDemo() {
   const [plant, setPlant] = useState<PlantWithCare | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCreatingHealthLog, setIsCreatingHealthLog] = useState(false);
+  const { toast } = useToast();
+
+  // Create a sample health diagnosis log
+  const createSampleHealthDiagnosis = async () => {
+    if (!plant) return;
+    
+    try {
+      setIsCreatingHealthLog(true);
+      
+      // Call our demo API endpoint
+      const response = await apiRequest(
+        'POST', 
+        `/api/demo/health-diagnosis/${plant.id}`
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create sample health diagnosis');
+      }
+      
+      const data = await response.json();
+      
+      // Show success message
+      toast({
+        title: "Sample health diagnosis created",
+        description: "A sample health diagnosis log has been added to this plant's timeline.",
+        variant: "default",
+      });
+      
+      // Refresh the care logs in the timeline
+      queryClient.invalidateQueries({ queryKey: [`/api/plants/${plant.id}/care-logs`] });
+      
+    } catch (err) {
+      console.error('Error creating sample health diagnosis:', err);
+      toast({
+        title: "Error creating sample",
+        description: err instanceof Error ? err.message : 'An unexpected error occurred',
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingHealthLog(false);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -89,7 +133,43 @@ export default function HealthDiagnosisDemo() {
             <CardDescription>{plant.type || 'No plant type information'}</CardDescription>
           </CardHeader>
           <CardContent>
-            <h3 className="font-medium text-lg mb-4">Care Timeline with Health Diagnosis</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-medium text-lg">Care Timeline with Health Diagnosis</h3>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="gap-1.5"
+                onClick={createSampleHealthDiagnosis}
+                disabled={isCreatingHealthLog}
+              >
+                {isCreatingHealthLog ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-3.5 w-3.5" />
+                    Add Sample Health Check
+                  </>
+                )}
+              </Button>
+            </div>
+            
+            <div className="bg-amber-50 border border-amber-200 p-3 rounded-md mb-4 text-sm">
+              <p className="flex items-center text-amber-800 font-medium mb-1">
+                <RefreshCw className="h-4 w-4 mr-1.5" /> Demo Instructions
+              </p>
+              <p className="text-amber-700 mb-2">
+                Click the "Add Sample Health Check" button above to create a sample health diagnosis 
+                log for this plant. This demonstrates how health issues would appear in the care timeline.
+              </p>
+              <p className="text-amber-700 text-xs">
+                The sample health diagnosis shows a fungal infection with medium severity, 
+                including information about the cause, solution, and prevention tips.
+              </p>
+            </div>
+            
             <CareTimeline plant={plant} />
           </CardContent>
         </Card>
