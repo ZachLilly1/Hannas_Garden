@@ -3,8 +3,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { InsertPlant } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from "@/components/ui/breadcrumb";
-import { HomeIcon } from "lucide-react";
 
 export default function PlantIdentifierPage() {
   const { toast } = useToast();
@@ -41,22 +39,6 @@ export default function PlantIdentifierPage() {
 
   return (
     <div className="container px-4 py-8 max-w-7xl mx-auto">
-      <Breadcrumb className="mb-6">
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/">
-            <HomeIcon className="h-4 w-4 mr-1" />
-            Home
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/tools">
-            Tools
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbItem>
-          <span>Plant Identifier</span>
-        </BreadcrumbItem>
-      </Breadcrumb>
     
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Plant Identifier</h1>
