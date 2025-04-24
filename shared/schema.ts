@@ -149,7 +149,7 @@ export const insertReminderSchema = createInsertSchema(reminders).omit({
 
 // Enum-like constants
 export const SUNLIGHT_LEVELS = ['low', 'medium', 'high'] as const;
-export const CARE_TYPES = ['water', 'fertilize', 'repot', 'prune', 'other'] as const;
+export const CARE_TYPES = ['water', 'fertilize', 'repot', 'prune', 'health_check', 'other'] as const;
 export const PLANT_STATUSES = ['healthy', 'needs_water', 'needs_fertilizer', 'unhealthy'] as const;
 export const REMINDER_STATUSES = ['pending', 'completed', 'dismissed'] as const;
 

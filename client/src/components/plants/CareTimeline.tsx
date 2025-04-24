@@ -3,7 +3,10 @@ import {
   HistoryIcon, 
   WaterDropIcon, 
   SeedlingIcon, 
-  SunIcon 
+  SunIcon,
+  LeafIcon,
+  ActivityIcon,
+  AlertIcon
 } from "@/lib/icons";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -46,7 +49,7 @@ export function CareTimeline({ plant }: CareTimelineProps) {
     }
   }, [plant.id]);
 
-  const getCareIcon = (careType: string) => {
+  const getCareIcon = (careType: string, healthSeverity?: string) => {
     switch (careType) {
       case 'water':
         return <WaterDropIcon className="h-4 w-4 text-blue-500" />;
@@ -56,12 +59,20 @@ export function CareTimeline({ plant }: CareTimelineProps) {
         return <SunIcon className="h-4 w-4 text-amber-500" />;
       case 'prune':
         return <HistoryIcon className="h-4 w-4 text-purple-500" />;
+      case 'health_check':
+        if (healthSeverity === 'high') {
+          return <AlertIcon className="h-4 w-4 text-red-500" />;
+        } else if (healthSeverity === 'medium') {
+          return <ActivityIcon className="h-4 w-4 text-amber-500" />;
+        } else {
+          return <LeafIcon className="h-4 w-4 text-blue-500" />;
+        }
       default:
         return <HistoryIcon className="h-4 w-4 text-neutral-dark" />;
     }
   };
 
-  const getCareTypeColor = (careType: string) => {
+  const getCareTypeColor = (careType: string, healthSeverity?: string) => {
     switch (careType) {
       case 'water':
         return 'bg-blue-100 text-blue-800';
@@ -71,6 +82,14 @@ export function CareTimeline({ plant }: CareTimelineProps) {
         return 'bg-amber-100 text-amber-800';
       case 'prune':
         return 'bg-purple-100 text-purple-800';
+      case 'health_check':
+        if (healthSeverity === 'high') {
+          return 'bg-red-100 text-red-800';
+        } else if (healthSeverity === 'medium') {
+          return 'bg-amber-100 text-amber-800';
+        } else {
+          return 'bg-blue-100 text-blue-800';
+        }
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -148,9 +167,27 @@ export function CareTimeline({ plant }: CareTimelineProps) {
             )}
             
             <div className="flex items-start space-x-3">
-              <div className={`p-2 rounded-full ${getCareTypeColor(log.careType)} flex-shrink-0 z-10`}>
-                {getCareIcon(log.careType)}
-              </div>
+              {/* Get health severity if this is a health check log */}
+              {(() => {
+                let healthSeverity = undefined;
+                if (log.careType === 'health_check' && log.metadata) {
+                  try {
+                    const metadata = typeof log.metadata === 'string' 
+                      ? JSON.parse(log.metadata) 
+                      : log.metadata;
+                    
+                    healthSeverity = metadata.healthDiagnosis?.severity;
+                  } catch (e) {
+                    console.error('Failed to parse health metadata:', e);
+                  }
+                }
+                
+                return (
+                  <div className={`p-2 rounded-full ${getCareTypeColor(log.careType, healthSeverity)} flex-shrink-0 z-10`}>
+                    {getCareIcon(log.careType, healthSeverity)}
+                  </div>
+                );
+              })()}
               
               <div className="pt-1">
                 <div className="flex items-center">
@@ -165,6 +202,35 @@ export function CareTimeline({ plant }: CareTimelineProps) {
                 {log.notes && (
                   <p className="text-sm mt-1 text-neutral-dark">{log.notes}</p>
                 )}
+                
+                {/* Display health diagnosis information if available */}
+                {log.careType === 'health_check' && log.metadata && (() => {
+                  try {
+                    const metadata = typeof log.metadata === 'string' 
+                      ? JSON.parse(log.metadata) 
+                      : log.metadata;
+                    
+                    if (metadata.healthDiagnosis) {
+                      const diagnosis = metadata.healthDiagnosis;
+                      return (
+                        <div className={`mt-2 p-2 rounded-lg text-sm border ${
+                          diagnosis.severity === 'high' 
+                            ? 'border-red-300 bg-red-50 text-red-800' 
+                            : diagnosis.severity === 'medium'
+                              ? 'border-amber-300 bg-amber-50 text-amber-800'
+                              : 'border-blue-300 bg-blue-50 text-blue-800'
+                        }`}>
+                          <div className="font-medium">{diagnosis.issue}</div>
+                          <p className="text-xs mt-1"><strong>Cause:</strong> {diagnosis.cause}</p>
+                          <p className="text-xs mt-1"><strong>Solution:</strong> {diagnosis.solution}</p>
+                        </div>
+                      );
+                    }
+                  } catch (e) {
+                    console.error('Failed to parse health diagnosis:', e);
+                  }
+                  return null;
+                })()}
                 
                 {log.photo && (
                   <div 
