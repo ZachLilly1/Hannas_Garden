@@ -9,6 +9,10 @@ import { loginSchema, User as SelectUser } from "@shared/schema";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
 
+// Define SessionStore type
+type SessionStore = session.Store;
+type MemoryStore = session.MemoryStore;
+
 declare global {
   namespace Express {
     interface User extends SelectUser {}
@@ -19,11 +23,22 @@ const scryptAsync = promisify(scrypt);
 
 // PostgreSQL session store
 const PgSession = connectPgSimple(session);
-const pgSessionStore = new PgSession({
-  pool,
-  tableName: 'user_sessions', // Custom session table name
-  createTableIfMissing: true
-});
+let pgSessionStore: session.Store;
+
+try {
+  pgSessionStore = new PgSession({
+    pool,
+    tableName: 'user_sessions', // Custom session table name
+    createTableIfMissing: true
+  });
+  console.log('PostgreSQL session store initialized successfully');
+} catch (error) {
+  console.error('Error initializing PostgreSQL session store:', error);
+  // Fallback to memory store if PostgreSQL store fails
+  const MemoryStore = session.MemoryStore;
+  pgSessionStore = new MemoryStore();
+  console.log('Fallback to memory session store');
+}
 
 // Hash password for secure storage
 export async function hashPassword(password: string): Promise<string> {
@@ -72,7 +87,20 @@ export function setupAuth(app: Express) {
 
   // Setup middleware
   app.set("trust proxy", 1);
-  app.use(session(sessionSettings));
+  
+  // Add error handling for session middleware
+  app.use((req, res, next) => {
+    session(sessionSettings)(req, res, (err) => {
+      if (err) {
+        console.error('Session middleware error:', err);
+        // Continue without a session in case of error
+        next();
+      } else {
+        next();
+      }
+    });
+  });
+  
   app.use(passport.initialize());
   app.use(passport.session());
 
