@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { type PlantWithCare, userProfileSchema } from "@shared/schema";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
@@ -64,6 +65,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function Profile() {
   const { user, logout, updateProfile } = useAuth();
+  const { isDarkMode, toggleDarkMode } = useTheme();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -384,7 +386,10 @@ export default function Profile() {
               <p className="font-medium">Dark Mode</p>
               <p className="text-sm text-muted-foreground">Switch between light and dark theme</p>
             </div>
-            <Switch />
+            <Switch 
+              checked={isDarkMode} 
+              onCheckedChange={toggleDarkMode}
+            />
           </div>
           
           <Separator />
