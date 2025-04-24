@@ -158,12 +158,6 @@ export function PlantIdentifier({ onAddToCollection }: {
   return (
     <div className="w-full max-w-2xl mx-auto">
       <Card className="shadow-md">
-        <CardHeader>
-          <CardTitle className="text-xl md:text-2xl font-bold">Plant Identifier</CardTitle>
-          <CardDescription>
-            Take or upload a photo of a plant to identify it and get care recommendations
-          </CardDescription>
-        </CardHeader>
         
         <CardContent className="space-y-4">
           {/* Hidden file input */}
