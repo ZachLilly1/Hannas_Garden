@@ -273,7 +273,9 @@ export function CareTimeline({ plant }: CareTimelineProps) {
                       };
                       
                       // Get the severity or default to 'low'
-                      const severityKey: SeverityLevel = diagnosis.severity || 'low';
+                      const severityKey: SeverityLevel = diagnosis.severity && ['low', 'medium', 'high'].includes(diagnosis.severity) 
+                        ? diagnosis.severity as SeverityLevel
+                        : 'low';
                       const colors = severityColors[severityKey];
                       
                       return (
@@ -284,7 +286,9 @@ export function CareTimeline({ plant }: CareTimelineProps) {
                               {diagnosis.issue}
                             </div>
                             <Badge className={`${colors.badge} text-xs`}>
-                              {diagnosis.severity.charAt(0).toUpperCase() + diagnosis.severity.slice(1)} Severity
+                              {diagnosis.severity && typeof diagnosis.severity === 'string' 
+                                ? diagnosis.severity.charAt(0).toUpperCase() + diagnosis.severity.slice(1) 
+                                : 'Medium'} Severity
                             </Badge>
                           </div>
                           
@@ -314,7 +318,9 @@ export function CareTimeline({ plant }: CareTimelineProps) {
                               <div className="flex items-center">
                                 <span className={`inline-block w-2 h-2 rounded-full ${colors.dot} mr-1.5`}></span>
                                 <span className={colors.text}>
-                                  Confidence: {diagnosis.confidenceLevel.charAt(0).toUpperCase() + diagnosis.confidenceLevel.slice(1)}
+                                  Confidence: {diagnosis.confidenceLevel && typeof diagnosis.confidenceLevel === 'string'
+                                    ? diagnosis.confidenceLevel.charAt(0).toUpperCase() + diagnosis.confidenceLevel.slice(1)
+                                    : 'Medium'}
                                 </span>
                               </div>
                             </div>
