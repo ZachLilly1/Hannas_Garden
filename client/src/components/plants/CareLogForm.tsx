@@ -4,10 +4,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { type InsertCareLog, CARE_TYPES } from '@shared/schema';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { CameraIcon } from '@/lib/icons';
+import { CameraIcon, LeafIcon } from '@/lib/icons';
 import { apiRequest } from '@/lib/queryClient';
 import { toast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
+import { Spinner } from '@/components/ui/spinner';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { PlantHealthDiagnosis } from '@/types/plant-health';
 
 interface CareLogFormProps {
   plantId: number;
@@ -19,6 +22,8 @@ export function CareLogForm({ plantId, onSuccess }: CareLogFormProps) {
   const [notes, setNotes] = useState('');
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [healthDiagnosis, setHealthDiagnosis] = useState<PlantHealthDiagnosis | null>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
