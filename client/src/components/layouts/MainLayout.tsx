@@ -8,6 +8,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { SimpleViewToggle } from "@/components/ui/view-toggle";
 import SearchModal from "@/components/search/SearchModal";
+import NotificationsModal from "@/components/notifications/NotificationsModal";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -17,6 +18,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const [location] = useLocation();
   const [isAddPlantModalOpen, setIsAddPlantModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
   const { isDarkMode } = useTheme();
   const { OnboardingComponent } = useOnboarding();
 
@@ -59,7 +61,11 @@ export function MainLayout({ children }: MainLayoutProps) {
             >
               <SearchIcon className="h-5 w-5 text-neutral-dark dark:text-gray-300" />
             </button>
-            <button className="p-2 rounded-full hover:bg-neutral-medium dark:hover:bg-gray-700 transition">
+            <button 
+              onClick={() => setIsNotificationsModalOpen(true)}
+              className="p-2 rounded-full hover:bg-neutral-medium dark:hover:bg-gray-700 transition"
+              aria-label="Notifications"
+            >
               <BellIcon className="h-5 w-5 text-neutral-dark dark:text-gray-300" />
             </button>
           </div>
@@ -87,6 +93,12 @@ export function MainLayout({ children }: MainLayoutProps) {
       <SearchModal 
         isOpen={isSearchModalOpen} 
         onClose={() => setIsSearchModalOpen(false)} 
+      />
+      
+      {/* Notifications Modal */}
+      <NotificationsModal 
+        isOpen={isNotificationsModalOpen} 
+        onClose={() => setIsNotificationsModalOpen(false)} 
       />
     </div>
   );
