@@ -45,7 +45,7 @@ export function BottomNavigation({ onAddPlant }: BottomNavigationProps) {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white shadow-lg rounded-t-xl border-t border-neutral-medium z-20">
+    <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white dark:bg-gray-800 shadow-lg rounded-t-xl border-t border-neutral-medium dark:border-gray-700 z-20">
       <div className="flex justify-around py-2 px-3">
         {navItems.map((item, index) => {
           // Special case for the Add button
@@ -69,7 +69,9 @@ export function BottomNavigation({ onAddPlant }: BottomNavigationProps) {
                 <div
                   className={cn(
                     "flex flex-col items-center p-2 cursor-pointer",
-                    isActive ? "text-primary" : "text-neutral-dark opacity-60"
+                    isActive 
+                      ? "text-primary" 
+                      : "text-neutral-dark dark:text-gray-400 opacity-60"
                   )}
                 >
                   {item.icon}

@@ -4,11 +4,13 @@ import { PlantCard } from "@/components/plants/PlantCard";
 import PlantGridView from "@/components/plants/PlantGridView";
 import { PlantDetailModal } from "@/components/plants/PlantDetailModal";
 import { AddPlantModal } from "@/components/plants/AddPlantModal";
-import { SortIcon } from "@/lib/icons";
+import { SortIcon, WaterDropIcon } from "@/lib/icons";
 import { usePlants } from "@/context/PlantContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Button } from "@/components/ui/button";
 import { ViewToggle } from "@/components/ui/view-toggle";
+import { CalendarIcon } from "lucide-react";
+import { getStatusColor, formatRelativeDate } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -144,7 +146,59 @@ export default function Plants() {
         ) : (
           // Plants list/grid view
           viewMode === 'grid' ? (
-            <PlantGridView />
+            <div className="grid grid-cols-2 gap-4">
+              {filteredPlants.map((plant) => (
+                <div key={plant.id} className="plant-grid-item">
+                  {/* Use the same component from PlantGridView but pass filtered plants */}
+                  <div 
+                    onClick={() => openPlantDetail(plant)}
+                    className="rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col"
+                  >
+                    {/* Status indicator */}
+                    <div className={`h-1 ${getStatusColor(plant.status)} w-full`}></div>
+                    
+                    {/* Image */}
+                    <div className="h-32 bg-neutral-100 dark:bg-gray-700 relative">
+                      {plant.image ? (
+                        <img 
+                          src={plant.image} 
+                          alt={plant.name} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-neutral-400 dark:text-gray-500">
+                          No Image
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="p-3 flex flex-col flex-1">
+                      <h3 className="font-medium text-sm mb-1 truncate dark:text-white">{plant.name}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 italic mb-2 truncate">{plant.type}</p>
+                      
+                      <div className="mt-auto space-y-1">
+                        {/* Watering info */}
+                        <div className="flex items-center text-xs">
+                          <WaterDropIcon className="h-3 w-3 text-blue-500 mr-1" />
+                          <span className="text-gray-600 dark:text-gray-300">
+                            {plant.nextWatering ? formatRelativeDate(plant.nextWatering) : 'Not set'}
+                          </span>
+                        </div>
+                        
+                        {/* Location */}
+                        <div className="flex items-center text-xs">
+                          <CalendarIcon className="h-3 w-3 text-gray-500 mr-1" />
+                          <span className="text-gray-600 dark:text-gray-300">
+                            {plant.location}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="space-y-4">
               {filteredPlants.map((plant) => (
