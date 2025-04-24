@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
@@ -7,10 +7,14 @@ export function useOnboarding() {
   const { user, isAuthenticated } = useAuth();
   const { isOnboarding } = useTheme();
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const onboardingShown = useRef(false);
   
-  // Show onboarding modal when user is logged in and hasn't completed onboarding
+  // Show onboarding modal only once when user is logged in and hasn't completed onboarding
   useEffect(() => {
-    if (isAuthenticated && user && isOnboarding) {
+    if (isAuthenticated && user && isOnboarding && !onboardingShown.current) {
+      // Mark as shown to prevent multiple occurrences
+      onboardingShown.current = true;
+      
       // Add a small delay to avoid showing the modal immediately on login
       const timer = setTimeout(() => {
         setShowOnboarding(true);
