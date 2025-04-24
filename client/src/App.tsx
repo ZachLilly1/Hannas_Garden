@@ -17,6 +17,7 @@ import Tools from "@/pages/tools";
 import LightMeterPage from "@/pages/light-meter";
 import PlantIdentifierPage from "@/pages/tools/plant-identifier";
 import PlantHealthDiagnosticPage from "@/pages/tools/plant-health-diagnostic";
+import PersonalizedAdvicePage from "@/pages/tools/personalized-advice";
 import HealthDiagnosisDemo from "@/pages/health-diagnosis-demo";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
