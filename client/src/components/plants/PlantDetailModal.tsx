@@ -392,7 +392,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="text-xs whitespace-nowrap"
+                      className="text-xs sm:whitespace-nowrap"
                       onClick={() => setShowLogCareForm(true)}
                     >
                       <CameraIcon className="h-3 w-3 mr-1" />
@@ -430,7 +430,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="text-xs whitespace-nowrap"
+                      className="text-xs sm:whitespace-nowrap"
                       onClick={() => setShowReminderForm(true)}
                     >
                       <BellIcon className="h-3 w-3 mr-1" />
