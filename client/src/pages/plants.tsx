@@ -69,6 +69,28 @@ export default function Plants() {
           />
         </div>
         
+        {/* Quick access tools section */}
+        <div className="mb-4 grid grid-cols-3 gap-2">
+          <Link href="/tools/plant-identifier">
+            <div className="flex flex-col items-center bg-emerald-50 dark:bg-emerald-900/30 p-3 rounded-lg">
+              <CameraIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mb-1" />
+              <span className="text-xs text-center">Identify Plant</span>
+            </div>
+          </Link>
+          <Link href="/tools/plant-health-diagnostic">
+            <div className="flex flex-col items-center bg-amber-50 dark:bg-amber-900/30 p-3 rounded-lg">
+              <LeafIcon className="h-5 w-5 text-amber-600 dark:text-amber-400 mb-1" />
+              <span className="text-xs text-center">Health Check</span>
+            </div>
+          </Link>
+          <Link href="/tools/light-meter">
+            <div className="flex flex-col items-center bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg">
+              <SunIcon className="h-5 w-5 text-blue-600 dark:text-blue-400 mb-1" />
+              <span className="text-xs text-center">Light Meter</span>
+            </div>
+          </Link>
+        </div>
+        
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-medium dark:text-white">All Plants</h2>
           <div className="flex items-center gap-2">
