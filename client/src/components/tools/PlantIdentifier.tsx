@@ -72,6 +72,8 @@ export function PlantIdentifier({ onAddToCollection }: {
   // Handle camera capture on mobile
   const handleCameraCapture = () => {
     if (fileInputRef.current) {
+      // Setting capture attribute dynamically for camera
+      fileInputRef.current.setAttribute('capture', 'environment');
       fileInputRef.current.click();
     }
   };
@@ -79,6 +81,8 @@ export function PlantIdentifier({ onAddToCollection }: {
   // Handle upload button click
   const handleUploadClick = () => {
     if (fileInputRef.current) {
+      // Remove capture attribute to ensure gallery opens instead of camera
+      fileInputRef.current.removeAttribute('capture');
       fileInputRef.current.click();
     }
   };
@@ -169,7 +173,6 @@ export function PlantIdentifier({ onAddToCollection }: {
             accept="image/*"
             onChange={handleFileChange}
             className="hidden"
-            capture="environment"
           />
           
           {/* Image preview area */}
