@@ -55,7 +55,17 @@ app.use((req, res, next) => {
     await applyMigrations();
     log('Database migrations applied successfully');
   } catch (error) {
-    log(`Error applying migrations: ${error}`, 'error');
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log(`Error applying migrations: ${errorMessage}`, 'error');
+    
+    // Try to provide more specific error details
+    if (errorMessage.includes('connect')) {
+      log('Database connection error. Please check DATABASE_URL environment variable.', 'error');
+    } else if (errorMessage.includes('permission denied')) {
+      log('Database permission error. Please check database user permissions.', 'error');
+    } else if (errorMessage.includes('column') && errorMessage.includes('does not exist')) {
+      log('Schema mismatch error. The database schema needs to be updated.', 'error');
+    }
   }
 
   const server = await registerRoutes(app);
