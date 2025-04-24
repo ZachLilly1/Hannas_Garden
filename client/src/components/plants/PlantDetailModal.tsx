@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { 
@@ -50,6 +50,32 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
   const [showReminderForm, setShowReminderForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [careLogs, setCareLogs] = useState<CareLog[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+
+  // Fetch care logs when the plant detail modal is opened
+  useEffect(() => {
+    if (plant && isOpen) {
+      const fetchCareLogs = async () => {
+        try {
+          setIsLoadingLogs(true);
+          const response = await apiRequest('GET', `/api/plants/${plant.id}/care-logs`);
+          if (response.ok) {
+            const logs = await response.json();
+            if (Array.isArray(logs)) {
+              setCareLogs(logs);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching care logs:', error);
+        } finally {
+          setIsLoadingLogs(false);
+        }
+      };
+      
+      fetchCareLogs();
+    }
+  }, [plant, isOpen]);
 
   if (!plant) return null;
   
@@ -135,8 +161,24 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
   const sunlightStatus = getSunlightAdequacy();
   const sunlightAdequate = sunlightStatus === "Adequate";
 
-  const handleCareLogSuccess = () => {
+  const handleCareLogSuccess = async () => {
     setShowLogCareForm(false);
+    
+    // Refresh care logs
+    try {
+      setIsLoadingLogs(true);
+      const response = await apiRequest('GET', `/api/plants/${plant.id}/care-logs`);
+      if (response.ok) {
+        const logs = await response.json();
+        if (Array.isArray(logs)) {
+          setCareLogs(logs);
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing care logs:', error);
+    } finally {
+      setIsLoadingLogs(false);
+    }
   };
 
   return (
@@ -254,10 +296,15 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                 </TabsTrigger>
                 <TabsTrigger 
                   value="history" 
-                  className="flex-1 text-xs sm:text-sm data-[state=active]:bg-background dark:data-[state=active]:bg-background data-[state=active]:shadow-none px-1 sm:px-2"
+                  className="flex-1 text-xs sm:text-sm data-[state=active]:bg-background dark:data-[state=active]:bg-background data-[state=active]:shadow-none px-1 sm:px-2 relative"
                 >
                   <HistoryIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                   <span className="whitespace-nowrap overflow-hidden text-ellipsis">History</span>
+                  {careLogs.length > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-white">
+                      {careLogs.length > 99 ? '99+' : careLogs.length}
+                    </span>
+                  )}
                 </TabsTrigger>
                 <TabsTrigger 
                   value="reminders" 
@@ -353,6 +400,54 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                       )}
                     </div>
                   </div>
+                </div>
+
+                {/* Care History Summary */}
+                <div className="mt-6">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-medium mb-2">Recent Activity</h3>
+                    <button 
+                      className="text-xs text-primary flex items-center"
+                      onClick={() => setActiveTab("history")}
+                    >
+                      View all {careLogs.length > 0 ? `(${careLogs.length})` : ''}
+                      <svg className="h-3 w-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                  {careLogs.length > 0 ? (
+                    <div className="p-3 bg-muted/30 dark:bg-muted/10 rounded-lg mb-2">
+                      <div className="flex items-center text-sm text-neutral-dark">
+                        <HistoryIcon className="h-4 w-4 mr-2 text-primary" />
+                        <span>
+                          {careLogs.length === 1 
+                            ? '1 care activity logged'
+                            : `${careLogs.length} care activities logged`}
+                        </span>
+                      </div>
+                      {careLogs.length > 0 && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Last activity: {careLogs[0]?.timestamp 
+                            ? formatRelativeDate(new Date(careLogs[0].timestamp))
+                            : 'Unknown date'}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-muted/30 dark:bg-muted/10 rounded-lg text-center mb-2">
+                      <p className="text-sm text-neutral-dark opacity-70">No care activities logged yet</p>
+                      <button 
+                        className="text-xs text-primary mt-1"
+                        onClick={() => {
+                          setActiveTab("history");
+                          setShowLogCareForm(true);
+                        }}
+                      >
+                        Log your first care activity
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Care Tips */}

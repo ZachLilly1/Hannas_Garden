@@ -130,6 +130,15 @@ export function CareTimeline({ plant }: CareTimelineProps) {
 
   return (
     <div className="mt-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-medium flex items-center gap-1">
+          <HistoryIcon className="h-4 w-4 text-neutral-dark" />
+          <span>Care History</span>
+          <span className="ml-1.5 px-1.5 py-0.5 bg-primary bg-opacity-10 text-primary rounded-full text-xs">
+            {careLogs.length}
+          </span>
+        </h3>
+      </div>
       <div className="space-y-4">
         {sortedLogs.map((log, index) => (
           <div key={log.id} className="relative">
