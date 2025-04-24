@@ -13,6 +13,10 @@ export const users = pgTable("users", {
   preferredUnits: text("preferred_units").default("metric"),
   timezone: text("timezone").default("UTC"),
   notificationsEnabled: boolean("notifications_enabled").default(true),
+  onboardingCompleted: boolean("onboarding_completed").default(false),
+  prefersDarkMode: boolean("prefers_dark_mode").default(false),
+  viewPreference: text("view_preference").default("list"), // list or grid
+  weatherLocation: text("weather_location"), // For weather integration
   createdAt: timestamp("created_at").defaultNow(),
   lastLogin: timestamp("last_login"),
 });
@@ -41,6 +45,10 @@ export const userProfileSchema = createInsertSchema(users).pick({
   timezone: true,
   notificationsEnabled: true,
   avatarUrl: true,
+  prefersDarkMode: true,
+  viewPreference: true,
+  weatherLocation: true,
+  onboardingCompleted: true,
 });
 
 // Plant schema
