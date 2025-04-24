@@ -129,10 +129,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!validation.success) return;
     
     const userId = req.user!.id;
-    const plantData: InsertPlant = {
-      ...validation.data,
-      userId
-    };
+    
+    // Get plant guide data for this plant type if it exists
+    let plantData = { ...validation.data, userId };
+    const plantGuide = await storage.getPlantGuideByType(validation.data.type);
+    
+    // If we have a guide for this plant type, use its recommended frequencies
+    // unless they were explicitly provided in the request
+    if (plantGuide) {
+      if (!validation.data.waterFrequency) {
+        plantData.waterFrequency = plantGuide.idealWaterFrequency;
+      }
+      
+      if (!validation.data.fertilizerFrequency) {
+        plantData.fertilizerFrequency = plantGuide.idealFertilizerFrequency;
+      }
+      
+      if (!validation.data.sunlightLevel) {
+        plantData.sunlightLevel = plantGuide.idealSunlight;
+      }
+      
+      // Add guide information to notes if not already specified
+      if (!validation.data.notes) {
+        plantData.notes = `Scientific Name: ${plantGuide.plantType.charAt(0).toUpperCase() + plantGuide.plantType.slice(1)}\n\n${plantGuide.description}\n\nCare Tips: ${plantGuide.careTips}`;
+      }
+    }
     
     const plant = await storage.createPlant(plantData);
     
