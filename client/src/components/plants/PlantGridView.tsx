@@ -52,9 +52,9 @@ function PlantGridCard({ plant, onClick }: PlantGridCardProps) {
       
       {/* Image */}
       <div className="h-32 bg-neutral-100 dark:bg-gray-700 relative">
-        {plant.imageUrl ? (
+        {plant.image ? (
           <img 
-            src={plant.imageUrl} 
+            src={plant.image} 
             alt={plant.name} 
             className="w-full h-full object-cover"
           />
@@ -87,11 +87,11 @@ function PlantGridCard({ plant, onClick }: PlantGridCardProps) {
             </span>
           </div>
           
-          {/* Acquisition date */}
+          {/* Location */}
           <div className="flex items-center text-xs">
             <CalendarIcon className="h-3 w-3 text-gray-500 mr-1" />
             <span className="text-gray-600 dark:text-gray-300">
-              {plant.acquisitionDate ? formatRelativeDate(new Date(plant.acquisitionDate)) : 'Unknown'}
+              Location: {plant.location}
             </span>
           </div>
         </div>
