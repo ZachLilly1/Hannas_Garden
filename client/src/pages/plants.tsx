@@ -55,7 +55,7 @@ export default function Plants() {
   const filteredPlants = plants.filter(plant => 
     plant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     plant.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    plant.type.toLowerCase().includes(searchTerm.toLowerCase())
+    (plant.scientificName && plant.scientificName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
   
   return (
@@ -198,7 +198,9 @@ export default function Plants() {
                     {/* Content */}
                     <div className="p-3 flex flex-col flex-1">
                       <h3 className="font-medium text-sm mb-1 truncate dark:text-white">{plant.name}</h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 italic mb-2 truncate">{plant.type}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 italic mb-2 truncate">
+                        {plant.scientificName || "Plant"}
+                      </p>
                       
                       <div className="mt-auto space-y-1">
                         {/* Watering info */}
