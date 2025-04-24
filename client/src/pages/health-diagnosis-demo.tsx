@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { PlantWithCare } from '@shared/schema';
 import { CareTimeline } from '@/components/plants/CareTimeline';
-import { apiRequest } from '@/lib/queryClient';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { AlertCircle, Loader2, Plus, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * This is a demonstration page that shows how the health diagnosis appears

@@ -715,6 +715,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Demo routes - for development and testing only
+  apiRouter.post("/api/demo/health-diagnosis/:plantId", isAuthenticated, async (req, res) => {
+    // This endpoint creates a sample health diagnosis care log for demonstration purposes
+    const plantId = parseInt(req.params.plantId);
+    if (isNaN(plantId)) {
+      return res.status(400).json({ message: "Invalid plant ID" });
+    }
+    
+    // Get the plant to ensure it exists and belongs to the user
+    const plant = await storage.getPlant(plantId);
+    if (!plant) {
+      return res.status(404).json({ message: "Plant not found" });
+    }
+    
+    // Ensure the plant belongs to the authenticated user
+    if (plant.userId !== req.user!.id) {
+      return res.status(403).json({ message: "You don't have permission to access this plant" });
+    }
+    
+    // Sample health diagnosis data
+    const healthDiagnosis: PlantHealthDiagnosis = {
+      issue: "Leaf Yellowing with Brown Spots",
+      cause: "The yellowing leaves with brown spots indicate a fungal infection, likely caused by overwatering and poor air circulation around the plant.",
+      solution: "Trim affected leaves with clean, sterilized scissors. Reduce watering frequency and ensure the soil dries between waterings. Improve air circulation around the plant and avoid wetting the leaves when watering.",
+      preventionTips: [
+        "Water at the base of the plant, not from above",
+        "Ensure proper drainage in the pot",
+        "Maintain good air circulation around plants",
+        "Clean gardening tools between uses to prevent spreading infection"
+      ],
+      severity: "medium",
+      confidenceLevel: "high"
+    };
+    
+    try {
+      // Create the care log with health diagnosis data
+      const careLog = await storage.createCareLog({
+        plantId,
+        careType: 'health_check',
+        notes: 'Sample health check with diagnosis data for demonstration',
+        metadata: JSON.stringify({ healthDiagnosis })
+      });
+      
+      res.status(201).json({
+        message: "Sample health diagnosis created successfully",
+        careLog,
+        healthDiagnosis
+      });
+    } catch (error) {
+      console.error("Error creating sample health diagnosis:", error);
+      res.status(500).json({
+        message: "Failed to create sample health diagnosis",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
