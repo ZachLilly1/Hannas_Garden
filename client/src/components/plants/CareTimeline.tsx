@@ -170,6 +170,20 @@ export function CareTimeline({ plant }: CareTimelineProps) {
                       src={log.photo} 
                       alt={`Care log ${log.careType} photo`} 
                       className="w-full h-auto object-cover"
+                      onError={(e) => {
+                        // Replace broken image with fallback content
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.parentElement.innerHTML = `
+                          <div class="bg-neutral-light h-32 flex flex-col items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-neutral-dark opacity-40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                              <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            <p class="text-xs mt-2 text-neutral-dark opacity-70">Image unavailable</p>
+                          </div>
+                        `;
+                      }}
                     />
                     <div className="text-xs text-center py-1 bg-neutral-medium bg-opacity-30">
                       Click to enlarge
