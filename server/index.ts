@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
 import fs from "fs";
+import { applyMigrations } from "./migrations";
 
 const app = express();
 // Increase JSON payload size limit to 50MB for handling image data
@@ -49,6 +50,14 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Apply database migrations
+  try {
+    await applyMigrations();
+    log('Database migrations applied successfully');
+  } catch (error) {
+    log(`Error applying migrations: ${error}`, 'error');
+  }
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

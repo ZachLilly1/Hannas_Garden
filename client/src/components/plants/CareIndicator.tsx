@@ -102,7 +102,14 @@ export function CareIndicator({
           {getIcon()}
         </div>
       </div>
-      <span className={cn("text-xs", isUrgent ? "text-status-danger font-medium" : "")}>{label}</span>
+      <span className={cn(
+        "text-xs", 
+        isUrgent 
+          ? "text-status-danger dark:text-red-400 font-medium" 
+          : "dark:text-gray-300"
+      )}>
+        {label}
+      </span>
     </div>
   );
 }

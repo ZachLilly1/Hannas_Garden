@@ -55,17 +55,18 @@ export function getPlantStatus(plant: PlantWithCare): string {
   return plant.status || "healthy";
 }
 
-export function getStatusLabel(status: string): string {
+export function getStatusLabel(status: string | null): string {
   switch (status) {
     case "healthy": return "Healthy";
     case "needs_water": return "Needs Water";
     case "needs_fertilizer": return "Needs Fertilizer";
     case "unhealthy": return "Unhealthy";
-    default: return status;
+    case null: return "Healthy";
+    default: return status || "Healthy";
   }
 }
 
-export function getStatusColor(status: string): string {
+export function getStatusColor(status: string | null): string {
   switch (status) {
     case "healthy": return "text-status-success";
     case "needs_water": return "text-status-warning";
