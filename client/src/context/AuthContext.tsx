@@ -53,13 +53,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ['/api/auth/user'],
     queryFn: async () => {
       try {
-        const res = await apiRequest('GET', '/api/auth/user');
+        // Use fetch directly instead of apiRequest to handle 401 gracefully
+        const res = await fetch('/api/auth/user', {
+          credentials: 'include'
+        });
+        
         if (res.status === 401) {
+          // This is expected when not logged in, return null silently
           return null;
         }
+        
+        if (!res.ok) {
+          throw new Error(`Error ${res.status}: ${res.statusText}`);
+        }
+        
         return await res.json();
       } catch (err) {
-        console.error('Failed to fetch user:', err);
+        // Only log real errors, not 401s
+        if (!(err instanceof Error && err.message.includes('401'))) {
+          console.error('Failed to fetch user:', err);
+        }
         return null;
       }
     },
@@ -150,8 +163,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(['/api/auth/user'], null);
-      // Clear out any user-specific queries
-      queryClient.invalidateQueries();
+      // Clear out only user-specific queries
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey[0];
+          // Only invalidate api queries, not ui state queries
+          return typeof queryKey === 'string' && queryKey.startsWith('/api/');
+        }
+      });
       toast({
         title: "Logged out",
         description: "You have been logged out successfully",
