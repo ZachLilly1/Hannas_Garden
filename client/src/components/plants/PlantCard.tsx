@@ -112,6 +112,9 @@ export function PlantCard({ plant, onClick }: PlantCardProps) {
               <HeartPulseIcon className="h-3 w-3" /> {getStatusLabel(plant.status)}
             </span>
           </div>
+          <p className="text-xs text-neutral-dark dark:text-gray-400 italic mb-1">
+            {plant.scientificName || ""}
+          </p>
           <p className="text-xs text-neutral-dark dark:text-gray-400 opacity-70 mb-2">{plant.location}</p>
 
           {/* Plant Care Indicators */}

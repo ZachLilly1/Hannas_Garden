@@ -56,7 +56,7 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
   const formSchema = insertPlantSchema.extend({
     name: z.string().min(2, "Plant name must be at least 2 characters."),
     location: z.string().min(2, "Location must be at least 2 characters."),
-    type: z.string().min(1, "Please select a plant type."),
+    type: z.string().optional().default("identified"), // No longer required, using scientificName instead
     scientificName: z.string().nullable().optional(),
     sunlightLevel: z.string().min(1, "Please select a sunlight level."),
     waterFrequency: z.coerce.number().min(1, "Water frequency must be at least 1 day."),
@@ -68,7 +68,7 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
     resolver: zodResolver(formSchema),
     defaultValues: plantToEdit ? {
       name: plantToEdit.name,
-      type: plantToEdit.type,
+      type: plantToEdit.type || "identified", // Ensure type is always a string
       location: plantToEdit.location,
       scientificName: plantToEdit.scientificName,
       sunlightLevel: plantToEdit.sunlightLevel,
@@ -82,9 +82,9 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
       lastFertilized: plantToEdit.lastFertilized
     } : {
       name: "",
-      type: "",
+      type: "identified", // Default value, as plant type is now optional
       location: "",
-      scientificName: null,
+      scientificName: "",
       sunlightLevel: "medium",
       waterFrequency: 7,
       fertilizerFrequency: 30,
@@ -431,19 +431,27 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
                 )}
               />
               
-              {/* Scientific Name - hidden field that gets filled by identification */}
+              {/* Scientific Name - important field for identification */}
               <FormField
                 control={form.control}
                 name="scientificName"
                 render={({ field }) => (
-                  <input 
-                    type="hidden" 
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    value={field.value || ''}
-                    name={field.name}
-                    ref={field.ref}
-                  />
+                  <FormItem>
+                    <FormLabel>Scientific Name</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="e.g., Monstera deliciosa" 
+                        {...field} 
+                        value={field.value || ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                    {!field.value && identificationResult && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Scientific name will be filled automatically when you identify a plant.
+                      </p>
+                    )}
+                  </FormItem>
                 )}
               />
 
