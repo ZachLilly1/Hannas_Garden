@@ -531,7 +531,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const validation = validateRequest(insertReminderSchema, req, res);
     if (!validation.success) return;
     
-    const reminder = await storage.createReminder(validation.data);
+    // Ensure message is provided with a default if not present
+    const reminderData = {
+      ...validation.data,
+      message: validation.data.message || `Reminder for ${validation.data.title}`
+    };
+    
+    const reminder = await storage.createReminder(reminderData);
     res.status(201).json(reminder);
   });
   
