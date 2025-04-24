@@ -10,7 +10,17 @@ import { toast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import { Spinner } from '@/components/ui/spinner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { PlantHealthDiagnosis } from '@/types/plant-health';
+
+
+// Plant health diagnosis type definition
+interface PlantHealthDiagnosis {
+  issue: string;
+  cause: string;
+  solution: string;
+  preventionTips: string[];
+  severity: "low" | "medium" | "high";
+  confidenceLevel: "low" | "medium" | "high";
+}
 
 interface CareLogFormProps {
   plantId: number;
@@ -39,15 +49,51 @@ export function CareLogForm({ plantId, onSuccess }: CareLogFormProps) {
       }
 
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         const result = e.target?.result as string;
         if (result) {
           // Store base64 string without the prefix (data:image/jpeg;base64,)
           const base64Data = result.split(',')[1];
           setPhotoBase64(base64Data);
+          
+          // Analyze plant health with the photo if it's not a fertilizing or watering log
+          if (selectedCareType !== 'water' && selectedCareType !== 'fertilize') {
+            await analyzePlantHealth(base64Data);
+          }
         }
       };
       reader.readAsDataURL(file);
+    }
+  };
+  
+  const analyzePlantHealth = async (imageBase64: string) => {
+    try {
+      setIsAnalyzing(true);
+      setHealthDiagnosis(null);
+      
+      const response = await apiRequest('POST', '/api/diagnose-plant-health', { imageBase64 });
+      
+      if (!response.ok) {
+        throw new Error('Failed to analyze plant health');
+      }
+      
+      const diagnosis = await response.json();
+      setHealthDiagnosis(diagnosis);
+      
+      // Automatically add the diagnosis to notes if we got a result
+      if (diagnosis && diagnosis.issue) {
+        const healthNote = `Plant health analysis: ${diagnosis.issue} (${diagnosis.severity} severity). ${diagnosis.solution}`;
+        setNotes(notes ? `${notes}\n\n${healthNote}` : healthNote);
+      }
+    } catch (error) {
+      console.error('Error analyzing plant health:', error);
+      toast({
+        title: 'Plant analysis failed',
+        description: 'Could not analyze plant health from the image',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -180,6 +226,46 @@ export function CareLogForm({ plantId, onSuccess }: CareLogFormProps) {
         </div>
       </div>
 
+      {/* Plant Health Analysis Display */}
+      {isAnalyzing && (
+        <div className="flex flex-col items-center justify-center py-4">
+          <Spinner size="md" className="text-primary mb-2" />
+          <p className="text-sm text-muted-foreground">Analyzing plant health...</p>
+        </div>
+      )}
+
+      {healthDiagnosis && !isAnalyzing && (
+        <Alert className={healthDiagnosis.severity === 'high' ? 'border-red-500' : healthDiagnosis.severity === 'medium' ? 'border-amber-500' : 'border-blue-500'}>
+          <LeafIcon className="h-4 w-4 mr-2" />
+          <AlertTitle className="flex items-center gap-2">
+            Plant Health Issue Detected: {healthDiagnosis.issue}
+            <span className={`px-2 py-0.5 text-xs rounded-full ${
+              healthDiagnosis.severity === 'high' 
+                ? 'bg-destructive text-destructive-foreground' 
+                : healthDiagnosis.severity === 'medium' 
+                  ? 'bg-amber-500 text-white' 
+                  : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+            }`}>
+              {healthDiagnosis.severity.toUpperCase()} severity
+            </span>
+          </AlertTitle>
+          <AlertDescription className="mt-2">
+            <p className="mt-1"><strong>Cause:</strong> {healthDiagnosis.cause}</p>
+            <p className="mt-2"><strong>Solution:</strong> {healthDiagnosis.solution}</p>
+            {healthDiagnosis.preventionTips.length > 0 && (
+              <div className="mt-2">
+                <strong>Prevention Tips:</strong>
+                <ul className="list-disc pl-5 mt-1 text-sm">
+                  {healthDiagnosis.preventionTips.map((tip, index) => (
+                    <li key={index}>{tip}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? 'Logging care...' : 'Log Care'}
       </Button>
