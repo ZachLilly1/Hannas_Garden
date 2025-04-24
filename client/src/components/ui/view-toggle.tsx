@@ -14,7 +14,10 @@ export function ViewToggle() {
       type="single" 
       value={viewMode}
       onValueChange={(value) => {
-        if (value) setViewMode(value as 'list' | 'grid');
+        if (value && (value === 'list' || value === 'grid')) {
+          console.log("Setting view mode to:", value);
+          setViewMode(value as 'list' | 'grid');
+        }
       }}
       className="border rounded-lg"
     >
