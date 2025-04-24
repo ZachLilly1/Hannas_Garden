@@ -66,6 +66,30 @@ export async function applyMigrations() {
     `);
     console.log('Added weather_location column (if needed)');
 
+    // Create the session table if it doesn't exist
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "user_sessions" (
+        "sid" varchar NOT NULL COLLATE "default",
+        "sess" json NOT NULL,
+        "expire" timestamp(6) NOT NULL,
+        CONSTRAINT "user_sessions_pkey" PRIMARY KEY ("sid")
+      );
+    `);
+    console.log('Created session table (if needed)');
+
+    // Create index on session table if it doesn't exist
+    await db.execute(sql`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_user_sessions_expire'
+        ) THEN
+          CREATE INDEX "IDX_user_sessions_expire" ON "user_sessions" ("expire");
+        END IF;
+      END $$;
+    `);
+    console.log('Created session table index (if needed)');
+
     console.log('Database migrations completed successfully!');
   } catch (error) {
     console.error('Error applying migrations:', error);
