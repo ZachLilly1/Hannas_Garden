@@ -28,6 +28,11 @@ interface PlantHealthDiagnosis {
   confidenceLevel: ConfidenceLevel;
 }
 
+interface CareLogMetadata {
+  healthDiagnosis?: PlantHealthDiagnosis;
+  // Add other metadata properties as needed in the future
+}
+
 interface CareTimelineProps {
   plant: PlantWithCare;
 }
@@ -62,7 +67,7 @@ export function CareTimeline({ plant }: CareTimelineProps) {
     }
   }, [plant.id]);
 
-  const getCareIcon = (careType: string, healthSeverity?: string) => {
+  const getCareIcon = (careType: string, healthSeverity?: SeverityLevel) => {
     switch (careType) {
       case 'water':
         return <WaterDropIcon className="h-4 w-4 text-blue-500" />;
@@ -85,7 +90,7 @@ export function CareTimeline({ plant }: CareTimelineProps) {
     }
   };
 
-  const getCareTypeColor = (careType: string, healthSeverity?: string) => {
+  const getCareTypeColor = (careType: string, healthSeverity?: SeverityLevel) => {
     switch (careType) {
       case 'water':
         return 'bg-blue-100 text-blue-800';
@@ -188,14 +193,16 @@ export function CareTimeline({ plant }: CareTimelineProps) {
             <div className="flex items-start space-x-3">
               {/* Get health severity if this is a health check log */}
               {(() => {
-                let healthSeverity = undefined;
+                let healthSeverity: SeverityLevel | undefined = undefined;
                 if (log.careType === 'health_check' && log.metadata) {
                   try {
-                    const metadata = typeof log.metadata === 'string' 
+                    const metadata: CareLogMetadata = typeof log.metadata === 'string' 
                       ? JSON.parse(log.metadata) 
                       : log.metadata;
                     
-                    healthSeverity = metadata.healthDiagnosis?.severity;
+                    if (metadata.healthDiagnosis) {
+                      healthSeverity = metadata.healthDiagnosis.severity;
+                    }
                   } catch (e) {
                     console.error('Failed to parse health metadata:', e);
                   }
@@ -225,12 +232,12 @@ export function CareTimeline({ plant }: CareTimelineProps) {
                 {/* Display health diagnosis information if available */}
                 {log.careType === 'health_check' && log.metadata && (() => {
                   try {
-                    const metadata = typeof log.metadata === 'string' 
+                    const metadata: CareLogMetadata = typeof log.metadata === 'string' 
                       ? JSON.parse(log.metadata) 
                       : log.metadata;
                     
                     if (metadata.healthDiagnosis) {
-                      const diagnosis = metadata.healthDiagnosis as PlantHealthDiagnosis;
+                      const diagnosis: PlantHealthDiagnosis = metadata.healthDiagnosis;
                       
                       // Determine colors based on severity
                       type ColorSet = {
@@ -292,11 +299,11 @@ export function CareTimeline({ plant }: CareTimelineProps) {
                               <p className="text-xs mt-0.5">{diagnosis.solution}</p>
                             </div>
                             
-                            {diagnosis.preventionTips && diagnosis.preventionTips.length > 0 && (
+                            {diagnosis.preventionTips && Array.isArray(diagnosis.preventionTips) && diagnosis.preventionTips.length > 0 && (
                               <div className={`${colors.text}`}>
                                 <strong className="font-medium">Prevention Tips:</strong>
                                 <ul className="list-disc pl-5 text-xs mt-0.5 space-y-0.5">
-                                  {diagnosis.preventionTips.map((tip: string, i: number) => (
+                                  {diagnosis.preventionTips.map((tip, i) => (
                                     <li key={i}>{tip}</li>
                                   ))}
                                 </ul>
