@@ -1,11 +1,16 @@
-import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { Loader2, Camera, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { CameraIcon, LeafIcon } from "@/lib/icons";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "@/hooks/use-toast";
+import { Label } from "@/components/ui/label";
+import { PlantWithCare } from "@shared/schema";
 
+// Types for plant identification result from OpenAI
 interface PlantIdentificationResult {
   plantType: string;
   commonName: string;
@@ -19,261 +24,273 @@ interface PlantIdentificationResult {
   confidence: "high" | "medium" | "low";
 }
 
-export function PlantIdentifier() {
-  // State for image upload and identification
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [isIdentifying, setIsIdentifying] = useState(false);
-  const [identificationResult, setIdentificationResult] = useState<PlantIdentificationResult | null>(null);
+export function PlantIdentifier({ onAddToCollection }: { 
+  onAddToCollection?: (plant: Partial<PlantWithCare>) => void 
+}) {
+  const [image, setImage] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+  const { toast } = useToast();
+
+  // Clear the selected image
+  const clearImage = () => {
+    setImage(null);
+    setPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   // Handle image file selection
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      setImageFile(file);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 10MB",
+          variant: "destructive",
+        });
+        return;
+      }
       
-      // Create a preview URL
       const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          setSelectedImage(e.target.result as string);
-        }
+      
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        // Extract the base64 data part (remove the data:image/jpeg;base64, prefix)
+        const base64Data = base64String.split(',')[1];
+        setImage(base64Data);
+        setPreview(base64String);
       };
+      
       reader.readAsDataURL(file);
     }
   };
 
-  // Trigger file input click
-  const handleImageClick = () => {
-    // Allows user to choose between camera and gallery on mobile devices
-    fileInputRef.current?.click();
-  };
-  
-  // Reset the identification process
-  const resetIdentification = () => {
-    setSelectedImage(null);
-    setImageFile(null);
-    setIdentificationResult(null);
+  // Handle camera capture on mobile
+  const handleCameraCapture = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
-  // Identify plant using OpenAI
-  const identifyPlant = async () => {
-    if (!selectedImage) {
+  // Handle upload button click
+  const handleUploadClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // Mutation for identifying plants
+  const identifyMutation = useMutation({
+    mutationFn: async (imageBase64: string) => {
+      const res = await apiRequest('POST', '/api/identify-plant', { imageBase64 });
+      const data: PlantIdentificationResult = await res.json();
+      return data;
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Plant identified!",
+        description: `This appears to be a ${data.commonName} (${data.scientificName})`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Identification failed",
+        description: error.message || "Please try again with a clearer image",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Add the identified plant to the user's collection
+  const handleAddToCollection = () => {
+    if (!identifyMutation.data) return;
+    
+    const { commonName, scientificName, careRecommendations } = identifyMutation.data;
+    
+    const newPlant = {
+      name: commonName,
+      scientificName: scientificName,
+      type: identifyMutation.data.plantType,
+      waterFrequency: careRecommendations.waterFrequency,
+      fertilizerFrequency: careRecommendations.fertilizerFrequency,
+      sunlightLevel: careRecommendations.sunlightLevel,
+      notes: careRecommendations.additionalCare,
+      image: preview, // Use the preview image for the plant
+    };
+    
+    if (onAddToCollection) {
+      onAddToCollection(newPlant);
+    }
+  };
+
+  // Identify the plant from the image
+  const identifyPlant = () => {
+    if (!image) {
       toast({
         title: "No image selected",
-        description: "Please upload an image of your plant first.",
-        variant: "destructive"
+        description: "Please take or upload a photo of a plant first",
+        variant: "destructive",
       });
       return;
     }
-
-    try {
-      setIsIdentifying(true);
-      
-      // Extract base64 data from the data URL
-      const base64Data = selectedImage.split(',')[1];
-      
-      // Call the identification API
-      const response = await fetch('/api/identify-plant', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          imageBase64: base64Data
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Server returned ${response.status}: ${await response.text()}`);
-      }
-      
-      // Parse JSON response
-      const result = await response.json() as PlantIdentificationResult;
-      console.log("Plant identification result:", result);
-      
-      setIdentificationResult(result);
-      
-      toast({
-        title: "Plant identified!",
-        description: `Identified as ${result.commonName || 'Unknown plant'} with ${result.confidence || 'unknown'} confidence.`
-      });
-    } catch (error) {
-      console.error("Error identifying plant:", error);
-      let errorMessage = "Unable to identify the plant.";
-      
-      if (error instanceof Error) {
-        if (error.message.includes("entity too large")) {
-          errorMessage = "The image is too large. Please try with a smaller image or resize it.";
-        } else if (error.message.includes("NetworkError") || error.message.includes("Failed to fetch")) {
-          errorMessage = "Network connection issue. Please check your internet connection.";
-        } else if (error.message.includes("timeout")) {
-          errorMessage = "The request timed out. Please try with a smaller image or try again later.";
-        } else {
-          errorMessage = `${errorMessage} ${error.message}`;
-        }
-      }
-      
-      toast({
-        title: "Identification failed",
-        description: errorMessage,
-        variant: "destructive"
-      });
-    } finally {
-      setIsIdentifying(false);
-    }
+    
+    identifyMutation.mutate(image);
   };
 
-  // Get care icons based on level
-  const getCareLevelIcon = (level: string) => {
-    switch(level) {
-      case 'low':
-        return '😌 Low';
-      case 'medium':
-        return '😊 Medium';
-      case 'high':
-        return '😎 High';
-      default:
-        return '❓ Unknown';
+  // Helper function to get badge color based on confidence
+  const getConfidenceColor = (confidence: "high" | "medium" | "low") => {
+    switch (confidence) {
+      case "high": return "bg-green-100 text-green-800";
+      case "medium": return "bg-yellow-100 text-yellow-800";
+      case "low": return "bg-red-100 text-red-800";
+      default: return "";
     }
   };
 
   return (
-    <div>
-      <p className="text-sm mb-6">
-        Take or upload a photo of any plant to identify it and get detailed care instructions.
-      </p>
-      
-      <div className="mb-6">
-        <input 
-          type="file" 
-          ref={fileInputRef}
-          accept="image/*"
-          className="hidden"
-          onChange={handleImageChange}
-        />
+    <div className="w-full max-w-2xl mx-auto">
+      <Card className="shadow-md">
+        <CardHeader>
+          <CardTitle className="text-xl md:text-2xl font-bold">Plant Identifier</CardTitle>
+          <CardDescription>
+            Take or upload a photo of a plant to identify it and get care recommendations
+          </CardDescription>
+        </CardHeader>
         
-        {selectedImage ? (
-          <div className="mb-3">
-            <div className="h-56 rounded-lg relative overflow-hidden">
-              <img 
-                src={selectedImage}
-                alt="Selected plant" 
-                className="w-full h-full object-cover"
-              />
-              <div 
-                onClick={handleImageClick}
-                className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
-                <CameraIcon className="h-8 w-8 text-white mb-2" />
-                <p className="text-sm text-white">Change photo</p>
+        <CardContent className="space-y-4">
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="hidden"
+            capture="environment"
+          />
+          
+          {/* Image preview area */}
+          <div className="relative aspect-video w-full bg-zinc-100 dark:bg-zinc-800 rounded-lg overflow-hidden flex items-center justify-center">
+            {preview ? (
+              <>
+                <img
+                  src={preview}
+                  alt="Plant preview"
+                  className="h-full w-full object-contain"
+                />
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2 h-8 w-8 rounded-full"
+                  onClick={clearImage}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </>
+            ) : (
+              <div className="text-center p-8">
+                <div className="mx-auto h-12 w-12 text-muted-foreground mb-2">
+                  <Camera className="h-12 w-12" />
+                </div>
+                <p className="text-muted-foreground">
+                  No image selected
+                </p>
               </div>
-            </div>
+            )}
           </div>
-        ) : (
-          <>
-            <div 
-              onClick={handleImageClick}
-              className="h-56 bg-neutral-medium bg-opacity-30 rounded-lg flex flex-col items-center justify-center cursor-pointer relative overflow-hidden mb-3"
+          
+          {/* Camera/Upload buttons */}
+          <div className="flex gap-3 mt-4">
+            <Button 
+              variant="outline" 
+              className="flex-1" 
+              onClick={handleCameraCapture}
             >
-              <CameraIcon className="h-12 w-12 text-neutral-dark opacity-60 mb-2" />
-              <p className="text-neutral-dark opacity-70">Tap to take a photo</p>
-            </div>
-            
-            <div className="flex justify-center">
-              <Button
-                onClick={handleImageClick}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <CameraIcon className="h-5 w-5" />
-                Upload from Gallery
-              </Button>
-            </div>
-          </>
-        )}
-      </div>
-      
-      {selectedImage && !isIdentifying && !identificationResult && (
-        <div className="flex justify-center mb-6">
+              <Camera className="mr-2 h-4 w-4" />
+              Take Photo
+            </Button>
+            <Button 
+              variant="outline" 
+              className="flex-1" 
+              onClick={handleUploadClick}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Image
+            </Button>
+          </div>
+          
+          {/* Identification button */}
           <Button 
-            onClick={identifyPlant} 
-            size="lg"
-            className="flex items-center gap-2"
+            className="w-full mt-4"
+            onClick={identifyPlant}
+            disabled={!image || identifyMutation.isPending}
           >
-            <LeafIcon className="h-5 w-5" />
-            Identify Plant
+            {identifyMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Identifying...
+              </>
+            ) : "Identify Plant"}
           </Button>
-        </div>
-      )}
-      
-      {isIdentifying && (
-        <div className="mb-6 space-y-3">
-          <Progress value={66} className="h-2" />
-          <p className="text-sm text-center text-neutral-dark">
-            Identifying your plant... This may take a few seconds.
-          </p>
-        </div>
-      )}
-      
-      {identificationResult && (
-        <div className="space-y-4 mb-6">
-          <Card className="p-4 overflow-hidden">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
-              <div>
-                <h3 className="text-xl font-medium">{identificationResult.commonName}</h3>
-                <p className="text-sm text-neutral-dark italic">{identificationResult.scientificName}</p>
-                <p className="text-sm mt-1">Type: <span className="font-medium capitalize">{identificationResult.plantType}</span></p>
-              </div>
-              <Badge className="self-start sm:self-center" variant={
-                identificationResult.confidence === "high" ? "default" : 
-                identificationResult.confidence === "medium" ? "outline" : "secondary"
-              }>
-                {identificationResult.confidence} confidence
-              </Badge>
-            </div>
-            
-            <div className="mt-4">
-              <h4 className="font-medium mb-2">Care Instructions:</h4>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <p className="text-sm font-medium">Water</p>
-                  <p className="text-sm">Every {identificationResult.careRecommendations.waterFrequency} days</p>
+          
+          {/* Identification results */}
+          {identifyMutation.data && (
+            <div className="mt-6 rounded-lg border p-4 bg-background">
+              <div className="flex flex-col md:flex-row justify-between gap-4 items-start">
+                <div>
+                  <h3 className="text-lg font-semibold">{identifyMutation.data.commonName}</h3>
+                  <p className="text-sm text-muted-foreground italic">{identifyMutation.data.scientificName}</p>
                 </div>
-                <div className="p-3 bg-yellow-50 rounded-lg">
-                  <p className="text-sm font-medium">Sunlight</p>
-                  <p className="text-sm">{getCareLevelIcon(identificationResult.careRecommendations.sunlightLevel)}</p>
-                </div>
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <p className="text-sm font-medium">Fertilizer</p>
-                  <p className="text-sm">Every {identificationResult.careRecommendations.fertilizerFrequency} days</p>
-                </div>
-                <div className="p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
-                  <p className="text-sm font-medium">Plant Type</p>
-                  <p className="text-sm capitalize">{identificationResult.plantType}</p>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className={getConfidenceColor(identifyMutation.data.confidence)}>
+                    {identifyMutation.data.confidence.charAt(0).toUpperCase() + identifyMutation.data.confidence.slice(1)} confidence
+                  </Badge>
+                  <Badge variant="outline">
+                    {identifyMutation.data.plantType.charAt(0).toUpperCase() + identifyMutation.data.plantType.slice(1)}
+                  </Badge>
                 </div>
               </div>
               
-              <div className="mt-3 p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
-                <p className="text-sm font-medium">Additional Care Tips:</p>
-                <p className="text-sm mt-1">{identificationResult.careRecommendations.additionalCare}</p>
+              <Separator className="my-4" />
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <Label className="text-sm font-medium">Water Frequency</Label>
+                  <p className="mt-1">{identifyMutation.data.careRecommendations.waterFrequency} days</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Sunlight Needs</Label>
+                  <p className="mt-1 capitalize">{identifyMutation.data.careRecommendations.sunlightLevel}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Fertilize Frequency</Label>
+                  <p className="mt-1">{identifyMutation.data.careRecommendations.fertilizerFrequency} days</p>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium">Care Instructions</Label>
+                <p className="mt-1 text-sm whitespace-pre-line">{identifyMutation.data.careRecommendations.additionalCare}</p>
               </div>
             </div>
-            
-            <div className="mt-6 flex gap-3">
-              <Button 
-                onClick={resetIdentification}
-                variant="outline"
-                className="flex-1"
-              >
-                Identify Another Plant
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
+          )}
+        </CardContent>
+        
+        {identifyMutation.data && onAddToCollection && (
+          <CardFooter>
+            <Button 
+              onClick={handleAddToCollection} 
+              className="w-full"
+              variant="secondary"
+            >
+              Add to My Collection
+            </Button>
+          </CardFooter>
+        )}
+      </Card>
     </div>
   );
 }
-
-export default PlantIdentifier;
