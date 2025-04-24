@@ -163,7 +163,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
       </AlertDialog>
       
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="mx-auto p-0 rounded-xl overflow-y-auto overflow-x-hidden max-h-[90vh] w-[95vw] max-w-[450px]">
+        <DialogContent className="mx-auto p-0 rounded-xl overflow-y-auto overflow-x-hidden max-h-[90vh] w-[95vw] max-w-[450px] flex flex-col">
           <div className="h-64 relative">
             <img
               src={plant.image || getDefaultPlantImage(plant.type)}
@@ -179,16 +179,16 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
           </div>
 
           <div className="px-4 sm:px-6 py-5 w-full">
-            <div className="flex justify-between items-center mb-2">
-              <div className="flex flex-col">
-                <h2 className="text-xl font-medium truncate max-w-[80%]">{plant.name}</h2>
+            <div className="flex justify-between items-start mb-2 w-full">
+              <div className="flex flex-col max-w-[70%]">
+                <h2 className="text-xl font-medium break-words">{plant.name}</h2>
                 {plant.scientificName && (
-                  <p className="text-sm text-muted-foreground italic">
+                  <p className="text-sm text-muted-foreground italic break-words">
                     {plant.scientificName}
                   </p>
                 )}
               </div>
-              <div className="flex space-x-3">
+              <div className="flex space-x-3 flex-shrink-0">
                 <button 
                   className="text-neutral-dark opacity-70 hover:opacity-100"
                   onClick={() => onEdit(plant)}
