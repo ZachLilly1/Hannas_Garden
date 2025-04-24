@@ -118,6 +118,88 @@ export async function applyMigrations() {
     `);
     console.log('Added metadata column to care_logs table (if needed)');
 
+    // Add scientific_name column to plants table if it doesn't exist
+    await db.execute(sql`
+      DO $$ 
+      BEGIN 
+        IF NOT EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_name = 'plants' AND column_name = 'scientific_name'
+        ) THEN 
+          ALTER TABLE plants ADD COLUMN scientific_name TEXT;
+        END IF;
+      END $$;
+    `);
+    console.log('Added scientific_name column to plants table (if needed)');
+
+    // Make plant type optional if it's currently required
+    await db.execute(sql`
+      DO $$ 
+      BEGIN 
+        -- Check if the column exists
+        IF EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_name = 'plants' AND column_name = 'type'
+        ) THEN 
+          -- Try to modify constraint (will error if no constraint exists, but that's ok)
+          BEGIN
+            -- Drop NOT NULL constraint
+            ALTER TABLE plants ALTER COLUMN type DROP NOT NULL;
+            -- Set default value for existing null values
+            UPDATE plants SET type = 'identified' WHERE type IS NULL;
+          EXCEPTION WHEN OTHERS THEN
+            NULL; -- Do nothing if fails (likely no constraint existed)
+          END;
+        END IF;
+      END $$;
+    `);
+    console.log('Made plant type optional (if needed)');
+
+    // Add common_name and category columns to plant_guides table and convert from plant_type to scientific_name
+    await db.execute(sql`
+      DO $$ 
+      BEGIN 
+        -- Add common_name if it doesn't exist
+        IF NOT EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_name = 'plant_guides' AND column_name = 'common_name'
+        ) THEN 
+          ALTER TABLE plant_guides ADD COLUMN common_name TEXT;
+          -- Initialize with existing plant_type as fallback
+          UPDATE plant_guides SET common_name = plant_type WHERE common_name IS NULL;
+          -- Make it not null after populating
+          ALTER TABLE plant_guides ALTER COLUMN common_name SET NOT NULL;
+        END IF;
+
+        -- Add category if it doesn't exist
+        IF NOT EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_name = 'plant_guides' AND column_name = 'category'
+        ) THEN 
+          ALTER TABLE plant_guides ADD COLUMN category TEXT;
+          -- Initialize with plant_type as the category
+          UPDATE plant_guides SET category = plant_type WHERE category IS NULL;
+        END IF;
+
+        -- Add scientific_name if it doesn't exist
+        IF NOT EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_name = 'plant_guides' AND column_name = 'scientific_name'
+        ) THEN 
+          ALTER TABLE plant_guides ADD COLUMN scientific_name TEXT;
+          -- Initialize with plant_type as a temporary value since we don't have real scientific names yet
+          UPDATE plant_guides SET scientific_name = plant_type WHERE scientific_name IS NULL;
+          -- Create a unique constraint
+          BEGIN
+            ALTER TABLE plant_guides ADD CONSTRAINT unique_scientific_name UNIQUE (scientific_name);
+          EXCEPTION WHEN OTHERS THEN
+            NULL; -- Do nothing if fails (constraint might already exist)
+          END;
+        END IF;
+      END $$;
+    `);
+    console.log('Updated plant_guides table structure (if needed)');
+
     console.log('Database migrations completed successfully!');
   } catch (error) {
     console.error('Error applying migrations:', error);

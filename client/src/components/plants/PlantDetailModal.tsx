@@ -259,9 +259,11 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
             </div>
 
             <div className="flex mb-3 space-x-2 flex-wrap">
-              <Badge variant="outline" className="px-2 py-1 bg-muted/50 dark:bg-muted/20 rounded-full text-xs mb-1">
-                {plant.type.charAt(0).toUpperCase() + plant.type.slice(1)}
-              </Badge>
+              {plant.scientificName && (
+                <Badge variant="outline" className="px-2 py-1 bg-primary/10 dark:bg-primary/20 rounded-full text-xs mb-1">
+                  {plant.scientificName}
+                </Badge>
+              )}
               <Badge variant="outline" className="px-2 py-1 bg-muted/50 dark:bg-muted/20 rounded-full text-xs mb-1">
                 {plant.sunlightLevel.charAt(0).toUpperCase() + plant.sunlightLevel.slice(1)} Light
               </Badge>
@@ -286,7 +288,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
               <p className="text-sm text-muted-foreground mb-6 break-words whitespace-pre-line hyphens-auto overflow-wrap-anywhere text-wrap-pretty break-word">
                 {plant.notes 
                   ? plant.notes
-                  : (plant.guide?.description || `A beautiful ${plant.type} plant placed in ${plant.location}.`)}
+                  : (plant.guide?.description || `A beautiful plant placed in ${plant.location}.`)}
               </p>
             )}
 
