@@ -8,7 +8,12 @@ import {
   type InsertCareLog
 } from "@shared/schema";
 import { z } from "zod";
-import { identifyPlantFromImage, type PlantIdentificationResult } from "./services/openai";
+import { 
+  identifyPlantFromImage, 
+  diagnosePlantHealth,
+  type PlantIdentificationResult, 
+  type PlantHealthDiagnosis 
+} from "./services/openai";
 import fs from "fs";
 import path from "path";
 import { setupAuth, isAuthenticated, hashPassword } from "./auth";
@@ -628,6 +633,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error identifying plant:", error);
       res.status(500).json({
         message: "Failed to identify plant",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+  
+  // Plant health diagnostic route
+  apiRouter.post("/api/diagnose-plant-health", isAuthenticated, async (req, res) => {
+    try {
+      // Validate request
+      const diagnoseSchema = z.object({
+        imageBase64: z.string().min(1),
+      });
+      
+      const validation = validateRequest(diagnoseSchema, req, res);
+      if (!validation.success) return;
+      
+      // Extract base64 image data
+      const { imageBase64 } = validation.data;
+      
+      // Process with OpenAI
+      const result = await diagnosePlantHealth(imageBase64);
+      
+      // Return diagnosis results
+      res.json(result);
+    } catch (error) {
+      console.error("Error diagnosing plant health:", error);
+      res.status(500).json({
+        message: "Failed to diagnose plant health",
         error: error instanceof Error ? error.message : String(error),
       });
     }
