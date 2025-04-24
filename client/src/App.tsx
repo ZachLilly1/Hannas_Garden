@@ -7,7 +7,7 @@ import { PlantProvider } from "@/context/PlantContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import MainLayout from "@/components/layouts/MainLayout";
+import { MainLayout } from "@/components/layouts/MainLayout";
 import Dashboard from "@/pages/dashboard";
 import Plants from "@/pages/plants";
 import CareSchedule from "@/pages/care-schedule";
