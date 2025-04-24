@@ -387,6 +387,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     const careLogData = { ...validation.data };
     
+    // Extract any additional data from the request that might not be in the schema
+    const { healthDiagnosis } = req.body;
+    
+    // Handle health diagnosis data if provided
+    if (healthDiagnosis && careLogData.careType === 'health_check') {
+      try {
+        // Store the health diagnosis in the metadata field as JSON
+        careLogData.metadata = JSON.stringify({ healthDiagnosis });
+      } catch (error) {
+        console.error('Error processing health diagnosis data:', error);
+      }
+    }
+    
     // Handle photoBase64 if provided
     if (careLogData.photoBase64) {
       try {
