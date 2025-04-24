@@ -25,7 +25,8 @@ export function CareTimeline({ plant }: CareTimelineProps) {
     const fetchCareLogs = async () => {
       try {
         setIsLoading(true);
-        const logs = await apiRequest('GET', `/api/plants/${plant.id}/care-logs`);
+        const response = await apiRequest('GET', `/api/plants/${plant.id}/care-logs`);
+        const logs = await response.json();
         if (Array.isArray(logs)) {
           setCareLogs(logs);
         } else {

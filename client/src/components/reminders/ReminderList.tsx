@@ -155,7 +155,7 @@ export function ReminderList({ type, plantId, days = 7, onAddReminder }: Reminde
                 </div>
                 
                 {reminder.status === "pending" && (
-                  <div className="flex space-x-2">
+                  <div className="flex flex-col space-y-2">
                     <Button 
                       size="sm" 
                       variant="ghost" 
