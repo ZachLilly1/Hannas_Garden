@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="200" viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="300" height="200" fill="#FDFAF7"/>
+  
+  <!-- Calendar background -->
+  <rect x="60" y="40" width="180" height="140" rx="8" fill="white" stroke="#DDDDDD" stroke-width="2"/>
+  
+  <!-- Calendar header -->
+  <rect x="60" y="40" width="180" height="30" rx="8" fill="#5C9EAD"/>
+  <path d="M90 55H210" stroke="white" stroke-width="2" stroke-opacity="0.5"/>
+  
+  <!-- Calendar grid -->
+  <path d="M90 70L90 180" stroke="#EEEEEE" stroke-width="1"/>
+  <path d="M120 70L120 180" stroke="#EEEEEE" stroke-width="1"/>
+  <path d="M150 70L150 180" stroke="#EEEEEE" stroke-width="1"/>
+  <path d="M180 70L180 180" stroke="#EEEEEE" stroke-width="1"/>
+  <path d="M210 70L210 180" stroke="#EEEEEE" stroke-width="1"/>
+  
+  <path d="M60 100L240 100" stroke="#EEEEEE" stroke-width="1"/>
+  <path d="M60 130L240 130" stroke="#EEEEEE" stroke-width="1"/>
+  <path d="M60 160L240 160" stroke="#EEEEEE" stroke-width="1"/>
+  
+  <!-- Plant reminder markers -->
+  <circle cx="90" cy="85" r="12" fill="#FFF6E9" stroke="#FFBD69" stroke-width="2"/>
+  <path d="M85 85H95" stroke="#FFBD69" stroke-width="2"/>
+  <path d="M90 80V90" stroke="#FFBD69" stroke-width="2"/>
+  
+  <circle cx="180" cy="115" r="12" fill="#F7EBFF" stroke="#C490E4" stroke-width="2"/>
+  <path d="M175 115H185" stroke="#C490E4" stroke-width="2"/>
+  <path d="M180 110V120" stroke="#C490E4" stroke-width="2"/>
+  
+  <circle cx="120" cy="145" r="12" fill="#EAFBEA" stroke="#A0D5A7" stroke-width="2"/>
+  <path d="M115 145H125" stroke="#A0D5A7" stroke-width="2"/>
+  <path d="M120 140V150" stroke="#A0D5A7" stroke-width="2"/>
+  
+  <!-- Notification bell -->
+  <circle cx="225" cy="50" r="30" fill="#FFE9C8" fill-opacity="0.5"/>
+  <path d="M225 35V40" stroke="#FF8C68" stroke-width="2" stroke-linecap="round"/>
+  <path d="M215 55C215 45 218 40 225 40C232 40 235 45 235 55V60C235 60 240 65 240 70H210C210 65 215 60 215 60V55Z" stroke="#FF8C68" stroke-width="2"/>
+  <path d="M220 70C220 72.7614 222.239 75 225 75C227.761 75 230 72.7614 230 70" stroke="#FF8C68" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Weather sun/cloud -->
+  <circle cx="60" cy="40" r="25" fill="#FFEB7F" fill-opacity="0.4"/>
+  <circle cx="60" cy="40" r="15" fill="#FFEB7F"/>
+  
+  <path d="M240 170C250 170 260 160 250 150C260 140 245 135 235 145C225 135 210 145 220 160C210 170 230 180 240 170Z" fill="#EAFAFF"/>
+</svg>

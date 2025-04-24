@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="200" viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Garden background -->
+  <rect width="300" height="200" fill="#F7FDF8"/>
+  
+  <!-- Sun -->
+  <circle cx="250" cy="50" r="25" fill="#FFEB7F"/>
+  <circle cx="250" cy="50" r="35" fill="#FFEB7F" fill-opacity="0.3"/>
+  
+  <!-- Ground -->
+  <path d="M0 150C50 135 100 155 150 145C200 135 250 150 300 140V200H0V150Z" fill="#A0D5A7"/>
+  
+  <!-- House -->
+  <rect x="30" y="75" width="70" height="60" fill="#FFE9C8"/>
+  <path d="M20 75L65 40L110 75H20Z" fill="#F96E5B"/>
+  <rect x="55" y="100" width="20" height="35" fill="#5C9EAD"/>
+  
+  <!-- Various plants -->
+  <path d="M150 145C150 115 170 125 170 105C170 85 150 90 150 70" stroke="#2E8540" stroke-width="3"/>
+  <circle cx="150" cy="70" r="15" fill="#FF8C68"/>
+  
+  <path d="M190 145C190 125 180 115 190 95" stroke="#2E8540" stroke-width="3"/>
+  <path d="M190 95C180 85 200 75 190 65" stroke="#2E8540" stroke-width="2"/>
+  <path d="M190 95C200 85 185 75 195 65" stroke="#2E8540" stroke-width="2"/>
+  <circle cx="195" cy="65" r="8" fill="#FFB5E8"/>
+  <circle cx="185" cy="65" r="8" fill="#FFB5E8"/>
+  
+  <path d="M230 145C230 125 240 115 230 95" stroke="#2E8540" stroke-width="3"/>
+  <circle cx="230" cy="95" r="15" fill="#B5EAEA"/>
+  
+  <!-- Flower pot -->
+  <path d="M270 145L260 110H280L270 145Z" fill="#D7816A"/>
+  <path d="M270 110C270 95 260 100 260 85C260 70 270 75 270 60" stroke="#2E8540" stroke-width="3"/>
+  <circle cx="270" cy="60" r="12" fill="#FFDE7F"/>
+</svg>
