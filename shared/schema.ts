@@ -48,6 +48,7 @@ export const plants = pgTable("plants", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   type: text("type").notNull(),
+  scientificName: text("scientific_name"),  // Added scientific name field
   location: text("location").notNull(),
   image: text("image"),
   notes: text("notes"),
