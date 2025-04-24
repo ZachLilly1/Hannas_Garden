@@ -406,7 +406,14 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
                 control={form.control}
                 name="scientificName"
                 render={({ field }) => (
-                  <input type="hidden" {...field} />
+                  <input 
+                    type="hidden" 
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    value={field.value || ''}
+                    name={field.name}
+                    ref={field.ref}
+                  />
                 )}
               />
 
