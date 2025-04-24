@@ -1,11 +1,14 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PlantCard } from "@/components/plants/PlantCard";
+import PlantGridView from "@/components/plants/PlantGridView";
 import { PlantDetailModal } from "@/components/plants/PlantDetailModal";
 import { AddPlantModal } from "@/components/plants/AddPlantModal";
 import { SortIcon } from "@/lib/icons";
 import { usePlants } from "@/context/PlantContext";
+import { useTheme } from "@/context/ThemeContext";
 import { Button } from "@/components/ui/button";
+import { ViewToggle } from "@/components/ui/view-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
