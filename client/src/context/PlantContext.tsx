@@ -71,8 +71,13 @@ export function PlantProvider({ children }: { children: ReactNode }) {
           if (!b.nextWatering) return -1;
           return new Date(a.nextWatering).getTime() - new Date(b.nextWatering).getTime();
         });
-      case "type":
-        return sorted.sort((a, b) => a.type.localeCompare(b.type));
+      case "scientificName":
+        return sorted.sort((a, b) => {
+          // Handle null/undefined values
+          const aName = a.scientificName || "";
+          const bName = b.scientificName || "";
+          return aName.localeCompare(bName);
+        });
       default:
         return sorted;
     }
