@@ -66,6 +66,20 @@ export async function applyMigrations() {
     `);
     console.log('Added weather_location column (if needed)');
 
+    // Add bio column if it doesn't exist
+    await db.execute(sql`
+      DO $$ 
+      BEGIN 
+        IF NOT EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_name = 'users' AND column_name = 'bio'
+        ) THEN 
+          ALTER TABLE users ADD COLUMN bio TEXT;
+        END IF;
+      END $$;
+    `);
+    console.log('Added bio column (if needed)');
+
     // Create the session table if it doesn't exist
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS "user_sessions" (
