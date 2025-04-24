@@ -130,28 +130,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     const userId = req.user!.id;
     
-    // Get plant guide data for this plant type if it exists
     let plantData = { ...validation.data, userId };
-    const plantGuide = await storage.getPlantGuideByType(validation.data.type);
     
-    // If we have a guide for this plant type, use its recommended frequencies
-    // unless they were explicitly provided in the request
-    if (plantGuide) {
-      if (!validation.data.waterFrequency) {
-        plantData.waterFrequency = plantGuide.idealWaterFrequency;
-      }
-      
-      if (!validation.data.fertilizerFrequency) {
-        plantData.fertilizerFrequency = plantGuide.idealFertilizerFrequency;
-      }
-      
-      if (!validation.data.sunlightLevel) {
-        plantData.sunlightLevel = plantGuide.idealSunlight;
-      }
-      
-      // Add guide information to notes if not already specified
-      if (!validation.data.notes) {
-        plantData.notes = `Scientific Name: ${plantGuide.plantType.charAt(0).toUpperCase() + plantGuide.plantType.slice(1)}\n\n${plantGuide.description}\n\nCare Tips: ${plantGuide.careTips}`;
+    // Get species-specific care recommendations if scientific name is provided
+    if (validation.data.scientificName && !validation.data.notes) {
+      try {
+        // Get detailed care recommendations from OpenAI
+        const { getPlantCareRecommendations } = await import('./services/openai');
+        const careInfo = await getPlantCareRecommendations(validation.data.scientificName);
+        
+        // Only apply OpenAI recommendations if not explicitly provided in the request
+        if (!validation.data.waterFrequency) {
+          plantData.waterFrequency = careInfo.wateringGuidelines.frequency;
+        }
+        
+        if (!validation.data.fertilizerFrequency) {
+          plantData.fertilizerFrequency = careInfo.fertilizerGuidelines.frequency;
+        }
+        
+        if (!validation.data.sunlightLevel) {
+          plantData.sunlightLevel = careInfo.sunlightRequirements.level;
+        }
+        
+        // Create a detailed plant description
+        plantData.notes = `${careInfo.description}\n\n` +
+                          `Watering: ${careInfo.wateringGuidelines.notes}\n\n` +
+                          `Light: ${careInfo.sunlightRequirements.notes}\n\n` +
+                          `Fertilizing: ${careInfo.fertilizerGuidelines.notes}\n\n` +
+                          `Care Tips: ${careInfo.careTips}\n\n` +
+                          `Interesting Fact: ${careInfo.interestingFact}`;
+      } catch (error) {
+        console.error("Error getting care recommendations:", error);
+        // Continue with user-provided data if OpenAI recommendation fails
       }
     }
     
