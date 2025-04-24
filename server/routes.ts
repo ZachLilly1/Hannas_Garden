@@ -43,9 +43,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(req.user);
   });
   
-  apiRouter.patch("/api/auth/profile", isAuthenticated, async (req, res) => {
+  apiRouter.put("/api/auth/profile", isAuthenticated, async (req, res) => {
     const userId = req.user!.id;
-    const { displayName, email, preferredUnits, timezone, notificationsEnabled } = req.body;
+    const { displayName, email, preferredUnits, timezone, notificationsEnabled, avatarUrl } = req.body;
     
     // Only allow these fields to be updated
     const updateData: any = {};
@@ -54,6 +54,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (preferredUnits !== undefined) updateData.preferredUnits = preferredUnits;
     if (timezone !== undefined) updateData.timezone = timezone;
     if (notificationsEnabled !== undefined) updateData.notificationsEnabled = notificationsEnabled;
+    if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
     
     try {
       const updatedUser = await storage.updateUserProfile(userId, updateData);
