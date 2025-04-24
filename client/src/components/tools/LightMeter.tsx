@@ -64,10 +64,8 @@ export function LightMeter() {
     };
   }, [stream]);
   
-  // Start camera automatically on load
-  useEffect(() => {
-    startCamera();
-  }, []);
+  // Do not start camera automatically on load
+  // Camera will only be started when user clicks the button
 
   // Start camera access
   const startCamera = async () => {
@@ -243,17 +241,15 @@ export function LightMeter() {
               <div className="w-full h-full flex flex-col items-center justify-center">
                 <CameraIcon className="h-12 w-12 text-neutral-dark opacity-60 mb-2" />
                 <p className="text-neutral-dark opacity-70 text-center px-4">
-                  {!errorMessage ? "Starting camera..." : "Camera access needed. Tap to try again."}
+                  Click the button below to start the camera and measure light levels
                 </p>
-                {!isCameraActive && errorMessage && (
-                  <Button
-                    onClick={startCamera}
-                    className="mt-4"
-                    variant="outline"
-                  >
-                    Try Again
-                  </Button>
-                )}
+                <Button
+                  onClick={startCamera}
+                  className="mt-4"
+                  variant="outline"
+                >
+                  Start Camera
+                </Button>
               </div>
             )}
           </div>
