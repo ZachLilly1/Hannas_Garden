@@ -84,7 +84,7 @@ export default function HealthDiagnosisDemo() {
         <Card>
           <CardHeader>
             <CardTitle>{plant.name}</CardTitle>
-            <CardDescription>{plant.species || 'No species information'}</CardDescription>
+            <CardDescription>{plant.type || 'No plant type information'}</CardDescription>
           </CardHeader>
           <CardContent>
             <h3 className="font-medium text-lg mb-4">Care Timeline with Health Diagnosis</h3>
