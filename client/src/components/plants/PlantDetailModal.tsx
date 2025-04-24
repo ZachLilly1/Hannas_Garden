@@ -179,8 +179,15 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
           </div>
 
           <div className="px-4 sm:px-6 py-5 w-full">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-xl font-medium truncate max-w-[80%]">{plant.name}</h2>
+            <div className="flex justify-between items-center mb-2">
+              <div className="flex flex-col">
+                <h2 className="text-xl font-medium truncate max-w-[80%]">{plant.name}</h2>
+                {plant.scientificName && (
+                  <p className="text-sm text-muted-foreground italic">
+                    {plant.scientificName}
+                  </p>
+                )}
+              </div>
               <div className="flex space-x-3">
                 <button 
                   className="text-neutral-dark opacity-70 hover:opacity-100"
@@ -217,15 +224,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
               )}
             </div>
             
-            {/* Extract the scientific name from notes if it exists */}
-            {plant.notes && plant.notes.includes("Scientific Name:") ? (
-              <div className="text-sm italic text-neutral-dark mb-2 break-words">
-                <span className="font-medium block mb-1">Scientific Name:</span> 
-                <span className="hyphens-auto overflow-wrap-anywhere inline-block text-wrap-balance break-word">
-                  {plant.notes.split("Scientific Name:")[1].split("\n")[0].trim()}
-                </span>
-              </div>
-            ) : null}
+            {/* Scientific name is now displayed in the header */}
 
             {/* Extract and display care tips if they exist in notes */}
             {plant.notes && plant.notes.includes("Care Tips:") ? (
