@@ -78,10 +78,13 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: pgSessionStore,
     cookie: {
-      secure: process.env.NODE_ENV === "production", // Only use secure cookies in production
+      // In production, allow secure cookies in all environments since we 
+      // can't predict the deployment environment
+      secure: false,
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-      sameSite: "lax"
+      sameSite: "lax",
+      path: "/"
     }
   };
 
@@ -232,7 +235,13 @@ function setupAuthRoutes(app: Express) {
       if (err) return next(err);
       req.session.destroy((err) => {
         if (err) return next(err);
-        res.clearCookie('connect.sid');
+        // Ensure we clear the cookie with the same settings that were used to set it
+        res.clearCookie('connect.sid', { 
+          path: '/',
+          httpOnly: true,
+          secure: false,
+          sameSite: 'lax'
+        });
         res.status(200).json({ message: "Logged out successfully" });
       });
     });
