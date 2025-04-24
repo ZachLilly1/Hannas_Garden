@@ -57,7 +57,9 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   private defaultGuides: InsertPlantGuide[] = [
     {
-      plantType: "tropical",
+      scientificName: "Monstera deliciosa",
+      commonName: "Swiss Cheese Plant",
+      category: "tropical",
       description: "Tropical plants thrive in warm, humid environments, native to regions near the equator. Interesting fact: Many tropical houseplants, like Pothos, can actually cleanse the air of certain toxins!",
       careTips: "Keep soil evenly moist but not soggy. Provide high humidity with regular misting or a humidifier. Protect from cold drafts and temperature below 65°F (18°C). Rotate regularly to ensure even growth.",
       idealWaterFrequency: 7,
@@ -65,7 +67,9 @@ export class DatabaseStorage implements IStorage {
       idealFertilizerFrequency: 30
     },
     {
-      plantType: "succulent",
+      scientificName: "Echeveria elegans",
+      commonName: "Mexican Snowball",
+      category: "succulent",
       description: "Succulents store water in their fleshy leaves, stems, or roots, and are drought-tolerant. Interesting fact: Some succulents can survive for months or even years without water by using their stored reserves!",
       careTips: "Allow soil to dry completely between waterings - overwatering is the #1 killer of succulents. Provide bright, direct light for at least 6 hours daily. Use well-draining cactus/succulent soil mix. Water less in winter.",
       idealWaterFrequency: 14,
@@ -73,7 +77,9 @@ export class DatabaseStorage implements IStorage {
       idealFertilizerFrequency: 90
     },
     {
-      plantType: "herb",
+      scientificName: "Ocimum basilicum",
+      commonName: "Sweet Basil",
+      category: "herb",
       description: "Culinary herbs are aromatic plants used for flavoring food and many have medicinal properties. Interesting fact: Regular harvesting of herbs actually encourages new growth, making your plant bushier and more productive!",
       careTips: "Most herbs need at least 6 hours of direct sunlight daily. Use well-draining soil and water when the top inch feels dry. Pinch off flowers to encourage leaf growth. Harvest in the morning when essential oils are strongest.",
       idealWaterFrequency: 3,
@@ -81,7 +87,9 @@ export class DatabaseStorage implements IStorage {
       idealFertilizerFrequency: 21
     },
     {
-      plantType: "flowering",
+      scientificName: "Phalaenopsis amabilis",
+      commonName: "Moth Orchid",
+      category: "flowering",
       description: "Flowering plants produce blooms that add color and sometimes fragrance to your space. Interesting fact: Many flowering plants have evolved their colors, patterns and scents specifically to attract certain pollinators!",
       careTips: "Most flowering plants need direct morning sun and regular watering when the top inch of soil feels dry. Deadhead spent flowers to encourage more blooms. Fertilize weekly during blooming season with a phosphorus-rich fertilizer.",
       idealWaterFrequency: 5,
@@ -89,7 +97,9 @@ export class DatabaseStorage implements IStorage {
       idealFertilizerFrequency: 14
     },
     {
-      plantType: "fern",
+      scientificName: "Nephrolepis exaltata",
+      commonName: "Boston Fern",
+      category: "fern",
       description: "Ferns are ancient plants that reproduce via spores and typically love shady, humid environments. Interesting fact: Ferns are one of Earth's oldest plant groups, with fossil records dating back over 360 million years!",
       careTips: "Keep soil consistently moist but not waterlogged. Provide high humidity (60%+) through misting, humidifiers, or pebble trays. Protect from direct sunlight and drafts. Remove any brown fronds at the base.",
       idealWaterFrequency: 3,
@@ -97,7 +107,9 @@ export class DatabaseStorage implements IStorage {
       idealFertilizerFrequency: 30
     },
     {
-      plantType: "other",
+      scientificName: "Hedera helix",
+      commonName: "English Ivy",
+      category: "other",
       description: "This category includes specialized plants like English Ivy, palms, and other unique species. Interesting fact: Plants like English Ivy are excellent climbers that can attach to surfaces using tiny root-like structures called holdfasts!",
       careTips: "Research your specific plant variety for precise care. Generally, check soil moisture before watering and adjust light levels based on leaf color. Watch for pest issues on the undersides of leaves. Trim damaged foliage promptly.",
       idealWaterFrequency: 5,
@@ -308,78 +320,90 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(plantGuides);
   }
 
-  async getPlantGuideByType(plantType: string): Promise<PlantGuide | undefined> {
-    // First, try to find by plant type
-    const [guide] = await db
+  async getPlantGuideByType(plantIdentifier: string): Promise<PlantGuide | undefined> {
+    if (!plantIdentifier) return undefined;
+    
+    // First, try to find by scientific name exact match
+    let [guide] = await db
       .select()
       .from(plantGuides)
-      .where(eq(plantGuides.plantType, plantType));
+      .where(eq(plantGuides.scientificName, plantIdentifier));
     
     if (guide) return guide;
     
-    // If no guide found by type, try to match based on keywords in the scientific name
-    if (plantType.toLowerCase().includes("monstera") || 
-        plantType.toLowerCase().includes("philodendron") || 
-        plantType.toLowerCase().includes("palm")) {
-      const [tropicalGuide] = await db
+    // Next, try to find by category (formerly plant type)
+    [guide] = await db
+      .select()
+      .from(plantGuides)
+      .where(eq(plantGuides.category, plantIdentifier));
+    
+    if (guide) return guide;
+    
+    // If no guide found yet, try to match based on keywords in the identifier
+    const identifierLower = plantIdentifier.toLowerCase();
+    
+    if (identifierLower.includes("monstera") || 
+        identifierLower.includes("philodendron") || 
+        identifierLower.includes("palm")) {
+      [guide] = await db
         .select()
         .from(plantGuides)
-        .where(eq(plantGuides.plantType, "tropical"));
-      return tropicalGuide;
+        .where(eq(plantGuides.category, "tropical"));
+      if (guide) return guide;
     }
     
-    if (plantType.toLowerCase().includes("cactus") || 
-        plantType.toLowerCase().includes("succulent") || 
-        plantType.toLowerCase().includes("aloe") || 
-        plantType.toLowerCase().includes("echeveria")) {
-      const [succulentGuide] = await db
+    if (identifierLower.includes("cactus") || 
+        identifierLower.includes("succulent") || 
+        identifierLower.includes("aloe") || 
+        identifierLower.includes("echeveria")) {
+      [guide] = await db
         .select()
         .from(plantGuides)
-        .where(eq(plantGuides.plantType, "succulent"));
-      return succulentGuide;
+        .where(eq(plantGuides.category, "succulent"));
+      if (guide) return guide;
     }
     
-    if (plantType.toLowerCase().includes("herb") || 
-        plantType.toLowerCase().includes("mint") || 
-        plantType.toLowerCase().includes("basil") || 
-        plantType.toLowerCase().includes("thyme") || 
-        plantType.toLowerCase().includes("rosemary") || 
-        plantType.toLowerCase().includes("sage")) {
-      const [herbGuide] = await db
+    if (identifierLower.includes("herb") || 
+        identifierLower.includes("mint") || 
+        identifierLower.includes("basil") || 
+        identifierLower.includes("thyme") || 
+        identifierLower.includes("rosemary") || 
+        identifierLower.includes("sage")) {
+      [guide] = await db
         .select()
         .from(plantGuides)
-        .where(eq(plantGuides.plantType, "herb"));
-      return herbGuide;
+        .where(eq(plantGuides.category, "herb"));
+      if (guide) return guide;
     }
     
-    if (plantType.toLowerCase().includes("flower") || 
-        plantType.toLowerCase().includes("rosa") || 
-        plantType.toLowerCase().includes("tulip") || 
-        plantType.toLowerCase().includes("lily") || 
-        plantType.toLowerCase().includes("orchid")) {
-      const [floweringGuide] = await db
+    if (identifierLower.includes("flower") || 
+        identifierLower.includes("rosa") || 
+        identifierLower.includes("tulip") || 
+        identifierLower.includes("lily") || 
+        identifierLower.includes("orchid")) {
+      [guide] = await db
         .select()
         .from(plantGuides)
-        .where(eq(plantGuides.plantType, "flowering"));
-      return floweringGuide;
+        .where(eq(plantGuides.category, "flowering"));
+      if (guide) return guide;
     }
     
-    if (plantType.toLowerCase().includes("fern") || 
-        plantType.toLowerCase().includes("nephrolepis") || 
-        plantType.toLowerCase().includes("pteridophyta")) {
-      const [fernGuide] = await db
+    if (identifierLower.includes("fern") || 
+        identifierLower.includes("nephrolepis") || 
+        identifierLower.includes("pteridophyta")) {
+      [guide] = await db
         .select()
         .from(plantGuides)
-        .where(eq(plantGuides.plantType, "fern"));
-      return fernGuide;
+        .where(eq(plantGuides.category, "fern"));
+      if (guide) return guide;
     }
     
     // Default fallback to the "other" plant guide
-    const [otherGuide] = await db
+    [guide] = await db
       .select()
       .from(plantGuides)
-      .where(eq(plantGuides.plantType, "other"));
-    return otherGuide;
+      .where(eq(plantGuides.category, "other"));
+    return guide;
   }
 
   async createPlantGuide(guideData: InsertPlantGuide): Promise<PlantGuide> {
@@ -504,12 +528,13 @@ export class DatabaseStorage implements IStorage {
     // Convert string date to Date object for database
     const dbReminderData = {
       ...reminderData,
-      dueDate: new Date(reminderData.dueDate)
+      // Convert string date to Date object if it's a string, otherwise use as is (should be a Date)
+      dueDate: typeof reminderData.dueDate === 'string' ? new Date(reminderData.dueDate) : reminderData.dueDate
     };
     
     const [reminder] = await db
       .insert(reminders)
-      .values(dbReminderData)
+      .values(dbReminderData as any) // Using type assertion to bypass type check
       .returning();
     return reminder;
   }
@@ -517,13 +542,13 @@ export class DatabaseStorage implements IStorage {
   async updateReminder(id: number, data: Partial<InsertReminder>): Promise<Reminder | undefined> {
     // Handle date conversion if dueDate is included
     const dbData = { ...data };
-    if (dbData.dueDate) {
-      dbData.dueDate = new Date(dbData.dueDate);
+    if (dbData.dueDate && typeof dbData.dueDate === 'string') {
+      dbData.dueDate = new Date(dbData.dueDate) as any; // Using type assertion to bypass type check
     }
     
     const [updatedReminder] = await db
       .update(reminders)
-      .set(dbData)
+      .set(dbData as any) // Using type assertion to bypass type check
       .where(eq(reminders.id, id))
       .returning();
     return updatedReminder || undefined;
