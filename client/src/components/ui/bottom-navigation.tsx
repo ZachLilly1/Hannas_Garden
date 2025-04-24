@@ -33,9 +33,9 @@ export function BottomNavigation({ onAddPlant }: BottomNavigationProps) {
       icon: <PlusIcon className="text-lg" />,
     },
     {
-      href: "/guides",
-      label: "Guides",
-      icon: <BookIcon className="text-lg" />,
+      href: "/profile",
+      label: "Profile",
+      icon: <UserIcon className="text-lg" />,
     },
     {
       href: "/tools",
