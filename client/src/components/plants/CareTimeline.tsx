@@ -15,6 +15,19 @@ import { type CareLog, type PlantWithCare } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// Type definitions for health diagnosis
+type SeverityLevel = 'high' | 'medium' | 'low';
+type ConfidenceLevel = 'high' | 'medium' | 'low';
+
+interface PlantHealthDiagnosis {
+  issue: string;
+  cause: string;
+  solution: string;
+  preventionTips: string[];
+  severity: SeverityLevel;
+  confidenceLevel: ConfidenceLevel;
+}
+
 interface CareTimelineProps {
   plant: PlantWithCare;
 }
@@ -96,6 +109,12 @@ export function CareTimeline({ plant }: CareTimelineProps) {
   };
 
   const formatCareType = (careType: string) => {
+    // Handle special case for health_check
+    if (careType === 'health_check') {
+      return 'Health Check';
+    }
+    
+    // Handle other care types with simple capitalization
     return careType.charAt(0).toUpperCase() + careType.slice(1);
   };
 
@@ -211,18 +230,88 @@ export function CareTimeline({ plant }: CareTimelineProps) {
                       : log.metadata;
                     
                     if (metadata.healthDiagnosis) {
-                      const diagnosis = metadata.healthDiagnosis;
+                      const diagnosis = metadata.healthDiagnosis as PlantHealthDiagnosis;
+                      
+                      // Determine colors based on severity
+                      type ColorSet = {
+                        border: string;
+                        bg: string;
+                        text: string;
+                        badge: string;
+                        dot: string;
+                      };
+                      
+                      const severityColors: Record<SeverityLevel, ColorSet> = {
+                        high: {
+                          border: 'border-red-300',
+                          bg: 'bg-red-50',
+                          text: 'text-red-800',
+                          badge: 'bg-red-500 text-white',
+                          dot: 'bg-red-500'
+                        },
+                        medium: {
+                          border: 'border-amber-300',
+                          bg: 'bg-amber-50', 
+                          text: 'text-amber-800',
+                          badge: 'bg-amber-500 text-white',
+                          dot: 'bg-amber-500'
+                        },
+                        low: {
+                          border: 'border-blue-300',
+                          bg: 'bg-blue-50',
+                          text: 'text-blue-800',
+                          badge: 'bg-blue-500 text-white',
+                          dot: 'bg-blue-500'
+                        }
+                      };
+                      
+                      // Get the severity or default to 'low'
+                      const severityKey: SeverityLevel = diagnosis.severity || 'low';
+                      const colors = severityColors[severityKey];
+                      
                       return (
-                        <div className={`mt-2 p-2 rounded-lg text-sm border ${
-                          diagnosis.severity === 'high' 
-                            ? 'border-red-300 bg-red-50 text-red-800' 
-                            : diagnosis.severity === 'medium'
-                              ? 'border-amber-300 bg-amber-50 text-amber-800'
-                              : 'border-blue-300 bg-blue-50 text-blue-800'
-                        }`}>
-                          <div className="font-medium">{diagnosis.issue}</div>
-                          <p className="text-xs mt-1"><strong>Cause:</strong> {diagnosis.cause}</p>
-                          <p className="text-xs mt-1"><strong>Solution:</strong> {diagnosis.solution}</p>
+                        <div className={`mt-2 p-3 rounded-lg text-sm border ${colors.border} ${colors.bg}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="font-medium text-base flex items-center">
+                              <AlertIcon className="w-4 h-4 mr-1.5" />
+                              {diagnosis.issue}
+                            </div>
+                            <Badge className={`${colors.badge} text-xs`}>
+                              {diagnosis.severity.charAt(0).toUpperCase() + diagnosis.severity.slice(1)} Severity
+                            </Badge>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className={`${colors.text}`}>
+                              <strong className="font-medium">Cause:</strong> 
+                              <p className="text-xs mt-0.5">{diagnosis.cause}</p>
+                            </div>
+                            
+                            <div className={`${colors.text}`}>
+                              <strong className="font-medium">Solution:</strong> 
+                              <p className="text-xs mt-0.5">{diagnosis.solution}</p>
+                            </div>
+                            
+                            {diagnosis.preventionTips && diagnosis.preventionTips.length > 0 && (
+                              <div className={`${colors.text}`}>
+                                <strong className="font-medium">Prevention Tips:</strong>
+                                <ul className="list-disc pl-5 text-xs mt-0.5 space-y-0.5">
+                                  {diagnosis.preventionTips.map((tip: string, i: number) => (
+                                    <li key={i}>{tip}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            
+                            <div className="flex items-center justify-between text-xs pt-1">
+                              <div className="flex items-center">
+                                <span className={`inline-block w-2 h-2 rounded-full ${colors.dot} mr-1.5`}></span>
+                                <span className={colors.text}>
+                                  Confidence: {diagnosis.confidenceLevel.charAt(0).toUpperCase() + diagnosis.confidenceLevel.slice(1)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       );
                     }
