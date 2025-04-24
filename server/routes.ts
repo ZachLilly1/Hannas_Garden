@@ -11,8 +11,27 @@ import { z } from "zod";
 import { 
   identifyPlantFromImage, 
   diagnosePlantHealth,
+  getPersonalizedPlantAdvice,
+  getSeasonalCareRecommendations,
+  getPlantArrangementSuggestions,
+  generateJournalEntry,
+  analyzeGrowthProgression,
+  getPlantCareAnswer,
+  generateOptimizedCareSchedule,
+  generateCommunityInsights,
   type PlantIdentificationResult, 
-  type PlantHealthDiagnosis 
+  type PlantHealthDiagnosis,
+  type PersonalizedAdvice,
+  type SeasonalCareGuide,
+  type ArrangementSuggestion,
+  type EnhancedJournalEntry,
+  type GrowthAnalysis,
+  type PlantCareAnswer,
+  type OptimizedCareSchedule,
+  type CommunityInsight,
+  type UserEnvironment,
+  type UserSchedule,
+  type AnonymizedCareLog
 } from "./services/openai";
 import fs from "fs";
 import path from "path";
@@ -788,6 +807,333 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error creating sample health diagnosis:", error);
       res.status(500).json({
         message: "Failed to create sample health diagnosis",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // ===== NEW AI-POWERED FEATURES =====
+
+  // 1. Personalized Plant Advice
+  apiRouter.post("/api/ai/personalized-advice/:plantId", isAuthenticated, async (req, res) => {
+    try {
+      const plantId = parseInt(req.params.plantId);
+      if (isNaN(plantId)) {
+        return res.status(400).json({ message: "Invalid plant ID" });
+      }
+
+      // Get the plant and ensure it belongs to the user
+      const plant = await storage.getPlant(plantId);
+      if (!plant) {
+        return res.status(404).json({ message: "Plant not found" });
+      }
+      if (plant.userId !== req.user!.id) {
+        return res.status(403).json({ message: "You don't have permission to access this plant" });
+      }
+
+      // Get recent care logs for the plant
+      const careLogs = await storage.getCareLogs(plantId);
+
+      // Parse user environment from request body
+      const userEnvironmentSchema = z.object({
+        location: z.string().optional(),
+        indoorTemperature: z.number().optional(),
+        humidity: z.number().optional(),
+        lightConditions: z.string().optional(),
+        averageWateringFrequency: z.number().optional()
+      });
+
+      const validation = validateRequest(userEnvironmentSchema, req, res);
+      if (!validation.success) return;
+
+      const userEnvironment: UserEnvironment = validation.data;
+
+      // Get personalized advice from OpenAI
+      const advice = await getPersonalizedPlantAdvice(plant, careLogs, userEnvironment);
+
+      res.json(advice);
+    } catch (error: any) {
+      console.error("Error getting personalized plant advice:", error);
+      res.status(500).json({
+        message: "Failed to get personalized plant advice",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // 2. Seasonal Care Recommendations
+  apiRouter.post("/api/ai/seasonal-recommendations", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+
+      // Get all user's plants
+      const plants = await storage.getPlants(userId);
+      if (plants.length === 0) {
+        return res.status(400).json({ message: "You need to have at least one plant to get seasonal recommendations" });
+      }
+
+      // Schema for request validation
+      const seasonalSchema = z.object({
+        location: z.string(),
+        season: z.string().optional()
+      });
+
+      const validation = validateRequest(seasonalSchema, req, res);
+      if (!validation.success) return;
+
+      // Get seasonal recommendations
+      const recommendations = await getSeasonalCareRecommendations(
+        plants,
+        validation.data.location,
+        validation.data.season
+      );
+
+      res.json(recommendations);
+    } catch (error: any) {
+      console.error("Error getting seasonal care recommendations:", error);
+      res.status(500).json({
+        message: "Failed to get seasonal care recommendations",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // 3. Plant Arrangement Suggestions
+  apiRouter.post("/api/ai/arrangement-suggestions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+
+      // Get user's plants
+      const plants = await storage.getPlants(userId);
+      if (plants.length < 2) {
+        return res.status(400).json({ 
+          message: "You need at least two plants to get arrangement suggestions" 
+        });
+      }
+
+      // Schema for request validation
+      const arrangementSchema = z.object({
+        spaceType: z.string(),
+        spaceSize: z.string(),
+        plantIds: z.array(z.number()).optional() // Optional array of plant IDs to include
+      });
+
+      const validation = validateRequest(arrangementSchema, req, res);
+      if (!validation.success) return;
+
+      // Filter plants if specific plant IDs were provided
+      let plantsToArrange = plants;
+      if (validation.data.plantIds && validation.data.plantIds.length > 0) {
+        plantsToArrange = plants.filter(plant => validation.data.plantIds!.includes(plant.id));
+        if (plantsToArrange.length < 2) {
+          return res.status(400).json({ 
+            message: "You need at least two valid plants to get arrangement suggestions" 
+          });
+        }
+      }
+
+      // Get arrangement suggestions
+      const suggestions = await getPlantArrangementSuggestions(
+        plantsToArrange,
+        validation.data.spaceType,
+        validation.data.spaceSize
+      );
+
+      res.json(suggestions);
+    } catch (error: any) {
+      console.error("Error getting plant arrangement suggestions:", error);
+      res.status(500).json({
+        message: "Failed to get plant arrangement suggestions",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // 4. AI Journal Entry Generation
+  apiRouter.post("/api/ai/journal-entry/:careLogId", isAuthenticated, async (req, res) => {
+    try {
+      const careLogId = parseInt(req.params.careLogId);
+      if (isNaN(careLogId)) {
+        return res.status(400).json({ message: "Invalid care log ID" });
+      }
+
+      // Get the care log
+      // Note: We would need to add a method to get a care log by ID to the storage interface
+      // For now, we'll get all logs for the plant and find the one we need
+      const plantId = parseInt(req.query.plantId as string);
+      if (isNaN(plantId)) {
+        return res.status(400).json({ message: "Plant ID is required" });
+      }
+
+      // Check if plant belongs to user
+      const plant = await storage.getPlant(plantId);
+      if (!plant) {
+        return res.status(404).json({ message: "Plant not found" });
+      }
+      if (plant.userId !== req.user!.id) {
+        return res.status(403).json({ message: "You don't have permission to access this plant" });
+      }
+
+      // Get care logs for the plant
+      const careLogs = await storage.getCareLogs(plantId);
+      const careLog = careLogs.find(log => log.id === careLogId);
+      if (!careLog) {
+        return res.status(404).json({ message: "Care log not found" });
+      }
+
+      // Generate enhanced journal entry
+      const journalEntry = await generateJournalEntry(careLog, plant);
+
+      res.json(journalEntry);
+    } catch (error: any) {
+      console.error("Error generating journal entry:", error);
+      res.status(500).json({
+        message: "Failed to generate journal entry",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // 5. Growth Analysis
+  apiRouter.post("/api/ai/growth-analysis/:plantId", isAuthenticated, async (req, res) => {
+    try {
+      const plantId = parseInt(req.params.plantId);
+      if (isNaN(plantId)) {
+        return res.status(400).json({ message: "Invalid plant ID" });
+      }
+
+      // Get the plant and ensure it belongs to the user
+      const plant = await storage.getPlant(plantId);
+      if (!plant) {
+        return res.status(404).json({ message: "Plant not found" });
+      }
+      if (plant.userId !== req.user!.id) {
+        return res.status(403).json({ message: "You don't have permission to access this plant" });
+      }
+
+      // Schema for request validation
+      const growthSchema = z.object({
+        imageHistory: z.array(z.string()).min(2)
+      });
+
+      const validation = validateRequest(growthSchema, req, res);
+      if (!validation.success) return;
+
+      // Analyze growth progression
+      const analysis = await analyzeGrowthProgression(validation.data.imageHistory, plant);
+
+      res.json(analysis);
+    } catch (error: any) {
+      console.error("Error analyzing growth progression:", error);
+      res.status(500).json({
+        message: "Failed to analyze growth progression",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // 6. Plant Care Q&A
+  apiRouter.post("/api/ai/plant-care-answer", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+
+      // Schema for request validation
+      const questionSchema = z.object({
+        question: z.string().min(5),
+        includePlantsContext: z.boolean().optional()
+      });
+
+      const validation = validateRequest(questionSchema, req, res);
+      if (!validation.success) return;
+
+      // Get user's plants if context is requested
+      let plantsContext = undefined;
+      if (validation.data.includePlantsContext) {
+        plantsContext = await storage.getPlants(userId);
+      }
+
+      // Get answer from OpenAI
+      const answer = await getPlantCareAnswer(validation.data.question, plantsContext);
+
+      res.json(answer);
+    } catch (error: any) {
+      console.error("Error getting plant care answer:", error);
+      res.status(500).json({
+        message: "Failed to get plant care answer",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // 7. Optimized Care Schedule
+  apiRouter.post("/api/ai/optimized-schedule", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+
+      // Get all user's plants
+      const plants = await storage.getPlants(userId);
+      if (plants.length === 0) {
+        return res.status(400).json({ message: "You need to have at least one plant to generate a care schedule" });
+      }
+
+      // Schema for request validation
+      const scheduleSchema = z.object({
+        weekdays: z.array(z.object({
+          day: z.string(),
+          availableTimeSlots: z.array(z.string())
+        })),
+        preferences: z.object({
+          preferredTime: z.string(),
+          maxDailyMinutes: z.number()
+        })
+      });
+
+      const validation = validateRequest(scheduleSchema, req, res);
+      if (!validation.success) return;
+
+      // Get optimized care schedule
+      const schedule = await generateOptimizedCareSchedule(plants, validation.data);
+
+      res.json(schedule);
+    } catch (error: any) {
+      console.error("Error generating optimized care schedule:", error);
+      res.status(500).json({
+        message: "Failed to generate optimized care schedule",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // 8. Community Insights
+  apiRouter.post("/api/ai/community-insights", isAuthenticated, async (req, res) => {
+    try {
+      // Schema for request validation
+      const insightsSchema = z.object({
+        plantType: z.string(),
+        anonymizedCareLogs: z.array(z.object({
+          plantType: z.string(),
+          scientificName: z.string(),
+          careType: z.string(),
+          frequency: z.number(),
+          success: z.boolean(),
+          notes: z.string().optional()
+        }))
+      });
+
+      const validation = validateRequest(insightsSchema, req, res);
+      if (!validation.success) return;
+
+      // Get community insights
+      const insights = await generateCommunityInsights(
+        validation.data.plantType,
+        validation.data.anonymizedCareLogs
+      );
+
+      res.json(insights);
+    } catch (error: any) {
+      console.error("Error generating community insights:", error);
+      res.status(500).json({
+        message: "Failed to generate community insights",
         error: error instanceof Error ? error.message : String(error)
       });
     }
