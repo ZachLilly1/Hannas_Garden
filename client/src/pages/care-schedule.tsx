@@ -71,7 +71,7 @@ export default function CareSchedule() {
     return (
       <div 
         key={`${plant.id}-${careType}`} 
-        className={`p-3 rounded-lg mb-2 flex items-center ${isUrgent ? 'bg-red-50' : 'bg-neutral-medium bg-opacity-30'}`}
+        className={`p-3 rounded-lg mb-2 flex items-center ${isUrgent ? 'bg-red-50 dark:bg-red-900/30' : 'bg-muted/50 dark:bg-muted/20'}`}
         onClick={() => openPlantDetail(plant)}
       >
         <div className="flex-shrink-0 mr-3">
@@ -82,9 +82,9 @@ export default function CareSchedule() {
         </div>
         <div className="flex-grow">
           <h3 className="font-medium">{plant.name}</h3>
-          <p className="text-xs text-neutral-dark opacity-70">{plant.location}</p>
+          <p className="text-xs text-muted-foreground">{plant.location}</p>
         </div>
-        <div className={`text-sm font-medium ${isUrgent ? 'text-status-danger' : ''}`}>
+        <div className={`text-sm font-medium ${isUrgent ? 'text-status-danger dark:text-red-400' : ''}`}>
           {statusText}
         </div>
       </div>
@@ -94,7 +94,7 @@ export default function CareSchedule() {
   // Skeleton loader for care items
   const renderSkeletonItems = (count: number) => {
     return Array.from({ length: count }).map((_, i) => (
-      <div key={i} className="p-3 rounded-lg mb-2 flex items-center bg-neutral-medium bg-opacity-30">
+      <div key={i} className="p-3 rounded-lg mb-2 flex items-center bg-muted/50 dark:bg-muted/20">
         <Skeleton className="w-10 h-10 rounded-full mr-3" />
         <div className="flex-grow">
           <Skeleton className="h-4 w-24 mb-1" />
@@ -126,7 +126,7 @@ export default function CareSchedule() {
               ) : wateringPlants.length === 0 ? (
                 <Card>
                   <CardContent className="p-4 text-center">
-                    <p className="text-neutral-dark opacity-70">No plants to water</p>
+                    <p className="text-muted-foreground">No plants to water</p>
                   </CardContent>
                 </Card>
               ) : (
@@ -143,7 +143,7 @@ export default function CareSchedule() {
               ) : fertilizingPlants.length === 0 ? (
                 <Card>
                   <CardContent className="p-4 text-center">
-                    <p className="text-neutral-dark opacity-70">No plants to fertilize</p>
+                    <p className="text-muted-foreground">No plants to fertilize</p>
                   </CardContent>
                 </Card>
               ) : (
