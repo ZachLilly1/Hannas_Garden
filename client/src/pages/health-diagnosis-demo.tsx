@@ -7,6 +7,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { AlertCircle, Loader2, Plus, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { PlantHealthDiagnosis } from '@/types/plant-health';
 
 /**
  * This is a demonstration page that shows how the health diagnosis appears
@@ -144,25 +145,36 @@ export default function HealthDiagnosisDemo() {
           <CardContent>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium text-lg">Care Timeline with Health Diagnosis</h3>
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="gap-1.5"
-                onClick={createSampleHealthDiagnosis}
-                disabled={isCreatingHealthLog}
-              >
-                {isCreatingHealthLog ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-3.5 w-3.5" />
-                    Add Sample Health Check
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={refreshData}
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Refresh Data
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={createSampleHealthDiagnosis}
+                  disabled={isCreatingHealthLog}
+                >
+                  {isCreatingHealthLog ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-3.5 w-3.5" />
+                      Add Sample Health Check
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
             
             <div className="bg-amber-50 border border-amber-200 p-3 rounded-md mb-4 text-sm">
