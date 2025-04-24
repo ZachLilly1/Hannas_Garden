@@ -163,7 +163,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
       </AlertDialog>
       
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="mx-auto p-0 rounded-t-xl overflow-hidden max-h-[95vh] overflow-y-auto sm:max-h-[80vh] w-[90vw] max-w-[95vw] sm:w-full sm:max-w-md overflow-visible">
+        <DialogContent className="mx-auto p-0 rounded-xl overflow-y-auto max-h-[90vh] w-[90vw] max-w-[450px]">
           <div className="h-64 relative">
             <img
               src={plant.image || getDefaultPlantImage(plant.type)}
@@ -273,18 +273,16 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
               <TabsContent value="care-schedule" className="mt-4">
                 <div className="space-y-4">
                   {/* Water Schedule */}
-                  <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
-                    <div className="flex items-center min-w-0 flex-1 pr-2">
-                      <div className="p-2 bg-blue-100 rounded-full mr-3 flex-shrink-0">
-                        <WaterDropIcon className="h-4 w-4 text-blue-500" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium truncate">Water</p>
-                        <p className="text-xs text-neutral-dark opacity-70 truncate">Every {plant.waterFrequency} days</p>
-                      </div>
+                  <div className="flex items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
+                    <div className="p-2 bg-blue-100 rounded-full mr-3 flex-shrink-0">
+                      <WaterDropIcon className="h-4 w-4 text-blue-500" />
                     </div>
-                    <div className="text-right flex-shrink-0 w-[80px]">
-                      <p className="font-medium text-sm">
+                    <div className="min-w-0 flex-grow">
+                      <p className="font-medium">Water</p>
+                      <p className="text-xs text-neutral-dark opacity-70">Every {plant.waterFrequency} days</p>
+                    </div>
+                    <div className="text-right ml-2">
+                      <p className="font-medium text-sm whitespace-nowrap">
                         {waterRemainingDays !== null 
                           ? waterRemainingDays < 0 
                             ? "Overdue" 
@@ -302,21 +300,19 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                   </div>
 
                   {/* Sunlight Schedule */}
-                  <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
-                    <div className="flex items-center min-w-0 flex-1 pr-2">
-                      <div className="p-2 bg-yellow-100 rounded-full mr-3 flex-shrink-0">
-                        <SunIcon className="h-4 w-4 text-yellow-500" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium truncate">Sunlight</p>
-                        <p className="text-xs text-neutral-dark opacity-70 truncate">
-                          {plant.sunlightLevel.charAt(0).toUpperCase() + plant.sunlightLevel.slice(1)}, 
-                          {plant.sunlightLevel === "high" ? " direct" : " indirect"}
-                        </p>
-                      </div>
+                  <div className="flex items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
+                    <div className="p-2 bg-yellow-100 rounded-full mr-3 flex-shrink-0">
+                      <SunIcon className="h-4 w-4 text-yellow-500" />
+                    </div>
+                    <div className="min-w-0 flex-grow">
+                      <p className="font-medium">Sunlight</p>
+                      <p className="text-xs text-neutral-dark opacity-70">
+                        {plant.sunlightLevel.charAt(0).toUpperCase() + plant.sunlightLevel.slice(1)}, 
+                        {plant.sunlightLevel === "high" ? " direct" : " indirect"}
+                      </p>
                     </div>
                     <div className={cn(
-                      "text-xs font-medium flex-shrink-0 w-[80px] text-right",
+                      "text-xs font-medium text-right ml-2 whitespace-nowrap",
                       sunlightAdequate ? "text-status-success" : "text-status-warning"
                     )}>
                       {sunlightAdequate ? <CheckCircleIcon className="h-4 w-4 inline mr-1" /> : null}
@@ -325,24 +321,22 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                   </div>
 
                   {/* Fertilizer Schedule */}
-                  <div className="flex justify-between items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
-                    <div className="flex items-center min-w-0 flex-1 pr-2">
-                      <div className="p-2 bg-green-100 rounded-full mr-3 flex-shrink-0">
-                        <SeedlingIcon className="h-4 w-4 text-green-500" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium truncate">Fertilizer</p>
-                        <p className="text-xs text-neutral-dark opacity-70 truncate">
-                          {plant.fertilizerFrequency === 0 
-                            ? "Not needed" 
-                            : `Every ${plant.fertilizerFrequency} days`}
-                        </p>
-                      </div>
+                  <div className="flex items-center p-3 bg-neutral-medium bg-opacity-30 rounded-lg">
+                    <div className="p-2 bg-green-100 rounded-full mr-3 flex-shrink-0">
+                      <SeedlingIcon className="h-4 w-4 text-green-500" />
                     </div>
-                    <div className="text-right flex-shrink-0 w-[80px]">
+                    <div className="min-w-0 flex-grow">
+                      <p className="font-medium">Fertilizer</p>
+                      <p className="text-xs text-neutral-dark opacity-70">
+                        {plant.fertilizerFrequency === 0 
+                          ? "Not needed" 
+                          : `Every ${plant.fertilizerFrequency} days`}
+                      </p>
+                    </div>
+                    <div className="text-right ml-2">
                       {plant.fertilizerFrequency > 0 && (
                         <>
-                          <p className="font-medium text-sm">
+                          <p className="font-medium text-sm whitespace-nowrap">
                             {fertilizerRemainingDays !== null 
                               ? fertilizerRemainingDays < 0 
                                 ? "Overdue" 
@@ -370,7 +364,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                       {plant.guide.careTips.split('.').filter(tip => tip.trim()).map((tip, index) => (
                         <li key={index} className="flex items-start">
                           <CircleDotIcon className="h-3 w-3 mt-1 mr-2 flex-shrink-0 text-primary" />
-                          <span className="break-words hyphens-auto overflow-wrap-anywhere">{tip.trim()}</span>
+                          <span className="break-words hyphens-auto overflow-wrap-anywhere text-wrap-pretty break-word">{tip.trim()}</span>
                         </li>
                       ))}
                     </ul>
