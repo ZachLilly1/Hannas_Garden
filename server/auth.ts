@@ -26,11 +26,19 @@ const PgSession = connectPgSimple(session);
 let pgSessionStore: session.Store;
 
 try {
+  // Create PostgreSQL session store with increased max listeners
   pgSessionStore = new PgSession({
     pool,
     tableName: 'user_sessions', // Custom session table name
     createTableIfMissing: true
   });
+  
+  // Fix for MaxListenersExceededWarning
+  // Increase max listeners for the session store
+  if (pgSessionStore.setMaxListeners) {
+    pgSessionStore.setMaxListeners(20); // Increase from default 10
+  }
+  
   console.log('PostgreSQL session store initialized successfully');
 } catch (error) {
   console.error('Error initializing PostgreSQL session store:', error);
