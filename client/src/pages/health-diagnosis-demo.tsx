@@ -61,27 +61,36 @@ export default function HealthDiagnosisDemo() {
     }
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        // Fetch plants, grab the first one for demo
-        const response = await apiRequest('GET', '/api/plants');
-        const plants = await response.json();
-        
-        if (plants && plants.length > 0) {
-          setPlant(plants[0]);
-        } else {
-          setError('No plants found. Please add a plant to view the health diagnosis demo.');
-        }
-      } catch (err) {
-        setError('Failed to load plants. You might need to login first.');
-        console.error('Error loading plants:', err);
-      } finally {
-        setLoading(false);
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      // Fetch plants, grab the first one for demo
+      const response = await apiRequest('GET', '/api/plants');
+      const plants = await response.json();
+      
+      if (plants && plants.length > 0) {
+        setPlant(plants[0]);
+      } else {
+        setError('No plants found. Please add a plant to view the health diagnosis demo.');
       }
-    };
+    } catch (err) {
+      setError('Failed to load plants. You might need to login first.');
+      console.error('Error loading plants:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Refresh all data
+  const refreshData = () => {
+    fetchData();
+    // Also refresh the care logs for the selected plant
+    if (plant) {
+      queryClient.invalidateQueries({ queryKey: [`/api/plants/${plant.id}/care-logs`] });
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, []);
 
