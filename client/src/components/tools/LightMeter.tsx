@@ -206,9 +206,6 @@ export function LightMeter() {
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <p className="text-sm mb-6">
-        Use your camera to measure the light level at your plant's location and get plant recommendations.
-      </p>
       
       {errorMessage && (
         <div className="rounded-md bg-red-50 p-4 mb-4">

@@ -25,9 +25,12 @@ export default function Tools() {
   return (
     <MainLayout>
       <div className="p-4">
-        <p className="text-sm text-neutral-dark opacity-70 mb-6">
-          Specialized tools to help with your gardening tasks
-        </p>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Garden Tools</h1>
+          <p className="text-muted-foreground">
+            Specialized tools to help with your gardening tasks
+          </p>
+        </div>
 
         <div className="grid gap-4">
           {tools.map((tool, index) => (
