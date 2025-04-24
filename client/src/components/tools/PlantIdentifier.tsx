@@ -115,15 +115,23 @@ export function PlantIdentifier({ onAddToCollection }: {
     
     const { commonName, scientificName, careRecommendations } = identifyMutation.data;
     
+    // Process the image before sending it to the server
+    // The server expects base64 data without the data:image prefix
+    let imageBase64 = null;
+    if (preview && preview.includes('base64')) {
+      // Extract just the base64 part without the prefix
+      imageBase64 = preview.split(',')[1];
+    }
+    
     const newPlant = {
       name: commonName,
       scientificName: scientificName,
-      type: identifyMutation.data.plantType,
+      type: identifyMutation.data.plantType.toLowerCase(),
       waterFrequency: careRecommendations.waterFrequency,
       fertilizerFrequency: careRecommendations.fertilizerFrequency,
       sunlightLevel: careRecommendations.sunlightLevel,
       notes: careRecommendations.additionalCare,
-      image: preview, // Use the preview image for the plant
+      imageBase64: imageBase64, // Send just the base64 data, not the full data URL
     };
     
     if (onAddToCollection) {
