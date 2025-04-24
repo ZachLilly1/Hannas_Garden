@@ -57,6 +57,7 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
     name: z.string().min(2, "Plant name must be at least 2 characters."),
     location: z.string().min(2, "Location must be at least 2 characters."),
     type: z.string().min(1, "Please select a plant type."),
+    scientificName: z.string().optional(),
     sunlightLevel: z.string().min(1, "Please select a sunlight level."),
     waterFrequency: z.coerce.number().min(1, "Water frequency must be at least 1 day."),
     fertilizerFrequency: z.coerce.number().min(0, "Fertilizer frequency must be 0 or more days."),
@@ -74,6 +75,7 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
       name: "",
       type: "",
       location: "",
+      scientificName: "",
       sunlightLevel: "medium",
       waterFrequency: 7,
       fertilizerFrequency: 30,
@@ -177,9 +179,14 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
           form.setValue("fertilizerFrequency", result.careRecommendations.fertilizerFrequency);
         }
         
-        // Add scientific name and additional care tips to notes
+        // Set the scientific name field directly
+        if (result.scientificName) {
+          form.setValue("scientificName", result.scientificName);
+        }
+        
+        // Add care tips to notes
         const existingNotes = form.getValues("notes") || "";
-        const newNotes = `Scientific Name: ${result.scientificName || 'Unknown'}\n\nCare Tips: ${result.careRecommendations.additionalCare || 'No specific care tips available.'}${existingNotes ? "\n\n" + existingNotes : ""}`;
+        const newNotes = `Care Tips: ${result.careRecommendations.additionalCare || 'No specific care tips available.'}${existingNotes ? "\n\n" + existingNotes : ""}`;
         form.setValue("notes", newNotes);
       }
       
@@ -389,6 +396,15 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
               <FormField
                 control={form.control}
                 name="type"
+                render={({ field }) => (
+                  <input type="hidden" {...field} />
+                )}
+              />
+              
+              {/* Scientific Name - hidden field that gets filled by identification */}
+              <FormField
+                control={form.control}
+                name="scientificName"
                 render={({ field }) => (
                   <input type="hidden" {...field} />
                 )}
