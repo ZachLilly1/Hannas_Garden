@@ -89,16 +89,22 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
           </p>
           
           <div className="flex justify-center mb-6">
-            {/* Placeholder for illustrations - replace with actual images */}
-            <div className="h-48 w-full bg-neutral-100 rounded-lg flex items-center justify-center text-neutral-400">
-              {currentStepData.image ? (
-                <img 
-                  src={currentStepData.image} 
-                  alt={currentStepData.title} 
-                  className="max-h-full max-w-full object-contain"
-                />
-              ) : (
-                "Illustration"
+            <div className="h-48 w-full rounded-lg flex items-center justify-center text-neutral-400 overflow-hidden">
+              {/* Use SVG illustrations instead of trying to load images */}
+              {currentStep === 0 && (
+                <div className="flex items-center justify-center text-primary">
+                  <LeafIcon className="h-32 w-32" />
+                </div>
+              )}
+              {currentStep === 1 && (
+                <div className="flex items-center justify-center text-blue-500">
+                  <WaterDropIcon className="h-32 w-32" />
+                </div>
+              )}
+              {currentStep === 2 && (
+                <div className="flex items-center justify-center text-yellow-500">
+                  <SunIcon className="h-32 w-32" />
+                </div>
               )}
             </div>
           </div>

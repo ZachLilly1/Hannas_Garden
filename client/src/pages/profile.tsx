@@ -65,7 +65,6 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function Profile() {
   const { user, logout, updateProfile } = useAuth();
-  const { isDarkMode, toggleDarkMode } = useTheme();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -377,19 +376,6 @@ export default function Profile() {
               <p className="text-sm text-muted-foreground">Get notified when your plants need care</p>
             </div>
             <Switch checked={user?.notificationsEnabled === true} />
-          </div>
-          
-          <Separator />
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Dark Mode</p>
-              <p className="text-sm text-muted-foreground">Switch between light and dark theme</p>
-            </div>
-            <Switch 
-              checked={isDarkMode} 
-              onCheckedChange={toggleDarkMode}
-            />
           </div>
           
           <Separator />

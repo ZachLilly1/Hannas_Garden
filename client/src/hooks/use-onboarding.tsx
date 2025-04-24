@@ -9,11 +9,17 @@ export function useOnboarding() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const onboardingShown = useRef(false);
   
-  // Show onboarding modal only once when user is logged in and hasn't completed onboarding
+  // Permanently store onboarding display state in sessionStorage
   useEffect(() => {
-    if (isAuthenticated && user && isOnboarding && !onboardingShown.current) {
+    // Check if we've already shown onboarding this session
+    const onboardingCompleted = sessionStorage.getItem('onboardingCompleted') === 'true';
+    
+    // Only show onboarding if user is authenticated, onboarding is needed, 
+    // and it hasn't been shown this session
+    if (isAuthenticated && user && isOnboarding && !onboardingCompleted && !onboardingShown.current) {
       // Mark as shown to prevent multiple occurrences
       onboardingShown.current = true;
+      sessionStorage.setItem('onboardingCompleted', 'true');
       
       // Add a small delay to avoid showing the modal immediately on login
       const timer = setTimeout(() => {
