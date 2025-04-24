@@ -57,8 +57,7 @@ export const userProfileSchema = createInsertSchema(users).pick({
 export const plants = pgTable("plants", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  type: text("type").notNull(),
-  scientificName: text("scientific_name"),  // Added scientific name field
+  scientificName: text("scientific_name"),  // Scientific name becomes more important
   location: text("location").notNull(),
   image: text("image"),
   notes: text("notes"),
@@ -70,6 +69,8 @@ export const plants = pgTable("plants", {
   status: text("status").default("healthy"),
   createdAt: timestamp("created_at").defaultNow(),
   userId: integer("user_id").notNull(),
+  // Keep type for backward compatibility, but it's no longer required
+  type: text("type").default("identified"),
 });
 
 export const insertPlantSchema = createInsertSchema(plants).omit({
@@ -96,15 +97,17 @@ export const insertCareLogSchema = createInsertSchema(careLogs).omit({
   metadata: z.string().optional(),
 });
 
-// Plant guide schema
+// Plant guide schema - now based on scientific name rather than generic plant type
 export const plantGuides = pgTable("plant_guides", {
   id: serial("id").primaryKey(),
-  plantType: text("plant_type").notNull().unique(),
+  scientificName: text("scientific_name").notNull().unique(), // Changed from plantType to scientificName
+  commonName: text("common_name").notNull(),
   description: text("description").notNull(),
   careTips: text("care_tips").notNull(),
   idealWaterFrequency: integer("ideal_water_frequency").notNull(),
   idealSunlight: text("ideal_sunlight").notNull(),
   idealFertilizerFrequency: integer("ideal_fertilizer_frequency").notNull(),
+  category: text("category"), // Optional category for organization (e.g. succulent, tropical, etc.)
 });
 
 export const insertPlantGuideSchema = createInsertSchema(plantGuides).omit({
