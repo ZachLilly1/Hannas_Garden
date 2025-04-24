@@ -85,6 +85,7 @@ export const careLogs = pgTable("care_logs", {
   timestamp: timestamp("timestamp").defaultNow(),
   notes: text("notes"),
   photo: text("photo"),
+  metadata: text("metadata"),  // For storing health diagnosis and other structured data
 });
 
 export const insertCareLogSchema = createInsertSchema(careLogs).omit({
@@ -92,6 +93,7 @@ export const insertCareLogSchema = createInsertSchema(careLogs).omit({
   timestamp: true,
 }).extend({
   photoBase64: z.string().optional(),
+  metadata: z.string().optional(),
 });
 
 // Plant guide schema

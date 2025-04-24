@@ -103,6 +103,20 @@ export async function applyMigrations() {
       END $$;
     `);
     console.log('Created session table index (if needed)');
+    
+    // Add metadata column to care_logs table if it doesn't exist
+    await db.execute(sql`
+      DO $$ 
+      BEGIN 
+        IF NOT EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_name = 'care_logs' AND column_name = 'metadata'
+        ) THEN 
+          ALTER TABLE care_logs ADD COLUMN metadata TEXT;
+        END IF;
+      END $$;
+    `);
+    console.log('Added metadata column to care_logs table (if needed)');
 
     console.log('Database migrations completed successfully!');
   } catch (error) {
