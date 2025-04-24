@@ -57,7 +57,7 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
     name: z.string().min(2, "Plant name must be at least 2 characters."),
     location: z.string().min(2, "Location must be at least 2 characters."),
     type: z.string().min(1, "Please select a plant type."),
-    scientificName: z.string().optional(),
+    scientificName: z.string().nullable().optional(),
     sunlightLevel: z.string().min(1, "Please select a sunlight level."),
     waterFrequency: z.coerce.number().min(1, "Water frequency must be at least 1 day."),
     fertilizerFrequency: z.coerce.number().min(0, "Fertilizer frequency must be 0 or more days."),
@@ -67,21 +67,30 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: plantToEdit ? {
-      ...plantToEdit,
-      // Make sure numbers are numbers, not strings
+      name: plantToEdit.name,
+      type: plantToEdit.type,
+      location: plantToEdit.location,
+      scientificName: plantToEdit.scientificName,
+      sunlightLevel: plantToEdit.sunlightLevel,
       waterFrequency: Number(plantToEdit.waterFrequency),
       fertilizerFrequency: Number(plantToEdit.fertilizerFrequency),
+      notes: plantToEdit.notes,
+      image: plantToEdit.image,
+      userId: plantToEdit.userId,
+      status: plantToEdit.status || "healthy",
+      lastWatered: plantToEdit.lastWatered,
+      lastFertilized: plantToEdit.lastFertilized
     } : {
       name: "",
       type: "",
       location: "",
-      scientificName: "",
+      scientificName: null,
       sunlightLevel: "medium",
       waterFrequency: 7,
       fertilizerFrequency: 30,
       notes: "",
-      image: "",
-      userId: 1, // For demo purpose
+      image: null,
+      userId: 1, // Will be set on the server
       status: "healthy",
     },
   });
@@ -222,16 +231,23 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      // Convert values to match expected API format
+      const submissionData = {
+        ...values,
+        // Ensure the right types for the backend
+        scientificName: values.scientificName || null
+      };
+      
       if (plantToEdit) {
         // Update existing plant
-        await apiRequest('PATCH', `/api/plants/${plantToEdit.id}`, values);
+        await apiRequest('PATCH', `/api/plants/${plantToEdit.id}`, submissionData);
         toast({
           title: "Plant updated",
           description: `${values.name} has been updated successfully.`,
         });
       } else {
         // Create new plant
-        await apiRequest('POST', '/api/plants', values);
+        await apiRequest('POST', '/api/plants', submissionData);
         toast({
           title: "Plant added",
           description: `${values.name} has been added to your garden.`,
