@@ -4,7 +4,7 @@ import { PlantCard } from "@/components/plants/PlantCard";
 import PlantGridView from "@/components/plants/PlantGridView";
 import { PlantDetailModal } from "@/components/plants/PlantDetailModal";
 import { AddPlantModal } from "@/components/plants/AddPlantModal";
-import { SortIcon, WaterDropIcon } from "@/lib/icons";
+import { SortIcon, WaterDropIcon, LeafIcon, SunIcon, CameraIcon } from "@/lib/icons";
 import { usePlants } from "@/context/PlantContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { type PlantWithCare } from "@shared/schema";
+import { Link } from "wouter";
 
 export default function Plants() {
   const {
