@@ -44,6 +44,18 @@ export interface PlantIdentificationResult {
 }
 
 /**
+ * Interface for plant health diagnosis results
+ */
+export interface PlantHealthDiagnosis {
+  issue: string;
+  cause: string;
+  solution: string;
+  preventionTips: string[];
+  severity: "low" | "medium" | "high";
+  confidenceLevel: "low" | "medium" | "high";
+}
+
+/**
  * Get detailed care recommendations for a specific plant species
  * @param plantName The scientific or common name of the plant
  * @returns Detailed care recommendations
@@ -139,6 +151,126 @@ export async function getPlantCareRecommendations(plantName: string): Promise<Pl
  * @param base64Image Base64 encoded image data (without data:image prefix)
  * @returns Plant identification result
  */
+/**
+ * Diagnose plant health issues from an image
+ * @param base64Image Base64 encoded image data (without data:image prefix)
+ * @returns Plant health diagnosis with recommendations
+ */
+export async function diagnosePlantHealth(base64Image: string): Promise<PlantHealthDiagnosis> {
+  try {
+    console.log("Starting plant health diagnosis process");
+    
+    // Check image size
+    const imageSizeInBytes = Buffer.from(base64Image, 'base64').length;
+    const imageSizeInMB = imageSizeInBytes / (1024 * 1024);
+    console.log(`Image size: ${imageSizeInMB.toFixed(2)} MB`);
+    
+    if (imageSizeInMB > 20) {
+      throw new Error(`Image size (${imageSizeInMB.toFixed(2)} MB) exceeds the recommended limit of 20 MB. Please resize the image.`);
+    }
+    
+    // Verify API key is set
+    if (!process.env.OPENAI_API_KEY) {
+      console.error("OPENAI_API_KEY is not set");
+      throw new Error("OpenAI API key is not configured");
+    }
+    
+    console.log("OpenAI API key is configured");
+    
+    // Prefix for base64 encoded images
+    const imageUrl = `data:image/jpeg;base64,${base64Image}`;
+    
+    // System message to guide the AI in diagnosing plant health issues
+    const systemPrompt = `
+      You are an expert plant pathologist and gardening specialist. The user will provide an image of a plant that appears to have health issues.
+      Your task is to identify the likely problem, its cause, recommend solutions, and suggest prevention methods.
+      
+      Analyze the visual symptoms carefully. Look for:
+      - Discoloration or spots on leaves
+      - Wilting or drooping
+      - Unusual growth patterns
+      - Signs of pests or disease
+      - Leaf curling, browning, or yellowing
+      - Stem or root issues
+      
+      You MUST provide your response as a JSON object with this exact structure:
+      {
+        "issue": "Brief name of the identified problem",
+        "cause": "Detailed explanation of what causes this issue",
+        "solution": "Step-by-step recommended treatment",
+        "preventionTips": ["Tip 1", "Tip 2", "Tip 3"],
+        "severity": "low" | "medium" | "high",
+        "confidenceLevel": "low" | "medium" | "high"
+      }
+    `;
+
+    // Call OpenAI API with the image
+    console.log("Making request to OpenAI API for plant health diagnosis...");
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text", 
+              text: "My plant doesn't look healthy. What's wrong with it and how can I help it recover?"
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: imageUrl,
+              },
+            },
+          ],
+        },
+      ],
+      response_format: { type: "json_object" },
+      max_tokens: 1000,
+    });
+
+    console.log("Received response from OpenAI for plant health diagnosis");
+    
+    // Check if we got a valid response
+    if (!response.choices || response.choices.length === 0) {
+      console.error("No choices returned from OpenAI");
+      throw new Error("Invalid response from OpenAI");
+    }
+    
+    if (!response.choices[0].message.content) {
+      console.error("Empty content in OpenAI response");
+      throw new Error("Empty response from OpenAI");
+    }
+    
+    const rawContent = response.choices[0].message.content;
+    console.log("Raw OpenAI plant health diagnosis response:", rawContent);
+
+    // Parse JSON response
+    const diagnosisData = JSON.parse(rawContent);
+    
+    // Ensure we have all required fields with fallbacks if needed
+    const result: PlantHealthDiagnosis = {
+      issue: diagnosisData.issue || "Unidentified plant issue",
+      cause: diagnosisData.cause || "The cause could not be determined with confidence from the image.",
+      solution: diagnosisData.solution || "Consider consulting a local plant expert for an in-person diagnosis.",
+      preventionTips: Array.isArray(diagnosisData.preventionTips) ? diagnosisData.preventionTips : 
+        ["Maintain proper watering routine", "Ensure adequate sunlight", "Monitor for early signs of issues"],
+      severity: ["low", "medium", "high"].includes(diagnosisData.severity) ? diagnosisData.severity : "medium",
+      confidenceLevel: ["low", "medium", "high"].includes(diagnosisData.confidenceLevel) ? diagnosisData.confidenceLevel : "medium"
+    };
+
+    console.log("Successfully created plant health diagnosis");
+    return result;
+  } catch (error) {
+    console.error("Error diagnosing plant health:", error);
+    throw new Error(error instanceof Error ? error.message : "Failed to diagnose plant health. Please try again.");
+  }
+}
+
 export async function identifyPlantFromImage(base64Image: string): Promise<PlantIdentificationResult> {
   try {
     console.log("Starting plant identification process");
