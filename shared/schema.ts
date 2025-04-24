@@ -10,6 +10,7 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   displayName: text("display_name"),
   avatarUrl: text("avatar_url"),
+  bio: text("bio"), // User biography
   preferredUnits: text("preferred_units").default("metric"),
   timezone: text("timezone").default("UTC"),
   notificationsEnabled: boolean("notifications_enabled").default(true),
@@ -41,6 +42,7 @@ export const loginSchema = z.object({
 export const userProfileSchema = createInsertSchema(users).pick({
   displayName: true,
   email: true,
+  bio: true,
   preferredUnits: true,
   timezone: true,
   notificationsEnabled: true,
