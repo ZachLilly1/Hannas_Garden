@@ -7,6 +7,7 @@ import { useOnboarding } from "@/hooks/use-onboarding";
 import { useTheme } from "@/context/ThemeContext";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { SimpleViewToggle } from "@/components/ui/view-toggle";
+import SearchModal from "@/components/search/SearchModal";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -15,6 +16,7 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const [location] = useLocation();
   const [isAddPlantModalOpen, setIsAddPlantModalOpen] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const { isDarkMode } = useTheme();
   const { OnboardingComponent } = useOnboarding();
 
@@ -50,7 +52,11 @@ export function MainLayout({ children }: MainLayoutProps) {
           <div className="flex items-center space-x-2">
             <ThemeToggle />
             {location === "/" && <SimpleViewToggle />}
-            <button className="p-2 rounded-full hover:bg-neutral-medium dark:hover:bg-gray-700 transition">
+            <button 
+              onClick={() => setIsSearchModalOpen(true)}
+              className="p-2 rounded-full hover:bg-neutral-medium dark:hover:bg-gray-700 transition"
+              aria-label="Search plants"
+            >
               <SearchIcon className="h-5 w-5 text-neutral-dark dark:text-gray-300" />
             </button>
             <button className="p-2 rounded-full hover:bg-neutral-medium dark:hover:bg-gray-700 transition">
@@ -76,6 +82,12 @@ export function MainLayout({ children }: MainLayoutProps) {
       
       {/* Onboarding Component */}
       <OnboardingComponent />
+      
+      {/* Search Modal */}
+      <SearchModal 
+        isOpen={isSearchModalOpen} 
+        onClose={() => setIsSearchModalOpen(false)} 
+      />
     </div>
   );
 }
