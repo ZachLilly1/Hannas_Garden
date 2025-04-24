@@ -16,6 +16,7 @@ import Profile from "@/pages/profile";
 import Tools from "@/pages/tools";
 import LightMeterPage from "@/pages/light-meter";
 import PlantIdentifierPage from "@/pages/tools/plant-identifier";
+import PlantHealthDiagnosticPage from "@/pages/tools/plant-health-diagnostic";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 
@@ -72,6 +73,13 @@ function Router() {
         <ProtectedRoute>
           <MainLayout>
             <PlantIdentifierPage />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/tools/plant-health-diagnostic">
+        <ProtectedRoute>
+          <MainLayout>
+            <PlantHealthDiagnosticPage />
           </MainLayout>
         </ProtectedRoute>
       </Route>

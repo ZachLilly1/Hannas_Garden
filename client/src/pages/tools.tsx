@@ -1,7 +1,8 @@
 import { MainLayout } from '@/components/layouts/MainLayout';
 import { Card } from '@/components/ui/card';
 import { Link } from 'wouter';
-import { SunIcon, CameraIcon, LeafIcon } from '@/lib/icons';
+import { AlertTriangle } from 'lucide-react';
+import { SunIcon, CameraIcon, LeafIcon, HeartPulseIcon } from '@/lib/icons';
 
 export default function Tools() {
   const tools = [
@@ -18,6 +19,13 @@ export default function Tools() {
       path: '/tools/plant-identifier',
       icon: <LeafIcon className="w-10 h-10 text-green-500" />,
       color: 'bg-green-100'
+    },
+    {
+      title: 'Plant Health Diagnostic',
+      description: 'Diagnose plant issues and get treatment recommendations',
+      path: '/tools/plant-health-diagnostic',
+      icon: <HeartPulseIcon className="w-10 h-10 text-rose-500" />,
+      color: 'bg-rose-100'
     },
     // More tools can be added here in the future
   ];
