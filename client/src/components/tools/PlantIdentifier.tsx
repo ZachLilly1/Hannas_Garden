@@ -46,6 +46,7 @@ export function PlantIdentifier() {
 
   // Trigger file input click
   const handleImageClick = () => {
+    // Allows user to choose between camera and gallery on mobile devices
     fileInputRef.current?.click();
   };
   
@@ -153,29 +154,44 @@ export function PlantIdentifier() {
           onChange={handleImageChange}
         />
         
-        <div 
-          onClick={handleImageClick}
-          className="h-56 bg-neutral-medium bg-opacity-30 rounded-lg flex flex-col items-center justify-center cursor-pointer relative overflow-hidden"
-        >
-          {selectedImage ? (
-            <>
+        {selectedImage ? (
+          <div className="mb-3">
+            <div className="h-56 rounded-lg relative overflow-hidden">
               <img 
                 src={selectedImage}
                 alt="Selected plant" 
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+              <div 
+                onClick={handleImageClick}
+                className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
                 <CameraIcon className="h-8 w-8 text-white mb-2" />
                 <p className="text-sm text-white">Change photo</p>
               </div>
-            </>
-          ) : (
-            <>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div 
+              onClick={handleImageClick}
+              className="h-56 bg-neutral-medium bg-opacity-30 rounded-lg flex flex-col items-center justify-center cursor-pointer relative overflow-hidden mb-3"
+            >
               <CameraIcon className="h-12 w-12 text-neutral-dark opacity-60 mb-2" />
-              <p className="text-neutral-dark opacity-70">Tap to take or upload a plant photo</p>
-            </>
-          )}
-        </div>
+              <p className="text-neutral-dark opacity-70">Tap to take a photo</p>
+            </div>
+            
+            <div className="flex justify-center">
+              <Button
+                onClick={handleImageClick}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <CameraIcon className="h-5 w-5" />
+                Upload from Gallery
+              </Button>
+            </div>
+          </>
+        )}
       </div>
       
       {selectedImage && !isIdentifying && !identificationResult && (
