@@ -112,7 +112,7 @@ export function CareLogForm({ plantId, onSuccess }: CareLogFormProps) {
     try {
       setIsSubmitting(true);
       
-      const careLogData: InsertCareLog & { photoBase64?: string } = {
+      const careLogData: InsertCareLog & { photoBase64?: string, healthDiagnosis?: PlantHealthDiagnosis } = {
         plantId,
         careType: selectedCareType,
         notes: notes.trim() || `Logged ${selectedCareType} care`,
@@ -121,6 +121,11 @@ export function CareLogForm({ plantId, onSuccess }: CareLogFormProps) {
       // Add photo if present
       if (photoBase64) {
         careLogData.photoBase64 = photoBase64;
+      }
+      
+      // Add health diagnosis data if available
+      if (healthDiagnosis && selectedCareType === 'health_check') {
+        careLogData.healthDiagnosis = healthDiagnosis;
       }
 
       await apiRequest('POST', '/api/care-logs', careLogData);
@@ -171,6 +176,15 @@ export function CareLogForm({ plantId, onSuccess }: CareLogFormProps) {
               <Label htmlFor={`care-type-${careType}`} className="capitalize">
                 {careType}
               </Label>
+              {careType === 'health_check' && photoBase64 && healthDiagnosis && (
+                <span className={`ml-1 inline-flex h-2 w-2 rounded-full ${
+                  healthDiagnosis.severity === 'high' 
+                    ? 'bg-red-500' 
+                    : healthDiagnosis.severity === 'medium' 
+                      ? 'bg-amber-500' 
+                      : 'bg-blue-500'
+                }`} />
+              )}
             </div>
           ))}
         </RadioGroup>
