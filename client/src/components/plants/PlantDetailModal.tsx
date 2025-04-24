@@ -12,7 +12,8 @@ import {
   CircleDotIcon, 
   CheckCircleIcon,
   CameraIcon,
-  LeafIcon
+  LeafIcon,
+  ActivityIcon
 } from "@/lib/icons";
 import { cn, formatRelativeDate, getDefaultPlantImage } from "@/lib/utils";
 import { type PlantWithCare, type CareLog, type InsertCareLog } from "@shared/schema";
