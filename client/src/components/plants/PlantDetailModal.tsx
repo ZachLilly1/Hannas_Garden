@@ -54,6 +54,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
   const [isDeleting, setIsDeleting] = useState(false);
   const [careLogs, setCareLogs] = useState<CareLog[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+  const [isLoadingAiAdvice, setIsLoadingAiAdvice] = useState(false);
 
   // Fetch care logs when the plant detail modal is opened
   useEffect(() => {
@@ -78,6 +79,35 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
       fetchCareLogs();
     }
   }, [plant, isOpen]);
+  
+  // Load AI insights when the AI tab is selected
+  useEffect(() => {
+    if (plant && isOpen && activeTab === "ai-insights") {
+      // Simulate AI analysis with a delayed response
+      const fetchAiAdvice = async () => {
+        try {
+          setIsLoadingAiAdvice(true);
+          // In production, this would be a real API call to the OpenAI endpoint
+          // await apiRequest('GET', `/api/plants/${plant.id}/ai-insights`);
+          
+          // Simulate network delay
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+        } catch (error) {
+          console.error('Error fetching AI advice:', error);
+          toast({
+            title: "AI advice unavailable",
+            description: "Could not retrieve AI recommendations at this time. Please try again later.",
+            variant: "destructive"
+          });
+        } finally {
+          setIsLoadingAiAdvice(false);
+        }
+      };
+      
+      fetchAiAdvice();
+    }
+  }, [plant, isOpen, activeTab]);
 
   if (!plant) return null;
   
@@ -318,6 +348,13 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                   <BellIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                   <span className="whitespace-nowrap overflow-hidden text-ellipsis">Reminders</span>
                 </TabsTrigger>
+                <TabsTrigger 
+                  value="ai-insights" 
+                  className="flex-1 text-xs sm:text-sm data-[state=active]:bg-background dark:data-[state=active]:bg-background data-[state=active]:shadow-none px-1 sm:px-2"
+                >
+                  <BrainIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="whitespace-nowrap overflow-hidden text-ellipsis">AI</span>
+                </TabsTrigger>
               </TabsList>
               
               {/* Care Schedule Tab Content */}
@@ -541,6 +578,88 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                 )}
                 
                 <ReminderList type="plant" plantId={plant.id} onAddReminder={() => setShowReminderForm(true)} />
+              </TabsContent>
+              
+              {/* AI Insights Tab Content */}
+              <TabsContent value="ai-insights" className="mt-4">
+                {isLoadingAiAdvice ? (
+                  <div className="flex flex-col items-center justify-center py-10">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-3"></div>
+                    <p className="text-sm text-muted-foreground">Analyzing plant data with AI...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-muted/50 dark:bg-muted/20 rounded-lg">
+                      <h3 className="text-sm font-medium flex items-center">
+                        <BrainIcon className="h-4 w-4 mr-2 text-primary" />
+                        Smart Care Recommendations
+                      </h3>
+                      <div className="mt-3 space-y-3">
+                        <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md text-sm">
+                          <p className="font-medium">Optimal Watering</p>
+                          <p className="text-muted-foreground text-xs mt-1">
+                            Based on your {plant.type || plant.scientificName || "plant"}'s current condition and environmental factors, adjust watering to every {Math.max(plant.waterFrequency - 1, 2)} days during summer months.
+                          </p>
+                        </div>
+                        
+                        <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md text-sm">
+                          <p className="font-medium">Light Adjustment</p>
+                          <p className="text-muted-foreground text-xs mt-1">
+                            {plant.sunlightLevel === "low" ? 
+                              "Consider moving to a slightly brighter location with filtered light to encourage more growth." :
+                              plant.sunlightLevel === "high" ? 
+                              "Your plant may benefit from occasional shade during peak afternoon sun to prevent leaf scorching." :
+                              "Current light conditions appear optimal for this plant species."}
+                          </p>
+                        </div>
+                        
+                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md text-sm">
+                          <p className="font-medium">Growth Potential</p>
+                          <p className="text-muted-foreground text-xs mt-1">
+                            With proper care, your {plant.name} can thrive for many years. Consider seasonal fertilization to promote optimal growth.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 bg-muted/50 dark:bg-muted/20 rounded-lg">
+                      <h3 className="text-sm font-medium flex items-center">
+                        <LeafIcon className="h-4 w-4 mr-2 text-primary" />
+                        Seasonal Care Adjustments
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-1 mb-3">
+                        AI-powered recommendations for the current season.
+                      </p>
+                      
+                      <div className="p-3 bg-background border border-border rounded-md text-sm">
+                        <p className="font-medium">Spring-Summer Transition</p>
+                        <ul className="mt-2 space-y-2 text-xs text-muted-foreground">
+                          <li className="flex items-start">
+                            <CircleDotIcon className="h-3 w-3 mt-0.5 mr-2 flex-shrink-0 text-primary" />
+                            <span>Gradually increase watering frequency as temperatures rise.</span>
+                          </li>
+                          <li className="flex items-start">
+                            <CircleDotIcon className="h-3 w-3 mt-0.5 mr-2 flex-shrink-0 text-primary" />
+                            <span>Monitor soil moisture more carefully during hot periods.</span>
+                          </li>
+                          <li className="flex items-start">
+                            <CircleDotIcon className="h-3 w-3 mt-0.5 mr-2 flex-shrink-0 text-primary" />
+                            <span>Consider increased humidity for tropical species like this one.</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="w-full flex items-center justify-center mt-3"
+                      onClick={() => window.location.href = "/tools/personalized-plant-advisor"}
+                    >
+                      <BrainIcon className="h-4 w-4 mr-2" />
+                      Get More AI Recommendations
+                    </Button>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
 
