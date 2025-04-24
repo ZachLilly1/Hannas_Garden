@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -55,10 +55,12 @@ import {
 const formSchema = z.object({
   displayName: z.string().optional(),
   email: z.string().email("Please enter a valid email address"),
+  bio: z.string().max(250, "Bio should be less than 250 characters").optional(),
   preferredUnits: z.enum(["metric", "imperial"]),
   timezone: z.string(),
   notificationsEnabled: z.boolean(),
   avatarUrl: z.union([z.string().url("Please enter a valid URL"), z.string().length(0)]).optional(),
+  photoBase64: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -76,17 +78,56 @@ export default function Profile() {
 
   const plantsCount = plants?.length || 0;
 
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       displayName: user?.displayName || "",
       email: user?.email || "",
+      bio: user?.bio || "",
       preferredUnits: (user?.preferredUnits as "metric" | "imperial") || "metric",
       timezone: user?.timezone || "UTC",
       notificationsEnabled: user?.notificationsEnabled || true,
       avatarUrl: user?.avatarUrl || "",
+      photoBase64: undefined,
     },
   });
+  
+  // Handle file upload for profile photo
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    // Check if file is an image
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Check file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Image size should be less than 2MB",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64String = e.target?.result as string;
+      setPreviewImage(base64String);
+      form.setValue("photoBase64", base64String);
+    };
+    reader.readAsDataURL(file);
+  };
 
   async function onSubmit(data: FormValues) {
     setIsSubmitting(true);
@@ -152,6 +193,9 @@ export default function Profile() {
             <div className="min-w-0">
               <h3 className="font-medium truncate">{user?.displayName || user?.username}</h3>
               <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
+              {user?.bio && (
+                <p className="text-sm mt-1 line-clamp-2">{user.bio}</p>
+              )}
             </div>
           </div>
           
@@ -245,6 +289,72 @@ export default function Profile() {
                   
                   <FormField
                     control={form.control}
+                    name="bio"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bio</FormLabel>
+                        <FormControl>
+                          <textarea 
+                            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            placeholder="Tell us a bit about yourself or your garden..." 
+                            {...field} 
+                            value={field.value || ""}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          A short bio to share with the community (max 250 characters).
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Profile Photo Upload */}
+                  <div className="space-y-3">
+                    <FormLabel className="text-base">Profile Photo</FormLabel>
+                    <div className="flex items-center gap-4">
+                      <div className="h-20 w-20 rounded-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                        {previewImage ? (
+                          <img 
+                            src={previewImage} 
+                            alt="Profile preview" 
+                            className="h-full w-full object-cover"
+                          />
+                        ) : user?.avatarUrl ? (
+                          <img 
+                            src={user.avatarUrl} 
+                            alt={user.displayName || user.username} 
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <UserIcon className="h-10 w-10 text-neutral-400" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full mb-2"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          Upload Photo
+                        </Button>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleFileChange}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          JPEG or PNG, max 2MB
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
                     name="avatarUrl"
                     render={({ field }) => (
                       <FormItem>
@@ -253,7 +363,7 @@ export default function Profile() {
                           <Input placeholder="https://example.com/avatar.jpg" {...field} value={field.value || ""} />
                         </FormControl>
                         <FormDescription>
-                          Enter a URL for your profile picture (optional).
+                          Alternatively, enter a URL for your profile picture.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
