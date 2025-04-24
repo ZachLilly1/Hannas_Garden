@@ -214,7 +214,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
         <DialogContent className="mx-auto p-0 rounded-xl overflow-y-auto overflow-x-hidden max-h-[90vh] w-[95vw] max-w-[450px] flex flex-col">
           <div className="h-64 relative">
             <img
-              src={plant.image || getDefaultPlantImage(plant.type)}
+              src={plant.image || getDefaultPlantImage(plant.scientificName || plant.type || "")}
               alt={plant.name}
               className="w-full h-full object-cover"
             />
@@ -259,22 +259,18 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
             </div>
 
             <div className="flex mb-3 space-x-2 flex-wrap">
-              {plant.scientificName && (
-                <Badge variant="outline" className="px-2 py-1 bg-primary/10 dark:bg-primary/20 rounded-full text-xs mb-1">
-                  {plant.scientificName}
-                </Badge>
-              )}
               <Badge variant="outline" className="px-2 py-1 bg-muted/50 dark:bg-muted/20 rounded-full text-xs mb-1">
                 {plant.sunlightLevel.charAt(0).toUpperCase() + plant.sunlightLevel.slice(1)} Light
               </Badge>
-              {plant.guide && (
+              <Badge variant="outline" className="px-2 py-1 bg-muted/50 dark:bg-muted/20 rounded-full text-xs mb-1">
+                Water every {plant.waterFrequency} days
+              </Badge>
+              {plant.location && (
                 <Badge variant="outline" className="px-2 py-1 bg-muted/50 dark:bg-muted/20 rounded-full text-xs mb-1">
-                  Water every {plant.guide.idealWaterFrequency} days
+                  {plant.location}
                 </Badge>
               )}
             </div>
-            
-            {/* Scientific name is now displayed in the header */}
 
             {/* Extract and display care tips if they exist in notes */}
             {plant.notes && plant.notes.includes("Care Tips:") ? (

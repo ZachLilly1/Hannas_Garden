@@ -44,9 +44,9 @@ export default function Plants() {
 
   const sortOptions = [
     { value: "name", label: "Name (A-Z)" },
+    { value: "scientificName", label: "Scientific Name" },
     { value: "location", label: "Location" },
     { value: "water", label: "Water Needs" },
-    { value: "type", label: "Plant Type" },
   ];
 
   const plants = getSortedPlants();
@@ -63,7 +63,7 @@ export default function Plants() {
       <section className="p-4">
         <div className="mb-4">
           <Input
-            placeholder="Search plants by name, location..."
+            placeholder="Search plants by name, scientific name, location..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full"
