@@ -58,42 +58,50 @@ export class DatabaseStorage implements IStorage {
   private defaultGuides: InsertPlantGuide[] = [
     {
       plantType: "tropical",
-      description: "Tropical plants thrive in warm, humid environments, native to regions near the equator.",
-      careTips: "Keep soil evenly moist, provide high humidity, and protect from cold drafts.",
+      description: "Tropical plants thrive in warm, humid environments, native to regions near the equator. Interesting fact: Many tropical houseplants, like Pothos, can actually cleanse the air of certain toxins!",
+      careTips: "Keep soil evenly moist but not soggy. Provide high humidity with regular misting or a humidifier. Protect from cold drafts and temperature below 65°F (18°C). Rotate regularly to ensure even growth.",
       idealWaterFrequency: 7,
       idealSunlight: "medium",
       idealFertilizerFrequency: 30
     },
     {
       plantType: "succulent",
-      description: "Succulents store water in their fleshy leaves, stems, or roots, and are drought-tolerant.",
-      careTips: "Allow soil to dry completely between waterings, provide bright light, use well-draining soil.",
+      description: "Succulents store water in their fleshy leaves, stems, or roots, and are drought-tolerant. Interesting fact: Some succulents can survive for months or even years without water by using their stored reserves!",
+      careTips: "Allow soil to dry completely between waterings - overwatering is the #1 killer of succulents. Provide bright, direct light for at least 6 hours daily. Use well-draining cactus/succulent soil mix. Water less in winter.",
       idealWaterFrequency: 14,
       idealSunlight: "high",
       idealFertilizerFrequency: 90
     },
     {
       plantType: "herb",
-      description: "Culinary herbs are aromatic plants used for flavoring food and some have medicinal properties.",
-      careTips: "Most herbs need at least 6 hours of direct sunlight daily and well-draining soil.",
+      description: "Culinary herbs are aromatic plants used for flavoring food and many have medicinal properties. Interesting fact: Regular harvesting of herbs actually encourages new growth, making your plant bushier and more productive!",
+      careTips: "Most herbs need at least 6 hours of direct sunlight daily. Use well-draining soil and water when the top inch feels dry. Pinch off flowers to encourage leaf growth. Harvest in the morning when essential oils are strongest.",
       idealWaterFrequency: 3,
       idealSunlight: "high",
-      idealFertilizerFrequency: 30
+      idealFertilizerFrequency: 21
     },
     {
       plantType: "flowering",
-      description: "Flowering plants produce blooms that add color and sometimes fragrance to your space.",
-      careTips: "Most flowering plants need regular watering and fertilizing during blooming season.",
+      description: "Flowering plants produce blooms that add color and sometimes fragrance to your space. Interesting fact: Many flowering plants have evolved their colors, patterns and scents specifically to attract certain pollinators!",
+      careTips: "Most flowering plants need direct morning sun and regular watering when the top inch of soil feels dry. Deadhead spent flowers to encourage more blooms. Fertilize weekly during blooming season with a phosphorus-rich fertilizer.",
       idealWaterFrequency: 5,
       idealSunlight: "medium",
       idealFertilizerFrequency: 14
     },
     {
       plantType: "fern",
-      description: "Ferns are ancient plants that reproduce via spores and typically love shady, humid environments.",
-      careTips: "Keep soil consistently moist, provide high humidity, and protect from direct sunlight.",
+      description: "Ferns are ancient plants that reproduce via spores and typically love shady, humid environments. Interesting fact: Ferns are one of Earth's oldest plant groups, with fossil records dating back over 360 million years!",
+      careTips: "Keep soil consistently moist but not waterlogged. Provide high humidity (60%+) through misting, humidifiers, or pebble trays. Protect from direct sunlight and drafts. Remove any brown fronds at the base.",
       idealWaterFrequency: 3,
       idealSunlight: "low",
+      idealFertilizerFrequency: 30
+    },
+    {
+      plantType: "other",
+      description: "This category includes specialized plants like English Ivy, palms, and other unique species. Interesting fact: Plants like English Ivy are excellent climbers that can attach to surfaces using tiny root-like structures called holdfasts!",
+      careTips: "Research your specific plant variety for precise care. Generally, check soil moisture before watering and adjust light levels based on leaf color. Watch for pest issues on the undersides of leaves. Trim damaged foliage promptly.",
+      idealWaterFrequency: 5,
+      idealSunlight: "medium",
       idealFertilizerFrequency: 30
     }
   ];
