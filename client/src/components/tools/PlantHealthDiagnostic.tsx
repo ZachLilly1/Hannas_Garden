@@ -10,16 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-// Types for plant health diagnosis from OpenAI
-interface PlantHealthDiagnosis {
-  issue: string;
-  cause: string;
-  solution: string;
-  preventionTips: string[];
-  severity: "low" | "medium" | "high";
-  confidenceLevel: "low" | "medium" | "high";
-}
+import { PlantHealthDiagnosis } from "@/types/plant-health";
 
 export function PlantHealthDiagnostic() {
   const [image, setImage] = useState<string | null>(null);

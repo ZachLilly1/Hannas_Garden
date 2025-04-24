@@ -14,19 +14,11 @@ import { format } from "date-fns";
 import { type CareLog, type PlantWithCare } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PlantHealthDiagnosis } from "@/types/plant-health";
 
-// Type definitions for health diagnosis
+// Define severity and confidence levels for use in the component
 type SeverityLevel = 'high' | 'medium' | 'low';
 type ConfidenceLevel = 'high' | 'medium' | 'low';
-
-interface PlantHealthDiagnosis {
-  issue: string;
-  cause: string;
-  solution: string;
-  preventionTips: string[];
-  severity: SeverityLevel;
-  confidenceLevel: ConfidenceLevel;
-}
 
 interface CareLogMetadata {
   healthDiagnosis?: PlantHealthDiagnosis;
