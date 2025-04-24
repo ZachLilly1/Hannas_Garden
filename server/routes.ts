@@ -50,16 +50,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.put("/api/auth/profile", isAuthenticated, async (req, res) => {
     const userId = req.user!.id;
-    const { displayName, email, preferredUnits, timezone, notificationsEnabled, avatarUrl } = req.body;
+    const { 
+      displayName, 
+      email, 
+      bio,
+      preferredUnits, 
+      timezone, 
+      notificationsEnabled, 
+      avatarUrl,
+      photoBase64,
+      prefersDarkMode,
+      viewPreference,
+      weatherLocation,
+      onboardingCompleted
+    } = req.body;
     
     // Only allow these fields to be updated
     const updateData: any = {};
     if (displayName !== undefined) updateData.displayName = displayName;
     if (email !== undefined) updateData.email = email;
+    if (bio !== undefined) updateData.bio = bio;
     if (preferredUnits !== undefined) updateData.preferredUnits = preferredUnits;
     if (timezone !== undefined) updateData.timezone = timezone;
     if (notificationsEnabled !== undefined) updateData.notificationsEnabled = notificationsEnabled;
     if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
+    if (prefersDarkMode !== undefined) updateData.prefersDarkMode = prefersDarkMode;
+    if (viewPreference !== undefined) updateData.viewPreference = viewPreference;
+    if (weatherLocation !== undefined) updateData.weatherLocation = weatherLocation;
+    if (onboardingCompleted !== undefined) updateData.onboardingCompleted = onboardingCompleted;
+    
+    // Handle photo upload if provided
+    if (photoBase64) {
+      // Remove data:image/jpeg;base64, prefix if present
+      const base64Data = photoBase64.replace(/^data:image\/\w+;base64,/, "");
+      // Generate a filename based on user ID and timestamp
+      const timestamp = new Date().getTime();
+      const avatarUrl = `user_${userId}_${timestamp}.jpg`;
+      
+      try {
+        // Store the image data (in a real app, this would save to a file or blob storage)
+        // For this example, we'll just use the data URL as the avatar URL
+        updateData.avatarUrl = photoBase64;
+      } catch (error) {
+        console.error("Error saving profile image:", error);
+        return res.status(500).json({ message: "Failed to save profile image" });
+      }
+    }
     
     try {
       const updatedUser = await storage.updateUserProfile(userId, updateData);
