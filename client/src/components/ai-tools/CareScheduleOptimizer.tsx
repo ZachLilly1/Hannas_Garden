@@ -56,6 +56,7 @@ const scheduleSchema = z.object({
 });
 
 type ScheduleFormValues = z.infer<typeof scheduleSchema>;
+type FormValues = ScheduleFormValues;
 
 export function CareScheduleOptimizer() {
   const { toast } = useToast();
@@ -67,7 +68,7 @@ export function CareScheduleOptimizer() {
   });
   
   // Form
-  const form = useForm<ScheduleFormValues>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(scheduleSchema),
     defaultValues: {
       maxDailyMinutes: "15",
@@ -86,7 +87,7 @@ export function CareScheduleOptimizer() {
   });
   
   // Helper function to convert form values to API payload
-  const getSchedulePayload = (formValues: ScheduleFormValues): UserSchedule => {
+  const getSchedulePayload = (formValues: FormValues): UserSchedule => {
     const weekdays = [
       { key: "monday", label: "Monday" },
       { key: "tuesday", label: "Tuesday" },
@@ -104,10 +105,10 @@ export function CareScheduleOptimizer() {
     ];
     
     const availableDays = weekdays
-      .filter(day => formValues[day.key as keyof ScheduleFormValues])
+      .filter(day => formValues[day.key as keyof FormValues])
       .map(day => {
         const availableTimeSlots = timeSlots
-          .filter(slot => formValues[slot.key as keyof ScheduleFormValues])
+          .filter(slot => formValues[slot.key as keyof FormValues])
           .map(slot => slot.value);
         
         return {
@@ -127,7 +128,7 @@ export function CareScheduleOptimizer() {
   
   // Mutation to get optimized schedule
   const scheduleMutation = useMutation({
-    mutationFn: async (data: ScheduleFormValues) => {
+    mutationFn: async (data: FormValues) => {
       if (!plants || plants.length === 0) {
         throw new Error("You need to have plants in your collection to generate a care schedule");
       }
@@ -160,7 +161,7 @@ export function CareScheduleOptimizer() {
     },
   });
   
-  const onSubmit: SubmitHandler<ScheduleFormValues> = (values) => {
+  const onSubmit = (values: FormValues) => {
     scheduleMutation.mutate(values);
   };
   
