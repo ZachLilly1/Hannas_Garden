@@ -257,7 +257,7 @@ export function PersonalizedPlantAdvisor() {
       {advice && (
         <Card className="border-green-200 dark:border-green-900">
           <CardHeader className="bg-green-50 dark:bg-green-950">
-            <CardTitle>Care Advice for {selectedPlantName}</CardTitle>
+            <span className="font-medium">Advice for {selectedPlantName}</span>
             <CardDescription>
               Personalized recommendations based on your plant's needs and environment
             </CardDescription>
