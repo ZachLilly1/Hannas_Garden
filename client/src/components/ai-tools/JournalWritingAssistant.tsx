@@ -200,8 +200,8 @@ ${journalEntry.nextSteps.map(step => `- ${step}`).join('\n')}
       </Card>
       
       {journalEntry && (
-        <Card className="border-indigo-200">
-          <CardHeader className="bg-indigo-50">
+        <Card className="border-indigo-200 dark:border-indigo-900">
+          <CardHeader className="bg-indigo-50 dark:bg-indigo-950">
             <div className="flex justify-between items-start">
               <div>
                 <CardTitle>{journalEntry.title}</CardTitle>
@@ -268,8 +268,8 @@ ${journalEntry.nextSteps.map(step => `- ${step}`).join('\n')}
               </TabsContent>
             </Tabs>
           </CardContent>
-          <CardFooter className="bg-indigo-50 flex justify-center border-t border-indigo-100">
-            <p className="text-sm text-indigo-700 flex items-center">
+          <CardFooter className="bg-indigo-50 dark:bg-indigo-950 flex justify-center border-t border-indigo-100 dark:border-indigo-800">
+            <p className="text-sm text-indigo-700 dark:text-indigo-400 flex items-center">
               <Brain className="mr-2 h-4 w-4" />
               AI-powered journal writing powered by OpenAI
             </p>
