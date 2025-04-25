@@ -350,10 +350,10 @@ export function PlantArrangementDesigner() {
       {arrangement && (
         <Card className="border-teal-200 dark:border-teal-900">
           <CardHeader className="bg-teal-50 dark:bg-teal-950">
-            <CardTitle className="flex items-center text-base">
+            <span className="flex items-center text-base font-medium">
               <PanelTop className="mr-2 h-5 w-5 text-teal-500" />
-              Plant Arrangement Suggestions
-            </CardTitle>
+              Arrangement Suggestions
+            </span>
             <CardDescription>
               Aesthetic and functional arrangement ideas for your plants
             </CardDescription>
