@@ -337,33 +337,120 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
                         className="w-full h-full object-cover"
                       />
                       <div 
-                        onClick={handleImageClick}
-                        className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
-                        <CameraIcon className="h-8 w-8 text-white mb-2" />
-                        <p className="text-sm text-white">Change photo</p>
+                        className="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                        <p className="text-sm text-white mb-4">Change photo</p>
+                        <div className="flex gap-3">
+                          <button 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (fileInputRef.current) {
+                                fileInputRef.current.removeAttribute('capture');
+                                fileInputRef.current.click();
+                              }
+                            }}
+                            className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-md text-sm flex items-center gap-1"
+                          >
+                            <svg 
+                              xmlns="http://www.w3.org/2000/svg" 
+                              className="h-4 w-4" 
+                              viewBox="0 0 24 24" 
+                              fill="none" 
+                              stroke="currentColor" 
+                              strokeWidth="2" 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round"
+                            >
+                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                              <circle cx="8.5" cy="8.5" r="1.5" />
+                              <polyline points="21 15 16 10 5 21" />
+                            </svg>
+                            Gallery
+                          </button>
+                          <button 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (fileInputRef.current) {
+                                fileInputRef.current.setAttribute('capture', 'environment');
+                                fileInputRef.current.click();
+                              }
+                            }}
+                            className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-md text-sm flex items-center gap-1"
+                          >
+                            <CameraIcon className="h-4 w-4" />
+                            Camera
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 ) : (
                   <>
                     <div 
-                      onClick={handleImageClick}
                       className="h-56 bg-neutral-medium bg-opacity-30 rounded-lg flex flex-col items-center justify-center cursor-pointer relative overflow-hidden mb-3"
                     >
-                      <CameraIcon className="h-12 w-12 text-neutral-dark opacity-60 mb-2" />
-                      <p className="text-neutral-dark opacity-70">Tap to add a plant photo</p>
-                      <p className="text-neutral-dark opacity-50 text-sm mt-1">Upload from your device or take a photo</p>
+                      <div className="mb-2">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-16 w-16 text-neutral-dark opacity-50"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7" />
+                          <line x1="16" y1="5" x2="22" y2="5" />
+                          <line x1="19" y1="2" x2="19" y2="8" />
+                          <circle cx="9" cy="9" r="2" />
+                          <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                        </svg>
+                      </div>
+                      <p className="text-neutral-dark opacity-70">Add plant photo</p>
+                      <p className="text-neutral-dark opacity-50 text-sm mt-1">Use the buttons below to choose a method</p>
                     </div>
                     
                     <div className="flex justify-center gap-3 mb-3">
                       <Button
                         type="button"
-                        onClick={handleImageClick}
+                        onClick={() => {
+                          if (fileInputRef.current) {
+                            fileInputRef.current.removeAttribute('capture');
+                            fileInputRef.current.click();
+                          }
+                        }}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        <svg 
+                          xmlns="http://www.w3.org/2000/svg" 
+                          className="h-5 w-5" 
+                          viewBox="0 0 24 24" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          strokeWidth="2" 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round"
+                        >
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                          <circle cx="8.5" cy="8.5" r="1.5" />
+                          <polyline points="21 15 16 10 5 21" />
+                        </svg>
+                        Gallery
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          if (fileInputRef.current) {
+                            fileInputRef.current.setAttribute('capture', 'environment');
+                            fileInputRef.current.click();
+                          }
+                        }}
                         variant="outline"
                         className="flex items-center gap-2"
                       >
                         <CameraIcon className="h-5 w-5" />
-                        Select Photo
+                        Camera
                       </Button>
                     </div>
                   </>
