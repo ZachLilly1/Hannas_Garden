@@ -305,9 +305,38 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
     { value: "0", label: "No fertilization" }
   ];
 
+  // Handle keyboard shortcuts
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // If Escape is pressed, close the modal (this is built-in for Dialog but adding for clarity)
+    if (e.key === 'Escape') {
+      onClose();
+    }
+    // If Enter is pressed in a field but not inside a textarea, submit the form
+    if (e.key === 'Enter' && e.target instanceof HTMLInputElement && e.target.type !== 'textarea') {
+      e.preventDefault();
+      form.handleSubmit(onSubmit)();
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md mx-auto p-0 rounded-t-xl sm:rounded-lg max-h-[90vh] overflow-y-auto" onInteractOutside={onClose}>
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent 
+        className="max-w-md mx-auto p-0 rounded-t-xl sm:rounded-lg max-h-[90vh] overflow-y-auto" 
+        onKeyDown={handleKeyDown}
+        onInteractOutside={(e) => {
+          // Only close if not in the middle of filling out the form
+          if (!isIdentifying) {
+            onClose();
+          } else {
+            e.preventDefault(); // Prevent closing during identification
+          }
+        }}
+      >
         <DialogHeader className="p-4 border-b border-neutral-medium">
           <DialogTitle className="text-lg font-medium">
             {plantToEdit ? "Edit Plant" : "Add New Plant"}
@@ -419,6 +448,16 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
                             fileInputRef.current.click();
                           }
                         }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            if (fileInputRef.current) {
+                              fileInputRef.current.removeAttribute('capture');
+                              fileInputRef.current.click();
+                            }
+                          }
+                        }}
+                        aria-label="Select image from gallery"
                         variant="outline"
                         className="flex items-center gap-2"
                       >
@@ -431,6 +470,7 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
                           strokeWidth="2" 
                           strokeLinecap="round" 
                           strokeLinejoin="round"
+                          aria-hidden="true"
                         >
                           <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                           <circle cx="8.5" cy="8.5" r="1.5" />
@@ -446,10 +486,20 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
                             fileInputRef.current.click();
                           }
                         }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            if (fileInputRef.current) {
+                              fileInputRef.current.setAttribute('capture', 'environment');
+                              fileInputRef.current.click();
+                            }
+                          }
+                        }}
+                        aria-label="Take photo with camera"
                         variant="outline"
                         className="flex items-center gap-2"
                       >
-                        <CameraIcon className="h-5 w-5" />
+                        <CameraIcon className="h-5 w-5" aria-hidden="true" />
                         Camera
                       </Button>
                     </div>
