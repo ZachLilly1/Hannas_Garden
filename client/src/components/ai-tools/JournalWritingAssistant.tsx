@@ -119,16 +119,7 @@ ${journalEntry.nextSteps.map(step => `- ${step}`).join('\n')}
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <BookOpen className="mr-2 h-5 w-5 text-indigo-500" />
-            Journal Writing Assistant
-          </CardTitle>
-          <CardDescription>
-            Transform your care logs into detailed and insightful journal entries
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="space-y-6">
             <div className="space-y-3">
               <Label htmlFor="plant-select">Select a Plant</Label>

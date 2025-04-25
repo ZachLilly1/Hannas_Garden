@@ -98,16 +98,7 @@ export function CommunityInsights() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Users className="mr-2 h-5 w-5 text-pink-500" />
-            Community Insights
-          </CardTitle>
-          <CardDescription>
-            Discover best practices from the plant care community based on collective experience
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField

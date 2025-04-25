@@ -112,16 +112,7 @@ export function PlantArrangementDesigner() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <PanelTop className="mr-2 h-5 w-5 text-teal-500" />
-            Plant Arrangement Designer
-          </CardTitle>
-          <CardDescription>
-            Get AI-powered suggestions for arranging your plants aesthetically and functionally
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">

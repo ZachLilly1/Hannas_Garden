@@ -82,16 +82,7 @@ export function PlantCareExpert() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Search className="mr-2 h-5 w-5 text-amber-500" />
-            Plant Care Expert
-          </CardTitle>
-          <CardDescription>
-            Get expert answers to your plant care questions using AI
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="space-y-6">
             <div className="space-y-3">
               <Label htmlFor="question">Your Plant Care Question</Label>
