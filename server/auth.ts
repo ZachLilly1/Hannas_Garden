@@ -36,7 +36,7 @@ try {
   // Fix for MaxListenersExceededWarning
   // Increase max listeners for the session store
   if (pgSessionStore.setMaxListeners) {
-    pgSessionStore.setMaxListeners(50); // Increase to accommodate all listeners
+    pgSessionStore.setMaxListeners(100); // Increase substantially to prevent warnings
   }
   
   console.log('PostgreSQL session store initialized successfully');
