@@ -464,8 +464,8 @@ export function CareScheduleOptimizer() {
               </TabsContent>
             </Tabs>
           </CardContent>
-          <CardFooter className="bg-orange-50 flex justify-center border-t border-orange-100">
-            <p className="text-sm text-orange-700 flex items-center">
+          <CardFooter className="bg-orange-50 dark:bg-orange-950 flex justify-center border-t border-orange-100 dark:border-orange-800">
+            <p className="text-sm text-orange-700 dark:text-orange-400 flex items-center">
               <Brain className="mr-2 h-4 w-4" />
               AI-powered schedule optimization powered by OpenAI
             </p>
