@@ -8,6 +8,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MainLayout } from "@/components/layouts/MainLayout";
+import { ErrorBoundary } from '@/components/error/ErrorBoundary';
+import NetworkStatusIndicator from '@/components/error/NetworkStatusIndicator';
 import Dashboard from "@/pages/dashboard";
 import Plants from "@/pages/plants";
 import CareSchedule from "@/pages/care-schedule";
@@ -177,18 +179,21 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ThemeProvider>
-          <PlantProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Router />
-            </TooltipProvider>
-          </PlantProvider>
-        </ThemeProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ThemeProvider>
+            <PlantProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Router />
+                <NetworkStatusIndicator />
+              </TooltipProvider>
+            </PlantProvider>
+          </ThemeProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
