@@ -355,8 +355,8 @@ export function CareScheduleOptimizer() {
       </Card>
       
       {schedule && (
-        <Card className="border-orange-200">
-          <CardHeader className="bg-orange-50">
+        <Card className="border-orange-200 dark:border-orange-900">
+          <CardHeader className="bg-orange-50 dark:bg-orange-950">
             <CardTitle className="flex items-center text-base">
               <Calendar className="mr-2 h-5 w-5 text-orange-500" />
               Your Optimized Care Schedule
@@ -380,8 +380,8 @@ export function CareScheduleOptimizer() {
               
               <TabsContent value="schedule" className="space-y-6">
                 {schedule.weeklySchedule.map((day, dayIndex) => (
-                  <Card key={dayIndex} className={day.tasks.length > 0 ? "border-orange-100" : "border-slate-100"}>
-                    <CardHeader className={`pb-2 ${day.tasks.length > 0 ? "bg-orange-50" : "bg-slate-50"}`}>
+                  <Card key={dayIndex} className={day.tasks.length > 0 ? "border-orange-100 dark:border-orange-800" : "border-slate-100 dark:border-slate-700"}>
+                    <CardHeader className={`pb-2 ${day.tasks.length > 0 ? "bg-orange-50 dark:bg-orange-950" : "bg-slate-50 dark:bg-slate-800"}`}>
                       <CardTitle className="text-base">{day.day}</CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
@@ -426,8 +426,8 @@ export function CareScheduleOptimizer() {
               </TabsContent>
               
               <TabsContent value="notes" className="space-y-6">
-                <Card className="border-green-100">
-                  <CardHeader className="pb-2 bg-green-50">
+                <Card className="border-green-100 dark:border-green-800">
+                  <CardHeader className="pb-2 bg-green-50 dark:bg-green-950">
                     <CardTitle className="text-base">Efficiency Tips</CardTitle>
                   </CardHeader>
                   <CardContent className="p-4">
@@ -443,8 +443,8 @@ export function CareScheduleOptimizer() {
                 </Card>
                 
                 {schedule.specialNotes.length > 0 && (
-                  <Card className="border-amber-100">
-                    <CardHeader className="pb-2 bg-amber-50">
+                  <Card className="border-amber-100 dark:border-amber-800">
+                    <CardHeader className="pb-2 bg-amber-50 dark:bg-amber-950">
                       <CardTitle className="text-base">Special Notes</CardTitle>
                     </CardHeader>
                     <CardContent className="p-4">
