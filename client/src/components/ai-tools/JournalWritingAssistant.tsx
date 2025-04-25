@@ -170,7 +170,7 @@ ${journalEntry.nextSteps.map(step => `- ${step}`).join('\n')}
                       </div>
                     ) : careLogs && careLogs.length > 0 ? (
                       careLogs.map((log) => {
-                        const date = new Date(log.createdAt).toLocaleDateString();
+                        const date = new Date(log.timestamp || Date.now()).toLocaleDateString();
                         return (
                           <SelectItem key={log.id} value={log.id.toString()}>
                             {date} - {log.careType.charAt(0).toUpperCase() + log.careType.slice(1)}

@@ -18,6 +18,13 @@ import LightMeterPage from "@/pages/light-meter";
 import PlantIdentifierPage from "@/pages/tools/plant-identifier";
 import PlantHealthDiagnosticPage from "@/pages/tools/plant-health-diagnostic";
 import PersonalizedAdvicePage from "@/pages/tools/personalized-advice";
+import SeasonalCarePage from "@/pages/tools/seasonal-care";
+import PlantArrangementPage from "@/pages/tools/plant-arrangement";
+import JournalGeneratorPage from "@/pages/tools/journal-generator";
+import GrowthAnalyzerPage from "@/pages/tools/growth-analyzer";
+import PlantExpertPage from "@/pages/tools/plant-expert";
+import CareSchedulerPage from "@/pages/tools/care-scheduler";
+import CommunityInsightsPage from "@/pages/tools/community-insights";
 import HealthDiagnosisDemo from "@/pages/health-diagnosis-demo";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
@@ -96,6 +103,55 @@ function Router() {
         <ProtectedRoute>
           <MainLayout>
             <PersonalizedAdvicePage />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/tools/seasonal-care">
+        <ProtectedRoute>
+          <MainLayout>
+            <SeasonalCarePage />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/tools/plant-arrangement">
+        <ProtectedRoute>
+          <MainLayout>
+            <PlantArrangementPage />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/tools/journal-generator">
+        <ProtectedRoute>
+          <MainLayout>
+            <JournalGeneratorPage />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/tools/growth-analyzer">
+        <ProtectedRoute>
+          <MainLayout>
+            <GrowthAnalyzerPage />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/tools/plant-expert">
+        <ProtectedRoute>
+          <MainLayout>
+            <PlantExpertPage />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/tools/care-scheduler">
+        <ProtectedRoute>
+          <MainLayout>
+            <CareSchedulerPage />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/tools/community-insights">
+        <ProtectedRoute>
+          <MainLayout>
+            <CommunityInsightsPage />
           </MainLayout>
         </ProtectedRoute>
       </Route>
