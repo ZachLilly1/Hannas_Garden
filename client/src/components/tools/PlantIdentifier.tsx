@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Loader2, Camera, Upload, X } from "lucide-react";
+import { Loader2, Camera, Upload, X, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -8,6 +8,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlantWithCare } from "@shared/schema";
 
 // Types for plant identification result from OpenAI
@@ -29,6 +30,7 @@ export function PlantIdentifier({ onAddToCollection }: {
 }) {
   const [image, setImage] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [plantLocation, setPlantLocation] = useState<string>("Living Room");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -127,11 +129,12 @@ export function PlantIdentifier({ onAddToCollection }: {
       name: commonName,
       scientificName: scientificName,
       type: identifyMutation.data.plantType.toLowerCase(),
+      location: plantLocation, // Use the selected location from state
       waterFrequency: careRecommendations.waterFrequency,
       fertilizerFrequency: careRecommendations.fertilizerFrequency,
       sunlightLevel: careRecommendations.sunlightLevel,
       notes: careRecommendations.additionalCare,
-      imageBase64: imageBase64, // Send just the base64 data, not the full data URL
+      image: imageBase64, // Use 'image' field name instead of 'imageBase64'
     };
     
     if (onAddToCollection) {
@@ -285,7 +288,32 @@ export function PlantIdentifier({ onAddToCollection }: {
         </CardContent>
         
         {identifyMutation.data && onAddToCollection && (
-          <CardFooter>
+          <CardFooter className="flex-col space-y-4">
+            <div className="w-full">
+              <Label htmlFor="location" className="mb-2 block">
+                <MapPin className="h-4 w-4 inline mr-1" />
+                Plant Location
+              </Label>
+              <Select
+                value={plantLocation}
+                onValueChange={setPlantLocation}
+              >
+                <SelectTrigger id="location">
+                  <SelectValue placeholder="Select a location" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Living Room">Living Room</SelectItem>
+                  <SelectItem value="Kitchen">Kitchen</SelectItem>
+                  <SelectItem value="Bedroom">Bedroom</SelectItem>
+                  <SelectItem value="Bathroom">Bathroom</SelectItem>
+                  <SelectItem value="Office">Office</SelectItem>
+                  <SelectItem value="Balcony">Balcony</SelectItem>
+                  <SelectItem value="Garden">Garden</SelectItem>
+                  <SelectItem value="Patio">Patio</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
             <Button 
               onClick={handleAddToCollection} 
               className="w-full"
