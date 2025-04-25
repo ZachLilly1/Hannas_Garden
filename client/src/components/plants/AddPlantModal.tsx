@@ -117,11 +117,13 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
     }
   };
 
-  // Trigger file input click
+  // Open file selector for choosing photos
   const handleImageClick = () => {
-    // No longer forcing 'capture' attribute, allowing user to choose
-    // between camera and gallery on mobile devices
-    fileInputRef.current?.click();
+    // Standard file picker with no capture attribute
+    if (fileInputRef.current) {
+      fileInputRef.current.removeAttribute('capture');
+      fileInputRef.current.click();
+    }
   };
 
   // Identify plant using OpenAI
@@ -317,6 +319,7 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {/* Plant Image Upload */}
               <div className="mb-4">
+                {/* File input for selecting photos */}
                 <input 
                   type="file" 
                   ref={fileInputRef}
@@ -348,10 +351,11 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
                       className="h-56 bg-neutral-medium bg-opacity-30 rounded-lg flex flex-col items-center justify-center cursor-pointer relative overflow-hidden mb-3"
                     >
                       <CameraIcon className="h-12 w-12 text-neutral-dark opacity-60 mb-2" />
-                      <p className="text-neutral-dark opacity-70">Tap to take a photo</p>
+                      <p className="text-neutral-dark opacity-70">Tap to add a plant photo</p>
+                      <p className="text-neutral-dark opacity-50 text-sm mt-1">Upload from your device or take a photo</p>
                     </div>
                     
-                    <div className="flex justify-center mb-3">
+                    <div className="flex justify-center gap-3 mb-3">
                       <Button
                         type="button"
                         onClick={handleImageClick}
@@ -359,7 +363,7 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
                         className="flex items-center gap-2"
                       >
                         <CameraIcon className="h-5 w-5" />
-                        Upload from Gallery
+                        Select Photo
                       </Button>
                     </div>
                   </>
