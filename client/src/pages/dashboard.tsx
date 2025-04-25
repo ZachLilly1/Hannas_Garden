@@ -60,7 +60,7 @@ export default function Dashboard() {
         </div>
         
         {/* Care Tasks Summary */}
-        <CareTaskSummary userId={1} />
+        <CareTaskSummary userId={0} /> {/* userId is determined on the server from the session */}
       </section>
       
       {/* Plants Collection */}

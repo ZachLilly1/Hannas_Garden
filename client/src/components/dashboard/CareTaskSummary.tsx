@@ -3,17 +3,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { WaterDropIcon, SunIcon, SeedlingIcon } from "@/lib/icons";
 import { useQuery } from "@tanstack/react-query";
 import { type PlantWithCare } from "@shared/schema";
+import { useAuth } from "@/context/AuthContext";
 
+// We don't need userId prop anymore as we'll get it from auth context
 interface CareSummaryProps {
-  userId: number;
+  userId?: number; // Made optional for backward compatibility
 }
 
-export function CareTaskSummary({ userId }: CareSummaryProps) {
+export function CareTaskSummary({ userId: propUserId }: CareSummaryProps) {
+  // Get the current user from auth context
+  const { user } = useAuth();
   const { data, isLoading } = useQuery<{
     needsWater: PlantWithCare[];
     needsFertilizer: PlantWithCare[];
   }>({
     queryKey: ['/api/dashboard/care-needed'],
+    // The API uses the authenticated user session so we don't need to pass userId
   });
 
   // Calculate plants needing different sunlight levels
@@ -38,6 +43,11 @@ export function CareTaskSummary({ userId }: CareSummaryProps) {
           </div>
           <div className="flex flex-col items-center bg-green-50 dark:bg-green-900/30 p-3 rounded-lg flex-1 animate-pulse">
             <div className="h-6 w-6 bg-green-200 dark:bg-green-700 rounded-full mb-1"></div>
+            <div className="h-3 w-12 bg-gray-200 dark:bg-gray-700 mb-1"></div>
+            <div className="h-4 w-8 bg-gray-300 dark:bg-gray-600"></div>
+          </div>
+          <div className="flex flex-col items-center bg-yellow-50 dark:bg-yellow-900/30 p-3 rounded-lg flex-1 animate-pulse">
+            <div className="h-6 w-6 bg-yellow-200 dark:bg-yellow-700 rounded-full mb-1"></div>
             <div className="h-3 w-12 bg-gray-200 dark:bg-gray-700 mb-1"></div>
             <div className="h-4 w-8 bg-gray-300 dark:bg-gray-600"></div>
           </div>
@@ -67,6 +77,13 @@ export function CareTaskSummary({ userId }: CareSummaryProps) {
           </div>
           <span className="text-xs text-neutral-dark dark:text-gray-300 opacity-70">Fertilize</span>
           <span className="font-medium text-sm dark:text-white">{fertilizerCount} plant{fertilizerCount !== 1 ? 's' : ''}</span>
+        </div>
+        <div className="flex flex-col items-center bg-yellow-50 dark:bg-yellow-900/30 p-3 rounded-lg flex-1">
+          <div className="text-yellow-500 dark:text-yellow-400 mb-1">
+            <SunIcon className="h-6 w-6" />
+          </div>
+          <span className="text-xs text-neutral-dark dark:text-gray-300 opacity-70">Sunlight</span>
+          <span className="font-medium text-sm dark:text-white">{sunlightCount} plant{sunlightCount !== 1 ? 's' : ''}</span>
         </div>
       </div>
     </Card>
