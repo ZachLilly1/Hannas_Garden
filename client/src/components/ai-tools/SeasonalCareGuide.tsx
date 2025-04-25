@@ -264,18 +264,18 @@ export function SeasonalCareGuide() {
                               <p className="text-sm">{plant.light}</p>
                             </div>
                             <div className="space-y-2">
-                              <h4 className="font-medium text-green-600">Fertilizing</h4>
+                              <h4 className="font-medium text-green-600 dark:text-green-400">Fertilizing</h4>
                               <p className="text-sm">{plant.fertilizing}</p>
                             </div>
                             <div className="space-y-2">
-                              <h4 className="font-medium text-purple-600">Pruning</h4>
+                              <h4 className="font-medium text-purple-600 dark:text-purple-400">Pruning</h4>
                               <p className="text-sm">{plant.pruning}</p>
                             </div>
                           </div>
                           
                           {plant.specialCare && (
                             <div className="border-t pt-4 mt-4">
-                              <h4 className="font-medium text-orange-600 flex items-center">
+                              <h4 className="font-medium text-orange-600 dark:text-orange-400 flex items-center">
                                 <Info className="h-4 w-4 mr-1" />
                                 Special Care for this Season
                               </h4>
@@ -290,8 +290,8 @@ export function SeasonalCareGuide() {
               </Tabs>
             </div>
           </CardContent>
-          <CardFooter className="bg-blue-50 flex justify-center border-t border-blue-100">
-            <p className="text-sm text-blue-700 flex items-center">
+          <CardFooter className="bg-blue-50 dark:bg-blue-950 flex justify-center border-t border-blue-100 dark:border-blue-800">
+            <p className="text-sm text-blue-700 dark:text-blue-400 flex items-center">
               <Brain className="mr-2 h-4 w-4" />
               AI-powered recommendations powered by OpenAI
             </p>
