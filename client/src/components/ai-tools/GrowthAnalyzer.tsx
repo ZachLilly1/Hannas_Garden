@@ -134,9 +134,9 @@ export function GrowthAnalyzer() {
   };
   
   // Format date for display
-  const formatDate = (dateString: string | null) => {
+  const formatDate = (dateString: string | Date | null) => {
     if (!dateString) return "Unknown date";
-    const date = new Date(dateString);
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
     return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   };
   
@@ -358,17 +358,17 @@ export function GrowthAnalyzer() {
                 </Accordion>
                 
                 <div className="grid grid-cols-3 gap-4 mt-4">
-                  {images.map((image, index) => (
-                    <div key={index} className="space-y-2">
+                  {photosForDisplay.map((log, index) => (
+                    <div key={log.id} className="space-y-2">
                       <div className="rounded-md overflow-hidden border">
                         <img
-                          src={`data:image/jpeg;base64,${image}`}
+                          src={log.photo!}
                           alt={`Plant photo ${index + 1}`}
                           className="w-full object-cover"
                         />
                       </div>
                       <p className="text-xs text-center text-muted-foreground">
-                        {index === 0 ? "Earlier" : index === images.length - 1 ? "Latest" : "Middle"}
+                        {index === 0 ? "Earlier" : index === photosForDisplay.length - 1 ? "Latest" : "Middle"}
                       </p>
                     </div>
                   ))}
