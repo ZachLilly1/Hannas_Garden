@@ -356,10 +356,10 @@ export function CareScheduleOptimizer() {
       {schedule && (
         <Card className="border-orange-200 dark:border-orange-900">
           <CardHeader className="bg-orange-50 dark:bg-orange-950">
-            <CardTitle className="flex items-center text-base">
+            <span className="flex items-center text-base font-medium">
               <Calendar className="mr-2 h-5 w-5 text-orange-500" />
-              Your Optimized Care Schedule
-            </CardTitle>
+              Weekly Care Plan
+            </span>
             <CardDescription>
               AI-generated schedule based on your plants' needs and your availability
             </CardDescription>

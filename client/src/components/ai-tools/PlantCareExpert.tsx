@@ -151,10 +151,10 @@ export function PlantCareExpert() {
         <Card className="border-amber-200">
           <CardHeader className="bg-amber-50 dark:bg-amber-950">
             <div className="flex justify-between items-start">
-              <CardTitle className="flex items-center">
+              <span className="flex items-center font-medium">
                 <Brain className="mr-2 h-5 w-5 text-amber-500 dark:text-amber-400" />
-                Expert Answer
-              </CardTitle>
+                Answer
+              </span>
               <div className={`px-2 py-1 rounded-full text-xs ${getConfidenceBadgeColor(answer.confidenceLevel)}`}>
                 {answer.confidenceLevel.charAt(0).toUpperCase() + answer.confidenceLevel.slice(1)} confidence
               </div>

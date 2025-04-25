@@ -156,10 +156,10 @@ export function CommunityInsights() {
       {insights && (
         <Card className="border-pink-200">
           <CardHeader className="bg-pink-50 dark:bg-pink-950">
-            <CardTitle className="flex items-center">
+            <span className="flex items-center font-medium">
               <Users className="mr-2 h-5 w-5 text-pink-500 dark:text-pink-400" />
-              {insights.plantType} Community Insights
-            </CardTitle>
+              {insights.plantType} Insights
+            </span>
             <CardDescription className="dark:text-pink-300/70">
               Collective wisdom and best practices from the plant community
             </CardDescription>
