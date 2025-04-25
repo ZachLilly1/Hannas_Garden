@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, Brain, BarChart, Upload, Camera, ArrowRight, ArrowRightLeft, Zap, AlertTriangle, ChevronRight } from "lucide-react";
+import { Loader2, Brain, BarChart, Clock, Calendar, ArrowRightLeft, Zap, AlertTriangle, ChevronRight } from "lucide-react";
 import { apiRequest } from '@/lib/queryClient';
-import { PlantWithCare } from '@shared/schema';
+import { PlantWithCare, CareLog } from '@shared/schema';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -27,76 +27,79 @@ interface GrowthAnalysis {
 export function GrowthAnalyzer() {
   const { toast } = useToast();
   const [selectedPlantId, setSelectedPlantId] = useState<string>("");
-  const [images, setImages] = useState<string[]>([]);
   const [analysis, setAnalysis] = useState<GrowthAnalysis | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedPhotos, setSelectedPhotos] = useState<CareLog[]>([]);
   
   // Query to get user's plants
   const { data: plants, isLoading: isPlantsLoading } = useQuery<PlantWithCare[]>({
     queryKey: ['/api/plants'],
   });
   
-  // Handle file selection
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-    
-    // Check if we already have 3 images (maximum)
-    if (images.length >= 3) {
-      toast({
-        title: "Maximum images reached",
-        description: "Please remove some images before adding more",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Check file size
-    const file = files[0];
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "Image too large",
-        description: "Please select an image smaller than 5MB",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      if (result) {
-        // Store base64 string without the prefix
-        const base64Data = result.split(',')[1];
-        setImages([...images, base64Data]);
+  // Query to get care logs with photos for the selected plant
+  const { data: careLogs, isLoading: isLogsLoading } = useQuery<CareLog[]>({
+    queryKey: ['/api/plants', selectedPlantId, 'care-logs'],
+    enabled: !!selectedPlantId,
+  });
+  
+  // Filter care logs with photos
+  const careLogsWithPhotos = careLogs?.filter(log => log.photo) || [];
+  
+  // Toggle photo selection for analysis
+  const togglePhotoSelection = (log: CareLog) => {
+    if (selectedPhotos.find(p => p.id === log.id)) {
+      // Remove if already selected
+      setSelectedPhotos(selectedPhotos.filter(p => p.id !== log.id));
+    } else {
+      // Add if not already selected (max 3)
+      if (selectedPhotos.length < 3) {
+        // Sort by date to maintain chronological order
+        const newSelection = [...selectedPhotos, log].sort((a, b) => {
+          const dateA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+          const dateB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+          return dateA - dateB;
+        });
+        setSelectedPhotos(newSelection);
+      } else {
+        toast({
+          title: "Maximum photos reached",
+          description: "Please deselect a photo before selecting another",
+          variant: "destructive",
+        });
       }
-    };
-    reader.readAsDataURL(file);
-    
-    // Reset the file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
     }
   };
   
-  // Remove an image
-  const removeImage = (index: number) => {
-    const newImages = [...images];
-    newImages.splice(index, 1);
-    setImages(newImages);
+  // Extract base64 image data from care log photo
+  const getBase64FromPhoto = (photoUrl: string): string => {
+    // If it's already a base64 data URL, extract just the base64 part
+    if (photoUrl.startsWith('data:image/')) {
+      return photoUrl.split(',')[1];
+    }
+    return photoUrl;
+  };
+  
+  // When plant selection changes, reset selected photos
+  const handlePlantChange = (plantId: string) => {
+    setSelectedPlantId(plantId);
+    setSelectedPhotos([]);
+    setAnalysis(null);
   };
   
   // Mutation to get growth analysis
   const analysisMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedPlantId || images.length === 0) {
-        throw new Error("Please select a plant and upload at least one image");
+      if (!selectedPlantId || selectedPhotos.length === 0) {
+        throw new Error("Please select a plant and at least one photo from care history");
       }
+      
+      const imageBase64Array = selectedPhotos
+        .filter(log => log.photo)
+        .map(log => getBase64FromPhoto(log.photo!));
       
       const res = await apiRequest(
         "POST", 
         `/api/ai/growth-analysis/${selectedPlantId}`, 
-        { imageBase64Array: images }
+        { imageBase64Array }
       );
       return res.json();
     },
@@ -132,6 +135,13 @@ export function GrowthAnalyzer() {
     }
   };
   
+  // Format date for display
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "Unknown date";
+    const date = new Date(dateString);
+    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+  
   const growthInfo = getGrowthRateInfo();
   
   return (
@@ -143,14 +153,14 @@ export function GrowthAnalyzer() {
             Growth Analyzer
           </CardTitle>
           <CardDescription>
-            Track and analyze your plant's growth over time using AI image analysis
+            Track and analyze your plant's growth over time using photos from your care history
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
             <div className="space-y-3">
               <Label htmlFor="plant-select">Select a Plant</Label>
-              <Select onValueChange={setSelectedPlantId} value={selectedPlantId}>
+              <Select onValueChange={handlePlantChange} value={selectedPlantId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a plant to analyze" />
                 </SelectTrigger>
@@ -174,88 +184,121 @@ export function GrowthAnalyzer() {
               </Select>
             </div>
             
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <Label>Upload Growth Photos</Label>
-                <Badge variant="outline" className="text-xs">
-                  {images.length}/3 images
-                </Badge>
-              </div>
-              
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="relative"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={images.length >= 3}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Image
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="sr-only"
-                    onChange={handleFileChange}
-                  />
-                </Button>
+            {selectedPlantId && (
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <Label>Select Photos from Care History</Label>
+                  <Badge variant="outline" className="text-xs">
+                    {selectedPhotos.length}/3 photos selected
+                  </Badge>
+                </div>
                 
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={images.length >= 3}
-                >
-                  <Camera className="h-4 w-4 mr-2" />
-                  Take Photo
-                </Button>
-              </div>
-              
-              {images.length > 0 && (
-                <div className="grid grid-cols-3 gap-4 mt-4">
-                  {images.map((image, index) => (
-                    <div key={index} className="relative">
-                      <div className="h-24 w-full rounded-md overflow-hidden border">
-                        <img
-                          src={`data:image/jpeg;base64,${image}`}
-                          alt={`Plant photo ${index + 1}`}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="h-6 w-6 absolute -top-2 -right-2 rounded-full"
-                        onClick={() => removeImage(index)}
-                      >
-                        <span className="sr-only">Remove image</span>
-                        ✕
-                      </Button>
-                      {images.length > 1 && index < images.length - 1 && (
-                        <div className="absolute -right-7 top-1/2 transform -translate-y-1/2">
-                          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                {isLogsLoading ? (
+                  <div className="flex justify-center p-4">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : careLogsWithPhotos.length === 0 ? (
+                  <Alert>
+                    <AlertTitle>No photos available</AlertTitle>
+                    <AlertDescription>
+                      This plant doesn't have any care logs with photos. Add some care logs with photos first.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                      {careLogsWithPhotos.map((log) => (
+                        <div 
+                          key={log.id} 
+                          className={`border rounded-md overflow-hidden cursor-pointer transition-colors ${
+                            selectedPhotos.find(p => p.id === log.id) 
+                              ? 'border-emerald-500 ring-2 ring-emerald-500 ring-opacity-50' 
+                              : 'hover:border-emerald-200'
+                          }`}
+                          onClick={() => togglePhotoSelection(log)}
+                        >
+                          <div className="aspect-square overflow-hidden">
+                            <img
+                              src={log.photo!}
+                              alt={`Plant care log from ${formatDate(log.timestamp)}`}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                          <div className="p-2 bg-gray-50 flex items-center justify-between text-xs">
+                            <div className="flex items-center text-muted-foreground">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {formatDate(log.timestamp)}
+                            </div>
+                            <Badge variant="outline" className="capitalize text-xs">
+                              {log.careType.replace('_', ' ')}
+                            </Badge>
+                          </div>
                         </div>
-                      )}
+                      ))}
+                    </div>
+                    
+                    {careLogsWithPhotos.length > 0 && (
+                      <Alert variant="default" className="bg-blue-50 border-blue-200">
+                        <Clock className="h-4 w-4 text-blue-500" />
+                        <AlertTitle>Select in Chronological Order</AlertTitle>
+                        <AlertDescription className="text-sm">
+                          For best results, select 2-3 photos taken at different points in time to analyze growth patterns.
+                          Photos will be analyzed in chronological order.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {selectedPhotos.length > 0 && (
+              <div className="space-y-3">
+                <Label>Selected Photos for Analysis</Label>
+                <div className="grid grid-cols-3 gap-4 mt-4">
+                  {selectedPhotos.map((log, index) => (
+                    <div key={log.id} className="space-y-1">
+                      <div className="relative">
+                        <div className="h-24 w-full rounded-md overflow-hidden border">
+                          <img
+                            src={log.photo!}
+                            alt={`Selected plant photo ${index + 1}`}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="h-6 w-6 absolute -top-2 -right-2 rounded-full"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedPhotos(selectedPhotos.filter(p => p.id !== log.id));
+                          }}
+                        >
+                          <span className="sr-only">Remove selection</span>
+                          ✕
+                        </Button>
+                        <Badge
+                          className="absolute bottom-1 right-1 text-xs"
+                          variant="secondary"
+                        >
+                          {index === 0 ? "First" : index === selectedPhotos.length - 1 ? "Latest" : "Middle"}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-center text-muted-foreground">
+                        {formatDate(log.timestamp)}
+                      </p>
                     </div>
                   ))}
                 </div>
-              )}
-              
-              {images.length === 0 && (
-                <div className="border border-dashed rounded-md p-6 text-center">
-                  <p className="text-muted-foreground text-sm">
-                    Upload 1-3 photos of your plant taken at different points in time to analyze growth patterns.
-                    For best results, use photos from the same angle with good lighting.
-                  </p>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
             
             <Button 
               onClick={() => analysisMutation.mutate()} 
               className="w-full"
-              disabled={!selectedPlantId || images.length === 0 || analysisMutation.isPending}
+              disabled={!selectedPlantId || selectedPhotos.length === 0 || analysisMutation.isPending}
             >
               {analysisMutation.isPending ? (
                 <>
