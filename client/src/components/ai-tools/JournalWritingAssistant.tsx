@@ -51,7 +51,7 @@ export function JournalWritingAssistant() {
     mutationFn: async (careLogId: string) => {
       const res = await apiRequest(
         "POST", 
-        `/api/ai/journal-entry/${careLogId}`, 
+        `/api/ai/journal-entry/${careLogId}?plantId=${selectedPlantId}`, 
         {}
       );
       return res.json();
