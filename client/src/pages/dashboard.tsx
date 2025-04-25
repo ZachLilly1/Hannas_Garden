@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ComponentErrorBoundary } from "@/components/error/ErrorBoundary";
 import { type PlantWithCare } from "@shared/schema";
 
 export default function Dashboard() {
@@ -60,7 +61,9 @@ export default function Dashboard() {
         </div>
         
         {/* Care Tasks Summary */}
-        <CareTaskSummary userId={0} /> {/* userId is determined on the server from the session */}
+        <ComponentErrorBoundary>
+          <CareTaskSummary userId={0} /> {/* userId is determined on the server from the session */}
+        </ComponentErrorBoundary>
       </section>
       
       {/* Plants Collection */}
@@ -88,59 +91,65 @@ export default function Dashboard() {
         </div>
         
         {/* Plant Cards List */}
-        <div className="space-y-4">
-          {isLoading ? (
-            // Loading skeleton
-            Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="flex">
-                  <Skeleton className="w-24 h-24" />
-                  <div className="flex-1 p-3">
-                    <div className="flex justify-between items-start">
-                      <Skeleton className="h-5 w-40 mb-2" />
-                      <Skeleton className="h-4 w-20" />
-                    </div>
-                    <Skeleton className="h-3 w-24 mb-3" />
-                    <div className="flex space-x-4 mt-3">
-                      <Skeleton className="h-5 w-12" />
-                      <Skeleton className="h-5 w-12" />
-                      <Skeleton className="h-5 w-12" />
+        <ComponentErrorBoundary>
+          <div className="space-y-4">
+            {isLoading ? (
+              // Loading skeleton
+              Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden">
+                  <div className="flex">
+                    <Skeleton className="w-24 h-24" />
+                    <div className="flex-1 p-3">
+                      <div className="flex justify-between items-start">
+                        <Skeleton className="h-5 w-40 mb-2" />
+                        <Skeleton className="h-4 w-20" />
+                      </div>
+                      <Skeleton className="h-3 w-24 mb-3" />
+                      <div className="flex space-x-4 mt-3">
+                        <Skeleton className="h-5 w-12" />
+                        <Skeleton className="h-5 w-12" />
+                        <Skeleton className="h-5 w-12" />
+                      </div>
                     </div>
                   </div>
                 </div>
+              ))
+            ) : plants.length === 0 ? (
+              <div className="text-center py-8 bg-white rounded-lg shadow-sm">
+                <p className="text-neutral-dark opacity-70">No plants yet.</p>
+                <p className="text-sm text-primary mt-2">Add your first plant!</p>
               </div>
-            ))
-          ) : plants.length === 0 ? (
-            <div className="text-center py-8 bg-white rounded-lg shadow-sm">
-              <p className="text-neutral-dark opacity-70">No plants yet.</p>
-              <p className="text-sm text-primary mt-2">Add your first plant!</p>
-            </div>
-          ) : (
-            plants.map((plant) => (
-              <PlantCard
-                key={plant.id}
-                plant={plant}
-                onClick={() => openPlantDetail(plant)}
-              />
-            ))
-          )}
-        </div>
+            ) : (
+              plants.map((plant) => (
+                <PlantCard
+                  key={plant.id}
+                  plant={plant}
+                  onClick={() => openPlantDetail(plant)}
+                />
+              ))
+            )}
+          </div>
+        </ComponentErrorBoundary>
       </section>
 
       {/* Plant Detail Modal */}
-      <PlantDetailModal
-        plant={selectedPlant}
-        isOpen={isPlantDetailOpen}
-        onClose={closePlantDetail}
-        onEdit={openEditPlant}
-      />
+      <ComponentErrorBoundary>
+        <PlantDetailModal
+          plant={selectedPlant}
+          isOpen={isPlantDetailOpen}
+          onClose={closePlantDetail}
+          onEdit={openEditPlant}
+        />
+      </ComponentErrorBoundary>
 
       {/* Edit Plant Modal */}
-      <AddPlantModal
-        isOpen={isEditPlantOpen}
-        onClose={closeEditPlant}
-        plantToEdit={plantToEdit}
-      />
+      <ComponentErrorBoundary>
+        <AddPlantModal
+          isOpen={isEditPlantOpen}
+          onClose={closeEditPlant}
+          plantToEdit={plantToEdit}
+        />
+      </ComponentErrorBoundary>
     </>
   );
 }
