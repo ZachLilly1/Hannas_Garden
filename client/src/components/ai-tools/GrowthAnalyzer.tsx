@@ -376,9 +376,9 @@ export function GrowthAnalyzer() {
               </TabsContent>
               
               <TabsContent value="recommendations" className="space-y-4">
-                <Alert className="bg-emerald-50 border-emerald-200">
-                  <AlertTitle className="text-emerald-800">Care Recommendations</AlertTitle>
-                  <AlertDescription className="text-emerald-700">
+                <Alert className="bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800">
+                  <AlertTitle className="text-emerald-800 dark:text-emerald-200">Care Recommendations</AlertTitle>
+                  <AlertDescription className="text-emerald-700 dark:text-emerald-300">
                     Based on the observed growth patterns, here are our recommendations:
                   </AlertDescription>
                 </Alert>
@@ -386,7 +386,7 @@ export function GrowthAnalyzer() {
                 <ul className="space-y-3">
                   {analysis.recommendations.map((rec, index) => (
                     <li key={index} className="flex items-start">
-                      <div className="bg-emerald-100 text-emerald-800 rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                      <div className="bg-emerald-100 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-200 rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
                         {index + 1}
                       </div>
                       <p className="text-sm">{rec}</p>
@@ -396,8 +396,8 @@ export function GrowthAnalyzer() {
               </TabsContent>
             </Tabs>
           </CardContent>
-          <CardFooter className="bg-emerald-50 flex justify-center border-t border-emerald-100">
-            <p className="text-sm text-emerald-700 flex items-center">
+          <CardFooter className="bg-emerald-50 dark:bg-emerald-950 flex justify-center border-t border-emerald-100 dark:border-emerald-800">
+            <p className="text-sm text-emerald-700 dark:text-emerald-300 flex items-center">
               <Brain className="mr-2 h-4 w-4" />
               AI-powered growth analysis powered by OpenAI
             </p>
