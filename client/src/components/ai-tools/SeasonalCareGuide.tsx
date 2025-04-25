@@ -95,16 +95,7 @@ export function SeasonalCareGuide() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <CloudSun className="mr-2 h-5 w-5 text-blue-500" />
-            Seasonal Care Guide
-          </CardTitle>
-          <CardDescription>
-            Get customized seasonal care recommendations for your plants based on location and time of year
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
