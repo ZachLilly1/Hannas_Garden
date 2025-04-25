@@ -123,16 +123,7 @@ export function PersonalizedPlantAdvisor() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Brain className="mr-2 h-5 w-5 text-purple-500" />
-            Personalized Plant Advisor
-          </CardTitle>
-          <CardDescription>
-            Get AI-powered care recommendations tailored to your specific plant and environment
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
