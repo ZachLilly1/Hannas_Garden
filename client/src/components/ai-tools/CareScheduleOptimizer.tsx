@@ -41,7 +41,7 @@ interface UserSchedule {
 
 // Form schema
 const scheduleSchema = z.object({
-  maxDailyMinutes: z.string().transform(val => parseInt(val) || 15),
+  maxDailyMinutes: z.coerce.number().default(15),
   preferredTime: z.string().default("morning"),
   monday: z.boolean().default(true),
   tuesday: z.boolean().default(true),
@@ -55,8 +55,7 @@ const scheduleSchema = z.object({
   eveningSlot: z.boolean().default(false),
 });
 
-type ScheduleFormValues = z.infer<typeof scheduleSchema>;
-type FormValues = ScheduleFormValues;
+type FormValues = z.infer<typeof scheduleSchema>;
 
 export function CareScheduleOptimizer() {
   const { toast } = useToast();
@@ -71,7 +70,7 @@ export function CareScheduleOptimizer() {
   const form = useForm<FormValues>({
     resolver: zodResolver(scheduleSchema),
     defaultValues: {
-      maxDailyMinutes: "15",
+      maxDailyMinutes: 15,
       preferredTime: "morning",
       monday: true,
       tuesday: true,
@@ -121,7 +120,7 @@ export function CareScheduleOptimizer() {
       weekdays: availableDays,
       preferences: {
         preferredTime: formValues.preferredTime,
-        maxDailyMinutes: parseInt(formValues.maxDailyMinutes as unknown as string) || 15,
+        maxDailyMinutes: formValues.maxDailyMinutes,
       },
     };
   };
@@ -161,7 +160,7 @@ export function CareScheduleOptimizer() {
     },
   });
   
-  const onSubmit = (values: FormValues) => {
+  const onSubmit: SubmitHandler<FormValues> = (values) => {
     scheduleMutation.mutate(values);
   };
   
@@ -199,7 +198,7 @@ export function CareScheduleOptimizer() {
                         <FormField
                           key={day}
                           control={form.control}
-                          name={day as any}
+                          name={day as keyof FormValues}
                           render={({ field }) => (
                             <FormItem className="flex flex-col items-center space-y-2">
                               <FormControl>
@@ -235,7 +234,7 @@ export function CareScheduleOptimizer() {
                         <FormField
                           key={slot.id}
                           control={form.control}
-                          name={slot.id as any}
+                          name={slot.id as keyof FormValues}
                           render={({ field }) => (
                             <FormItem className="flex items-center space-x-2 space-y-0 p-2 border rounded-md">
                               <FormControl>
