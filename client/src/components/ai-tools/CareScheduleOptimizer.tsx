@@ -190,7 +190,6 @@ export function CareScheduleOptimizer() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-4">
-                <h3 className="text-base font-medium">Availability</h3>
                 <div className="space-y-4">
                   <div>
                     <Label className="text-sm font-medium">Available Days</Label>
@@ -326,7 +325,7 @@ export function CareScheduleOptimizer() {
               ) : (
                 <div className="p-4 border rounded-md">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium">Plants in your collection</h3>
+                    <span className="text-sm font-medium">Plants in your collection</span>
                     <span className="text-xs text-muted-foreground">{plants.length} plants</span>
                   </div>
                   <p className="text-xs text-muted-foreground mb-2">
