@@ -302,7 +302,7 @@ export function PlantArrangementDesigner() {
                                         />
                                       </FormControl>
                                       <div className="flex gap-2 items-center leading-none">
-                                        <Leaf className="h-4 w-4 text-green-500" />
+                                        <Leaf className="h-4 w-4 text-green-500 dark:text-green-400" />
                                         <div className="space-y-1">
                                           <FormLabel className="font-medium text-sm">
                                             {plant.name}
