@@ -267,7 +267,7 @@ export function PersonalizedPlantAdvisor() {
               <div>
                 <h3 className="text-lg font-medium mb-2">Care Actions</h3>
                 <div className="grid gap-4 sm:grid-cols-3">
-                  <Card className="border-l-4 border-l-red-400">
+                  <Card className="border-l-4 border-l-red-400 dark:border-l-red-600">
                     <CardHeader className="p-4 pb-2">
                       <CardTitle className="text-sm">Do Now</CardTitle>
                     </CardHeader>
@@ -280,7 +280,7 @@ export function PersonalizedPlantAdvisor() {
                     </CardContent>
                   </Card>
                   
-                  <Card className="border-l-4 border-l-orange-400">
+                  <Card className="border-l-4 border-l-orange-400 dark:border-l-orange-600">
                     <CardHeader className="p-4 pb-2">
                       <CardTitle className="text-sm">This Week</CardTitle>
                     </CardHeader>
@@ -293,7 +293,7 @@ export function PersonalizedPlantAdvisor() {
                     </CardContent>
                   </Card>
                   
-                  <Card className="border-l-4 border-l-yellow-400">
+                  <Card className="border-l-4 border-l-yellow-400 dark:border-l-yellow-600">
                     <CardHeader className="p-4 pb-2">
                       <CardTitle className="text-sm">This Month</CardTitle>
                     </CardHeader>
@@ -343,13 +343,13 @@ export function PersonalizedPlantAdvisor() {
                   <AccordionTrigger>
                     <div className="flex items-center">
                       <span>Common Problems</span>
-                      <AlertTriangle className="ml-2 h-4 w-4 text-amber-500" />
+                      <AlertTriangle className="ml-2 h-4 w-4 text-amber-500 dark:text-amber-400" />
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="space-y-4">
                       {advice.commonProblems.map((problem, index) => (
-                        <Card key={index} className="border-amber-200">
+                        <Card key={index} className="border-amber-200 dark:border-amber-900">
                           <CardHeader className="p-4 pb-2">
                             <CardTitle className="text-sm">{problem.issue}</CardTitle>
                           </CardHeader>
@@ -380,8 +380,8 @@ export function PersonalizedPlantAdvisor() {
               </Accordion>
             </div>
           </CardContent>
-          <CardFooter className="bg-green-50 flex justify-center border-t border-green-100">
-            <p className="text-sm text-green-700 flex items-center">
+          <CardFooter className="bg-green-50 dark:bg-green-950 flex justify-center border-t border-green-100 dark:border-green-800">
+            <p className="text-sm text-green-700 dark:text-green-400 flex items-center">
               <Brain className="mr-2 h-4 w-4" />
               AI-powered recommendations powered by OpenAI
             </p>
