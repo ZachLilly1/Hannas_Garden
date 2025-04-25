@@ -510,11 +510,18 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
                   <div className="mt-4 flex justify-center">
                     <Button 
                       type="button" 
-                      onClick={identifyPlant} 
+                      onClick={identifyPlant}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          identifyPlant();
+                        }
+                      }}
+                      aria-label="Identify plant from uploaded image"
                       size="lg"
                       className="flex items-center gap-2"
                     >
-                      <LeafIcon className="h-5 w-5" />
+                      <LeafIcon className="h-5 w-5" aria-hidden="true" />
                       Identify Plant
                     </Button>
                   </div>
@@ -730,7 +737,17 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
               />
 
               {/* Submit Button */}
-              <Button type="submit" className="w-full">
+              <Button 
+                type="submit" 
+                className="w-full"
+                aria-label={plantToEdit ? "Update plant details" : "Add plant to your collection"}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    form.handleSubmit(onSubmit)();
+                  }
+                }}
+              >
                 {plantToEdit ? "Update Plant" : "Add Plant"}
               </Button>
             </form>
