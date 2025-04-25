@@ -169,17 +169,17 @@ export function CareScheduleOptimizer() {
   const getCareTypeColor = (careType: string) => {
     switch (careType) {
       case "water":
-        return "text-blue-500 bg-blue-50";
+        return "text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900";
       case "fertilize":
-        return "text-green-500 bg-green-50";
+        return "text-green-500 dark:text-green-400 bg-green-50 dark:bg-green-900";
       case "prune":
-        return "text-purple-500 bg-purple-50";
+        return "text-purple-500 dark:text-purple-400 bg-purple-50 dark:bg-purple-900";
       case "repot":
-        return "text-amber-500 bg-amber-50";
+        return "text-amber-500 dark:text-amber-400 bg-amber-50 dark:bg-amber-900";
       case "health_check":
-        return "text-red-500 bg-red-50";
+        return "text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900";
       default:
-        return "text-slate-500 bg-slate-50";
+        return "text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800";
     }
   };
   
@@ -411,7 +411,7 @@ export function CareScheduleOptimizer() {
                                     </p>
                                   </div>
                                 </div>
-                                <div className="text-xs bg-slate-100 px-2 py-1 rounded-md">
+                                <div className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md">
                                   {task.estimatedTime}
                                 </div>
                               </div>
@@ -434,7 +434,7 @@ export function CareScheduleOptimizer() {
                     <ul className="space-y-2">
                       {schedule.efficiencyTips.map((tip, index) => (
                         <li key={index} className="flex items-start">
-                          <CheckCircle className="h-4 w-4 mr-2 text-green-500 mt-0.5" />
+                          <CheckCircle className="h-4 w-4 mr-2 text-green-500 dark:text-green-400 mt-0.5" />
                           <p className="text-sm">{tip}</p>
                         </li>
                       ))}
@@ -451,7 +451,7 @@ export function CareScheduleOptimizer() {
                       <ul className="space-y-2">
                         {schedule.specialNotes.map((note, index) => (
                           <li key={index} className="flex items-start">
-                            <span className="bg-amber-100 text-amber-800 rounded-full w-5 h-5 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0 text-xs">
+                            <span className="bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 rounded-full w-5 h-5 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0 text-xs">
                               {index + 1}
                             </span>
                             <p className="text-sm">{note}</p>
