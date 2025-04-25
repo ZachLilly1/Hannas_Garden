@@ -257,9 +257,9 @@ export function GrowthAnalyzer() {
       </Card>
       
       {analysis && (
-        <Card className="border-emerald-200">
-          <CardHeader className="bg-emerald-50">
-            <CardTitle className="flex items-center">
+        <Card className="border-emerald-200 dark:border-emerald-900">
+          <CardHeader className="bg-emerald-50 dark:bg-emerald-950">
+            <CardTitle className="flex items-center text-base">
               <BarChart className="mr-2 h-5 w-5 text-emerald-500" />
               Growth Analysis Results
             </CardTitle>
@@ -277,7 +277,7 @@ export function GrowthAnalyzer() {
               
               <TabsContent value="overview" className="space-y-6">
                 <div className="grid gap-6 md:grid-cols-2">
-                  <Card className="border-emerald-100">
+                  <Card className="border-emerald-100 dark:border-emerald-800">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base flex items-center">
                         <Zap className="h-4 w-4 mr-2 text-emerald-500" />
@@ -301,7 +301,7 @@ export function GrowthAnalyzer() {
                     </CardContent>
                   </Card>
                   
-                  <Card className="border-emerald-100">
+                  <Card className="border-emerald-100 dark:border-emerald-800">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base flex items-center">
                         <ArrowRightLeft className="h-4 w-4 mr-2 text-emerald-500" />
@@ -314,7 +314,7 @@ export function GrowthAnalyzer() {
                   </Card>
                 </div>
                 
-                <Card className="border-emerald-100">
+                <Card className="border-emerald-100 dark:border-emerald-800">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base">Growth Assessment</CardTitle>
                   </CardHeader>
@@ -324,8 +324,8 @@ export function GrowthAnalyzer() {
                 </Card>
                 
                 {analysis.potentialIssues.length > 0 && (
-                  <Card className="border-amber-200">
-                    <CardHeader className="pb-2 bg-amber-50">
+                  <Card className="border-amber-200 dark:border-amber-800">
+                    <CardHeader className="pb-2 bg-amber-50 dark:bg-amber-950">
                       <CardTitle className="text-base flex items-center">
                         <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
                         Potential Issues

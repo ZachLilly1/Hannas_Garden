@@ -348,9 +348,9 @@ export function PlantArrangementDesigner() {
       </Card>
       
       {arrangement && (
-        <Card className="border-teal-200">
-          <CardHeader className="bg-teal-50">
-            <CardTitle className="flex items-center">
+        <Card className="border-teal-200 dark:border-teal-900">
+          <CardHeader className="bg-teal-50 dark:bg-teal-950">
+            <CardTitle className="flex items-center text-base">
               <PanelTop className="mr-2 h-5 w-5 text-teal-500" />
               Plant Arrangement Suggestions
             </CardTitle>
@@ -377,10 +377,10 @@ export function PlantArrangementDesigner() {
                 </TabsList>
                 
                 <TabsContent value="visualization" className="pt-4">
-                  <Card className="bg-teal-50/50 border-teal-100">
+                  <Card className="bg-teal-50/50 border-teal-100 dark:bg-teal-950/50 dark:border-teal-800">
                     <CardContent className="p-6">
-                      <h3 className="text-lg font-medium mb-2 text-teal-800">Visual Description</h3>
-                      <p className="text-teal-700 whitespace-pre-line">{arrangement.visualDescription}</p>
+                      <h3 className="text-lg font-medium mb-2 text-teal-800 dark:text-teal-200">Visual Description</h3>
+                      <p className="text-teal-700 dark:text-teal-300 whitespace-pre-line">{arrangement.visualDescription}</p>
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -428,8 +428,8 @@ export function PlantArrangementDesigner() {
                 <TabsContent value="plantGroups" className="pt-4">
                   <div className="space-y-4">
                     {arrangement.plantGroups.map((group, index) => (
-                      <Card key={index} className="border-teal-100">
-                        <CardHeader className="bg-teal-50/50 pb-2">
+                      <Card key={index} className="border-teal-100 dark:border-teal-800">
+                        <CardHeader className="bg-teal-50/50 dark:bg-teal-950/50 pb-2">
                           <CardTitle className="text-base">{group.name}</CardTitle>
                           <CardDescription>{group.location}</CardDescription>
                         </CardHeader>
@@ -437,8 +437,8 @@ export function PlantArrangementDesigner() {
                           <div className="space-y-3">
                             <div className="flex flex-wrap gap-2">
                               {group.plants.map((plant, pIndex) => (
-                                <div key={pIndex} className="px-2 py-1 bg-teal-100 rounded-md text-xs flex items-center">
-                                  <Leaf className="h-3 w-3 mr-1 text-teal-600" />
+                                <div key={pIndex} className="px-2 py-1 bg-teal-100 dark:bg-teal-900 rounded-md text-xs flex items-center dark:text-teal-200">
+                                  <Leaf className="h-3 w-3 mr-1 text-teal-600 dark:text-teal-400" />
                                   {plant}
                                 </div>
                               ))}
@@ -453,8 +453,8 @@ export function PlantArrangementDesigner() {
               </Tabs>
             </div>
           </CardContent>
-          <CardFooter className="bg-teal-50 flex justify-center border-t border-teal-100">
-            <p className="text-sm text-teal-700 flex items-center">
+          <CardFooter className="bg-teal-50 dark:bg-teal-950 flex justify-center border-t border-teal-100 dark:border-teal-800">
+            <p className="text-sm text-teal-700 dark:text-teal-300 flex items-center">
               <Brain className="mr-2 h-4 w-4" />
               AI-powered arrangement suggestions powered by OpenAI
             </p>
