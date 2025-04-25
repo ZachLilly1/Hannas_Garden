@@ -198,18 +198,18 @@ export function SeasonalCareGuide() {
       
       {careGuide && (
         <Card className="border-blue-200">
-          <CardHeader className="bg-blue-50">
+          <CardHeader className="bg-blue-50 dark:bg-blue-950">
             <CardTitle className="flex items-center">
-              <CloudSun className="mr-2 h-5 w-5 text-blue-500" />
+              <CloudSun className="mr-2 h-5 w-5 text-blue-500 dark:text-blue-400" />
               {careGuide.season.charAt(0).toUpperCase() + careGuide.season.slice(1)} Care Guide
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="dark:text-blue-300/70">
               Seasonal recommendations for your plant collection
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
             <div className="space-y-6">
-              <div className="rounded-md border-l-4 border-blue-500 bg-blue-50 p-4">
+              <div className="rounded-md border-l-4 border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30 p-4">
                 <p className="text-sm">{careGuide.generalRecommendations}</p>
               </div>
               
@@ -256,11 +256,11 @@ export function SeasonalCareGuide() {
                         <div className="space-y-4">
                           <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                              <h4 className="font-medium text-blue-600">Watering</h4>
+                              <h4 className="font-medium text-blue-600 dark:text-blue-400">Watering</h4>
                               <p className="text-sm">{plant.watering}</p>
                             </div>
                             <div className="space-y-2">
-                              <h4 className="font-medium text-yellow-600">Light</h4>
+                              <h4 className="font-medium text-yellow-600 dark:text-yellow-400">Light</h4>
                               <p className="text-sm">{plant.light}</p>
                             </div>
                             <div className="space-y-2">

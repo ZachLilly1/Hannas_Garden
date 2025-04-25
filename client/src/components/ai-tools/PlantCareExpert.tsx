@@ -69,11 +69,11 @@ export function PlantCareExpert() {
   const getConfidenceBadgeColor = (level: "low" | "medium" | "high") => {
     switch (level) {
       case "high":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200";
       case "medium":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200";
       case "low":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200";
       default:
         return "";
     }
@@ -117,8 +117,8 @@ export function PlantCareExpert() {
             )}
             
             {includeUserPlants && plants && plants.length === 0 && (
-              <Alert className="bg-amber-50 border-amber-200">
-                <Info className="h-4 w-4" />
+              <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-900">
+                <Info className="h-4 w-4 text-amber-500 dark:text-amber-400" />
                 <AlertTitle>No plants in your collection</AlertTitle>
                 <AlertDescription>
                   Add plants to your collection to get more personalized answers.
@@ -149,10 +149,10 @@ export function PlantCareExpert() {
       
       {answer && (
         <Card className="border-amber-200">
-          <CardHeader className="bg-amber-50">
+          <CardHeader className="bg-amber-50 dark:bg-amber-950">
             <div className="flex justify-between items-start">
               <CardTitle className="flex items-center">
-                <Brain className="mr-2 h-5 w-5 text-amber-500" />
+                <Brain className="mr-2 h-5 w-5 text-amber-500 dark:text-amber-400" />
                 Expert Answer
               </CardTitle>
               <div className={`px-2 py-1 rounded-full text-xs ${getConfidenceBadgeColor(answer.confidenceLevel)}`}>
@@ -175,7 +175,7 @@ export function PlantCareExpert() {
                   <ul className="space-y-2">
                     {answer.recommendations.map((rec, index) => (
                       <li key={index} className="flex items-start">
-                        <div className="bg-green-100 text-green-800 rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                        <div className="bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200 rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
                           {index + 1}
                         </div>
                         <p className="text-sm">{rec}</p>
@@ -190,8 +190,8 @@ export function PlantCareExpert() {
                   <h3 className="text-base font-medium mb-3">Related Plants</h3>
                   <div className="flex flex-wrap gap-2">
                     {answer.relatedPlants.map((plant, index) => (
-                      <div key={index} className="px-3 py-1.5 bg-amber-100 rounded-full text-sm flex items-center">
-                        <Leaf className="h-3.5 w-3.5 mr-1.5 text-green-600" />
+                      <div key={index} className="px-3 py-1.5 bg-amber-100 dark:bg-amber-900 rounded-full text-sm text-amber-800 dark:text-amber-200 flex items-center">
+                        <Leaf className="h-3.5 w-3.5 mr-1.5 text-green-600 dark:text-green-400" />
                         {plant}
                       </div>
                     ))}
@@ -205,7 +205,7 @@ export function PlantCareExpert() {
                   <ul className="space-y-2">
                     {answer.additionalResources.map((resource, index) => (
                       <li key={index} className="flex items-center">
-                        <ExternalLink className="h-4 w-4 mr-2 text-amber-500" />
+                        <ExternalLink className="h-4 w-4 mr-2 text-amber-500 dark:text-amber-400" />
                         <span className="text-sm">{resource}</span>
                       </li>
                     ))}
@@ -214,8 +214,8 @@ export function PlantCareExpert() {
               )}
             </div>
           </CardContent>
-          <CardFooter className="bg-amber-50 flex justify-center border-t border-amber-100">
-            <p className="text-sm text-amber-700 flex items-center">
+          <CardFooter className="bg-amber-50 dark:bg-amber-950 flex justify-center border-t border-amber-100 dark:border-amber-800">
+            <p className="text-sm text-amber-700 dark:text-amber-400 flex items-center">
               <Brain className="mr-2 h-4 w-4" />
               AI-powered plant expertise powered by OpenAI
             </p>
