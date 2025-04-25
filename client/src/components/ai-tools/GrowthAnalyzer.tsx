@@ -148,16 +148,7 @@ export function GrowthAnalyzer() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <BarChart className="mr-2 h-5 w-5 text-emerald-500" />
-            Growth Analyzer
-          </CardTitle>
-          <CardDescription>
-            Track and analyze your plant's growth over time using photos from your care history
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="space-y-6">
             <div className="space-y-3">
               <Label htmlFor="plant-select">Select a Plant</Label>
