@@ -87,11 +87,11 @@ export function CommunityInsights() {
   const getFrequencyColor = (frequency: string) => {
     const frequencyLower = frequency.toLowerCase();
     if (frequencyLower.includes("high") || frequencyLower.includes("very common")) {
-      return "bg-red-100 text-red-800";
+      return "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200";
     } else if (frequencyLower.includes("medium") || frequencyLower.includes("common")) {
-      return "bg-amber-100 text-amber-800";
+      return "bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200";
     } else {
-      return "bg-blue-100 text-blue-800";
+      return "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200";
     }
   };
   
@@ -155,12 +155,12 @@ export function CommunityInsights() {
       
       {insights && (
         <Card className="border-pink-200">
-          <CardHeader className="bg-pink-50">
+          <CardHeader className="bg-pink-50 dark:bg-pink-950">
             <CardTitle className="flex items-center">
-              <Users className="mr-2 h-5 w-5 text-pink-500" />
+              <Users className="mr-2 h-5 w-5 text-pink-500 dark:text-pink-400" />
               {insights.plantType} Community Insights
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="dark:text-pink-300/70">
               Collective wisdom and best practices from the plant community
             </CardDescription>
           </CardHeader>
@@ -223,8 +223,8 @@ export function CommunityInsights() {
                   </Card>
                 </div>
                 
-                <Card className="border-pink-100">
-                  <CardHeader className="p-4 pb-2 bg-pink-50/50">
+                <Card className="border-pink-100 dark:border-pink-900">
+                  <CardHeader className="p-4 pb-2 bg-pink-50/50 dark:bg-pink-950/50">
                     <CardTitle className="text-base">Overall Recommendations</CardTitle>
                   </CardHeader>
                   <CardContent className="p-4">
@@ -236,11 +236,11 @@ export function CommunityInsights() {
               <TabsContent value="issues" className="space-y-4">
                 <div className="space-y-4">
                   {insights.commonIssues.map((issue, index) => (
-                    <Card key={index} className="border-red-50">
+                    <Card key={index} className="border-red-50 dark:border-red-900">
                       <CardHeader className="p-4 pb-2">
                         <div className="flex justify-between items-start">
                           <CardTitle className="text-base flex items-center">
-                            <CircleAlert className="h-4 w-4 mr-2 text-red-500" />
+                            <CircleAlert className="h-4 w-4 mr-2 text-red-500 dark:text-red-400" />
                             {issue.issue}
                           </CardTitle>
                           <div className={`px-2 py-1 rounded-full text-xs ${getFrequencyColor(issue.frequency)}`}>
@@ -265,9 +265,9 @@ export function CommunityInsights() {
               
               <TabsContent value="success" className="space-y-4">
                 <Card className="border-green-100">
-                  <CardHeader className="p-4 pb-2 bg-green-50/50">
+                  <CardHeader className="p-4 pb-2 bg-green-50/50 dark:bg-green-950/50">
                     <CardTitle className="text-base flex items-center">
-                      <ThumbsUp className="h-4 w-4 mr-2 text-green-500" />
+                      <ThumbsUp className="h-4 w-4 mr-2 text-green-500 dark:text-green-400" />
                       Success Patterns
                     </CardTitle>
                   </CardHeader>
@@ -275,7 +275,7 @@ export function CommunityInsights() {
                     <ul className="space-y-3">
                       {insights.successPatterns.map((pattern, index) => (
                         <li key={index} className="flex items-start">
-                          <div className="bg-green-100 text-green-800 rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                          <div className="bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200 rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
                             {index + 1}
                           </div>
                           <p className="text-sm">{pattern}</p>
@@ -287,8 +287,8 @@ export function CommunityInsights() {
               </TabsContent>
             </Tabs>
           </CardContent>
-          <CardFooter className="bg-pink-50 flex justify-center border-t border-pink-100">
-            <p className="text-sm text-pink-700 flex items-center">
+          <CardFooter className="bg-pink-50 dark:bg-pink-950 flex justify-center border-t border-pink-100 dark:border-pink-800">
+            <p className="text-sm text-pink-700 dark:text-pink-400 flex items-center">
               <Brain className="mr-2 h-4 w-4" />
               AI-powered community insights powered by OpenAI
             </p>
