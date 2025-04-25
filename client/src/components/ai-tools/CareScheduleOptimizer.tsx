@@ -17,6 +17,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, Controller } from 'react-hook-form';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import type { SubmitHandler } from 'react-hook-form';
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
 
 // Interface for the OpenAI response
 interface OptimizedCareSchedule {
@@ -204,7 +205,7 @@ export function CareScheduleOptimizer() {
                               <FormControl>
                                 <div className="flex flex-col items-center justify-center space-y-1">
                                   <Checkbox 
-                                    checked={field.value} 
+                                    checked={field.value as boolean} 
                                     onCheckedChange={field.onChange}
                                     id={day}
                                   />
@@ -239,7 +240,7 @@ export function CareScheduleOptimizer() {
                             <FormItem className="flex items-center space-x-2 space-y-0 p-2 border rounded-md">
                               <FormControl>
                                 <Checkbox 
-                                  checked={field.value} 
+                                  checked={field.value as boolean} 
                                   onCheckedChange={field.onChange}
                                   id={slot.id}
                                 />
@@ -356,7 +357,7 @@ export function CareScheduleOptimizer() {
       {schedule && (
         <Card className="border-orange-200">
           <CardHeader className="bg-orange-50">
-            <CardTitle className="flex items-center">
+            <CardTitle className="flex items-center text-base">
               <Calendar className="mr-2 h-5 w-5 text-orange-500" />
               Your Optimized Care Schedule
             </CardTitle>
