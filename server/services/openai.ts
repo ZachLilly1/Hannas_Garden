@@ -119,14 +119,11 @@ export interface ArrangementSuggestion {
   visualDescription: string;
 }
 
-// Interface for enhanced journal entries
+// Interface for enhanced journal entries - simplified
 export interface EnhancedJournalEntry {
   title: string;
-  narrative: string;
   observations: string[];
-  careDetails: string;
   growthProgress: string;
-  nextSteps: string[];
 }
 
 // Interface for growth analysis
@@ -907,18 +904,14 @@ export async function generateJournalEntry(
       throw new Error("OpenAI API key is not configured");
     }
     
-    // System prompt for journal entry generation
+    // System prompt for journal entry generation - simplified
     const systemPrompt = `
       You are a plant journaling expert. Create an engaging, detailed journal entry from a basic plant care log.
-      Transform the simple care information into a rich, narrative entry that captures observations and next steps.
-      Return a JSON object with the following structure:
+      Return a JSON object with the following simplified structure:
       {
         "title": "An engaging title for this journal entry",
-        "narrative": "A narrative description of the care event written in first person",
-        "observations": ["Observation 1", "Observation 2"],
-        "careDetails": "Detailed notes about the care provided",
-        "growthProgress": "Notes about the plant's growth progress",
-        "nextSteps": ["Next step 1", "Next step 2"]
+        "observations": ["Observation 1", "Observation 2", "Observation 3"],
+        "growthProgress": "Detailed notes about the plant's growth progress, focusing on comparing with previous photos if available"
       }
     `;
 
@@ -971,8 +964,8 @@ export async function generateJournalEntry(
     // Parse the JSON response
     const result = JSON.parse(rawContent);
     
-    // Validation
-    if (!result.title || !result.narrative) {
+    // Validation for simplified structure
+    if (!result.title || !result.observations || !result.growthProgress) {
       console.error("Incomplete journal entry:", result);
       throw new Error("Incomplete journal entry");
     }
