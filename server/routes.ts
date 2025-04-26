@@ -178,6 +178,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log(`Found ${plants.length} plants for user ID ${userId}`);
     res.json(plants);
   });
+  
+  // Debug endpoint for adding plants without requiring authentication
+  apiRouter.post("/api/debug/plants", async (req, res) => {
+    try {
+      console.log("Debug plant creation request:", req.body);
+      
+      // Validate request data
+      try {
+        const validation = validateRequest(insertPlantSchema, req, res);
+        if (!validation.success) return;
+        
+        // Set user ID to 1 (Zach) for debugging
+        const userId = 1;
+        
+        // Merge user ID with plant data
+        const plantData = { ...validation.data, userId };
+        console.log("Creating plant with data:", plantData);
+        
+        // Create the plant directly
+        const plant = await storage.createPlant(plantData);
+        
+        // Create automatic reminders for watering and fertilizing
+        if (plant.waterFrequency > 0) {
+          const wateringDueDate = new Date();
+          wateringDueDate.setDate(wateringDueDate.getDate() + plant.waterFrequency);
+          
+          await storage.createReminder({
+            plantId: plant.id,
+            userId,
+            title: `Water your ${plant.name}`,
+            message: `It's time to water your ${plant.name}`,
+            dueDate: wateringDueDate.toISOString(),
+            careType: 'water',
+            status: 'pending',
+            recurring: true,
+            recurringInterval: plant.waterFrequency,
+            notified: false
+          });
+        }
+        
+        if (plant.fertilizerFrequency > 0) {
+          const fertilizingDueDate = new Date();
+          fertilizingDueDate.setDate(fertilizingDueDate.getDate() + plant.fertilizerFrequency);
+          
+          await storage.createReminder({
+            plantId: plant.id,
+            userId,
+            title: `Fertilize your ${plant.name}`,
+            message: `It's time to fertilize your ${plant.name}`,
+            dueDate: fertilizingDueDate.toISOString(),
+            careType: 'fertilize',
+            status: 'pending',
+            recurring: true,
+            recurringInterval: plant.fertilizerFrequency,
+            notified: false
+          });
+        }
+        
+        res.status(201).json(plant);
+      } catch (validationError) {
+        console.error("Error validating plant data:", validationError);
+        res.status(400).json({ 
+          message: "Error validating plant data", 
+          error: validationError instanceof Error ? validationError.message : String(validationError)
+        });
+      }
+    } catch (error: any) {
+      console.error("Error in debug plant creation:", error);
+      res.status(500).json({ 
+        message: "Failed to add plant", 
+        error: error.message,
+        stack: error.stack 
+      });
+    }
+  });
 
   apiRouter.get("/api/plants/:id", async (req, res) => {
     const plantId = parseInt(req.params.id);
