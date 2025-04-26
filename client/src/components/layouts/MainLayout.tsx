@@ -6,7 +6,7 @@ import AddPlantModal from "@/components/plants/AddPlantModal";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useTheme } from "@/context/ThemeContext";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { SimpleViewToggle } from "@/components/ui/view-toggle";
+
 import SearchModal from "@/components/search/SearchModal";
 import NotificationsModal from "@/components/notifications/NotificationsModal";
 
@@ -53,7 +53,6 @@ export function MainLayout({ children }: MainLayoutProps) {
           </div>
           <div className="flex items-center space-x-2">
             <ThemeToggle />
-            {location === "/" && <SimpleViewToggle />}
             <button 
               onClick={() => setIsSearchModalOpen(true)}
               className="p-2 rounded-full hover:bg-neutral-medium dark:hover:bg-gray-700 transition"
