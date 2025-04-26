@@ -3,9 +3,13 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
   insertPlantSchema, 
-  insertCareLogSchema,
+  insertCareLogSchema, 
+  insertCommunityTipSchema,
   type InsertPlant,
-  type InsertCareLog
+  type InsertCareLog,
+  type InsertCommunityTip,
+  type CommunityTipWithUser,
+  CARE_CATEGORIES
 } from "@shared/schema";
 import { z } from "zod";
 import { 
