@@ -182,10 +182,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Debug endpoint for adding plants without requiring authentication
   apiRouter.post("/api/debug/plants", async (req, res) => {
     try {
-      console.log("Debug plant creation request:", req.body);
+      // Log the request but truncate image data for cleaner logs
+      const { image, ...logData } = req.body;
+      console.log("Debug plant creation request:", {
+        ...logData,
+        image: image ? `[Base64 image truncated, length: ${image.length}]` : null
+      });
       
       // Validate request data
       try {
+        // Special handling for the image data - we need to make sure it's a valid base64 string
+        // Sometimes the image can be malformed if not properly encoded
+        if (req.body.image) {
+          try {
+            // Quick sanity check - ensure it looks like a base64 string
+            // It should start with data:image/ for most cases
+            if (typeof req.body.image === 'string' && !req.body.image.startsWith('data:image/')) {
+              console.warn("Image data doesn't appear to be properly formatted base64");
+              // Try to fix it if it's a plain base64 string without the prefix
+              if (!req.body.image.includes(',')) {
+                req.body.image = `data:image/jpeg;base64,${req.body.image}`;
+              }
+            }
+          } catch (imageError) {
+            console.error("Error processing image data:", imageError);
+          }
+        }
+        
         const validation = validateRequest(insertPlantSchema, req, res);
         if (!validation.success) return;
         
@@ -194,7 +217,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Merge user ID with plant data
         const plantData = { ...validation.data, userId };
-        console.log("Creating plant with data:", plantData);
+        console.log("Creating plant with data:", {
+          ...plantData,
+          image: plantData.image ? `[Base64 image truncated, length: ${plantData.image.length}]` : null
+        });
         
         // Create the plant directly
         const plant = await storage.createPlant(plantData);

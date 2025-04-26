@@ -64,10 +64,20 @@ export function PlantIdentifier({ onAddToCollection }: {
       
       reader.onloadend = () => {
         const base64String = reader.result as string;
-        // Extract the base64 data part (remove the data:image/jpeg;base64, prefix)
-        const base64Data = base64String.split(',')[1];
-        setImage(base64Data);
+        // For the preview we use the full data URL
         setPreview(base64String);
+
+        // For the backend API, we either keep the full string or ensure it's valid
+        if (base64String.startsWith('data:image/')) {
+          setImage(base64String); // Store the complete data URL for consistency
+        } else {
+          // If it's somehow not properly formatted, make sure it's valid
+          const imageType = file.type || 'image/jpeg';
+          const base64Content = base64String.includes(',') 
+            ? base64String.split(',')[1]
+            : base64String;
+          setImage(`data:${imageType};base64,${base64Content}`);
+        }
       };
       
       reader.readAsDataURL(file);
@@ -95,7 +105,14 @@ export function PlantIdentifier({ onAddToCollection }: {
   // Mutation for identifying plants
   const identifyMutation = useMutation({
     mutationFn: async (imageBase64: string) => {
-      const res = await apiRequest('POST', '/api/identify-plant', { imageBase64 });
+      // Make sure we're sending the image with proper prefix to the server
+      const payload = {
+        imageBase64: imageBase64.startsWith('data:image/') 
+          ? imageBase64 
+          : `data:image/jpeg;base64,${imageBase64}`
+      };
+      
+      const res = await apiRequest('POST', '/api/identify-plant', payload);
       const data: PlantIdentificationResult = await res.json();
       return data;
     },
@@ -120,13 +137,8 @@ export function PlantIdentifier({ onAddToCollection }: {
     
     const { commonName, scientificName, careRecommendations } = identifyMutation.data;
     
-    // Process the image before sending it to the server
-    // The server expects base64 data without the data:image prefix
-    let imageBase64 = null;
-    if (preview && preview.includes('base64')) {
-      // Extract just the base64 part without the prefix
-      imageBase64 = preview.split(',')[1];
-    }
+    // Use the image data in its current format (with the data:image/* prefix)
+    // This ensures we send a properly formatted base64 image to the server
     
     // Use custom location if it's selected and has a value, otherwise use the dropdown selection
     const finalLocation = showCustomLocation && customLocation.trim() !== "" 
@@ -143,7 +155,7 @@ export function PlantIdentifier({ onAddToCollection }: {
       fertilizerFrequency: Number(careRecommendations.fertilizerFrequency),
       sunlightLevel: careRecommendations.sunlightLevel,
       notes: careRecommendations.additionalCare || '',
-      image: imageBase64, // Use 'image' field name instead of 'imageBase64'
+      image: image, // Keep the full data URL format for consistency
       // These fields are handled by the server:
       // userId - server side adds from auth
       // status - defaults to healthy
