@@ -281,9 +281,31 @@ export function LightMeter() {
           pixelCount++;
         }
         
-        // Calculate average brightness and convert to lux estimation
+        // Calculate average brightness
         const averageBrightness = totalBrightness / pixelCount;
-        const estimatedLux = Math.round(averageBrightness * 100);
+        
+        // Convert to a more realistic lux estimation
+        // Normalize the brightness value (0-255) to a log scale that better represents
+        // actual light intensity relationships
+        
+        // Using a more calibrated approach based on common lighting conditions
+        let estimatedLux;
+        
+        if (averageBrightness < 20) {
+          // Very dark (indoor dim lighting)
+          estimatedLux = Math.round(averageBrightness * 25); // 0-500 lux
+        } else if (averageBrightness < 60) {
+          // Moderately lit indoor space
+          estimatedLux = Math.round(500 + (averageBrightness - 20) * 50); // 500-2500 lux
+        } else if (averageBrightness < 120) {
+          // Bright indoor or indirect outdoor
+          estimatedLux = Math.round(2500 + (averageBrightness - 60) * 125); // 2500-10000 lux
+        } else {
+          // Direct sunlight or very bright conditions
+          estimatedLux = Math.round(10000 + (averageBrightness - 120) * 667); // 10000+ lux
+        }
+        
+        console.log(`Raw brightness: ${averageBrightness}, Estimated lux: ${estimatedLux}`);
         
         // Find the corresponding light level
         const level = LIGHT_LEVELS.find(level => 
