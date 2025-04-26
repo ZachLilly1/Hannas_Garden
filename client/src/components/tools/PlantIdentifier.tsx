@@ -139,13 +139,15 @@ export function PlantIdentifier({ onAddToCollection }: {
       scientificName: scientificName || null, // Scientific name is optional, null if not available
       type: identifyMutation.data.plantType.toLowerCase(),
       location: finalLocation,
-      waterFrequency: careRecommendations.waterFrequency,
-      fertilizerFrequency: careRecommendations.fertilizerFrequency,
+      waterFrequency: Number(careRecommendations.waterFrequency), // Ensure numbers are sent as numbers
+      fertilizerFrequency: Number(careRecommendations.fertilizerFrequency),
       sunlightLevel: careRecommendations.sunlightLevel,
       notes: careRecommendations.additionalCare || '',
       image: imageBase64, // Use 'image' field name instead of 'imageBase64'
-      // userId is handled on the server side based on user's authentication
-      status: 'healthy', // Default status
+      // These fields are handled by the server:
+      // userId - server side adds from auth
+      // status - defaults to healthy
+      // lastWatered & lastFertilized - optional
     };
     
     console.log("Adding plant to collection:", newPlant);
