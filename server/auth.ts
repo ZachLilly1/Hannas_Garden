@@ -9,6 +9,7 @@ import { loginSchema, User as SelectUser } from "@shared/schema";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
 import csrf from "csurf";
+import rateLimit from "express-rate-limit";
 
 // Initialize CSRF protection middleware
 const csrfProtection = csrf({
@@ -263,6 +264,29 @@ declare global {
 
 // Authentication routes
 function setupAuthRoutes(app: Express) {
+  // Setup rate limiters for authentication endpoints
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // 10 requests per window per IP
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+      message: "Too many login attempts, please try again after 15 minutes",
+      error: "Rate limit exceeded"
+    }
+  });
+  
+  const registerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 5, // 5 registration attempts per hour per IP
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+      message: "Too many registration attempts, please try again after an hour",
+      error: "Rate limit exceeded"
+    }
+  });
+  
   // Using the global csrfProtection middleware defined at the top of the file
   
   // CSRF token endpoint
@@ -271,7 +295,7 @@ function setupAuthRoutes(app: Express) {
   });
 
   // Register new user
-  app.post("/api/auth/register", csrfProtection, async (req, res, next) => {
+  app.post("/api/auth/register", registerLimiter, csrfProtection, async (req, res, next) => {
     try {
       // Check if user already exists
       const existingUser = await storage.getUserByUsername(req.body.username);
