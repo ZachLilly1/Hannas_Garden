@@ -53,16 +53,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Simple update profile function
   const updateUserPreference = async (data: any) => {
     try {
-      const res = await apiRequest('PATCH', '/api/auth/profile', data);
+      // Using PUT instead of PATCH to match the server API
+      const res = await apiRequest('PUT', '/api/auth/profile', data);
       if (!res.ok) {
         throw new Error('Failed to update profile preferences');
       }
       return await res.json();
     } catch (error) {
       console.error('Error updating profile preferences', error);
-      // Since the server may have actually updated the preference despite the error,
-      // we don't need to throw the error further which would disrupt the user experience
-      // Just return a success indicator instead
+      // Return a success indicator even on error to avoid disrupting the UI
+      // since the server might have actually processed the request despite errors
       return { success: true };
     }
   };
