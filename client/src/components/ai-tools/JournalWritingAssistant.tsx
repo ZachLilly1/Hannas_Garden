@@ -164,7 +164,7 @@ ${journalEntry.nextSteps.map(step => `- ${step}`).join('\n')}
                         const date = new Date(log.timestamp || Date.now()).toLocaleDateString();
                         return (
                           <SelectItem key={log.id} value={log.id.toString()}>
-                            {date} - {log.careType.charAt(0).toUpperCase() + log.careType.slice(1)}
+                            {date} - {log.careType ? (log.careType.charAt(0).toUpperCase() + log.careType.slice(1)) : 'Care Log'}
                           </SelectItem>
                         );
                       })
