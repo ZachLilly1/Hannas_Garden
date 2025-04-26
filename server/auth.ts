@@ -79,18 +79,19 @@ export function setupAuth(app: Express) {
     console.warn("Warning: SESSION_SECRET not set, using generated random value instead");
   }
 
-  // Session configuration
+  // Session configuration with improved persistence settings
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
+    resave: true, // Changed to true to ensure session saved even if unchanged
+    saveUninitialized: true, // Changed to true to ensure session creation
     store: pgSessionStore,
+    name: 'garden.sid', // Custom cookie name for better identification
     cookie: {
       // In production, allow secure cookies in all environments since we 
       // can't predict the deployment environment
       secure: false,
       httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
       sameSite: "lax",
       path: "/"
     }
@@ -205,9 +206,13 @@ function setupAuthRoutes(app: Express) {
   // Login user
   app.post("/api/auth/login", (req, res, next) => {
     try {
+      console.log("POST /api/auth/login - Attempting login with:", req.body.username);
+      console.log("Session ID before auth:", req.session.id);
+      
       // Validate login data
       const validatedData = loginSchema.safeParse(req.body);
       if (!validatedData.success) {
+        console.log("Login validation failed:", validatedData.error.errors);
         return res.status(400).json({ 
           message: "Invalid login data", 
           errors: validatedData.error.errors 
@@ -215,13 +220,25 @@ function setupAuthRoutes(app: Express) {
       }
       
       passport.authenticate("local", (err: Error, user: SelectUser) => {
-        if (err) return next(err);
+        if (err) {
+          console.log("Login authentication error:", err);
+          return next(err);
+        }
         if (!user) {
+          console.log("Login failed: Invalid username or password");
           return res.status(401).json({ message: "Invalid username or password" });
         }
         
+        console.log("User authenticated successfully:", user.username);
+        
         req.login(user, (err) => {
-          if (err) return next(err);
+          if (err) {
+            console.log("Login session error:", err);
+            return next(err);
+          }
+          
+          console.log("Login completed, session established. Session ID:", req.session.id);
+          console.log("User in session:", req.user?.username);
           
           // Return user info without password
           const { password, ...userInfo } = user;
@@ -229,6 +246,7 @@ function setupAuthRoutes(app: Express) {
         });
       })(req, res, next);
     } catch (error) {
+      console.log("Login error:", error);
       next(error);
     }
   });
@@ -240,7 +258,7 @@ function setupAuthRoutes(app: Express) {
       req.session.destroy((err) => {
         if (err) return next(err);
         // Ensure we clear the cookie with the same settings that were used to set it
-        res.clearCookie('connect.sid', { 
+        res.clearCookie('garden.sid', { 
           path: '/',
           httpOnly: true,
           secure: false,
@@ -253,6 +271,11 @@ function setupAuthRoutes(app: Express) {
 
   // Get current user
   app.get("/api/auth/user", (req, res) => {
+    console.log("GET /api/auth/user - Session ID:", req.session.id);
+    console.log("Is authenticated:", req.isAuthenticated());
+    console.log("Session data:", JSON.stringify(req.session));
+    console.log("User data:", req.user ? JSON.stringify(req.user) : "No user data");
+    
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
