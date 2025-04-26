@@ -107,16 +107,33 @@ export function LightMeter() {
         throw new Error('Camera not supported by your browser');
       }
       
-      const videoConstraints = {
-        video: {
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      };
+      // Start with a simpler constraint set (more compatible)
+      let mediaStream;
       
-      console.log('Requesting camera with constraints:', videoConstraints);
-      const mediaStream = await navigator.mediaDevices.getUserMedia(videoConstraints);
+      try {
+        // First try with preferred settings
+        console.log('Requesting camera with basic constraints');
+        mediaStream = await navigator.mediaDevices.getUserMedia({ 
+          video: true,
+          audio: false
+        });
+      } catch (initialError) {
+        console.error('Initial camera request failed:', initialError);
+        
+        // Fall back to specific constraints only if first attempt fails
+        const videoConstraints = {
+          video: {
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        };
+        
+        console.log('Trying fallback camera constraints:', videoConstraints);
+        mediaStream = await navigator.mediaDevices.getUserMedia(videoConstraints);
+      }
+      
+      // If we get here, we have a mediaStream
       setStream(mediaStream);
       
       if (videoRef.current) {
@@ -144,22 +161,14 @@ export function LightMeter() {
         } else if (error.name === 'NotFoundError') {
           errorMsg += 'No camera found on this device.';
         } else if (error.name === 'OverconstrainedError') {
-          // Try with simpler constraints
-          try {
-            const simpleStream = await navigator.mediaDevices.getUserMedia({ video: true });
-            setStream(simpleStream);
-            
-            if (videoRef.current) {
-              videoRef.current.srcObject = simpleStream;
-              await videoRef.current.play();
-              return; // Exit on success
-            }
-          } catch (fallbackError) {
-            errorMsg += 'Your device camera does not support the required features.';
-          }
+          errorMsg += 'Your device camera does not meet the required constraints.';
+        } else if (error.name === 'NotSupportedError') {
+          errorMsg += 'Your browser does not support camera access.';
         } else {
-          errorMsg += 'Try using a different browser or device.';
+          errorMsg += `Error: ${error.message || 'Unknown error'}. Try using a different browser or device.`;
         }
+      } else {
+        errorMsg += `Error: ${error.message || 'Unknown error'}. Try using a different browser or device.`;
       }
       
       setErrorMessage(errorMsg);
