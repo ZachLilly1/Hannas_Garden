@@ -121,7 +121,6 @@ export default function Tools() {
 
         {/* Basic Tools Section */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Essential Tools</h2>
           <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {basicTools.map((tool, index) => (
               <div key={index} className="w-full">
@@ -144,7 +143,7 @@ export default function Tools() {
         {/* AI Tools Section */}
         <div>
           <div className="flex items-center mb-4">
-            <h2 className="text-xl font-semibold">AI-Powered Features</h2>
+            <div className="text-neutral-800 dark:text-gray-300 font-medium">AI-Powered Features</div>
             <div className="ml-2 px-2 py-1 bg-purple-100 rounded-full text-xs font-semibold text-purple-800">
               NEW
             </div>
