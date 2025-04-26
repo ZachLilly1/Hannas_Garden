@@ -653,7 +653,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                     <Button 
                       variant="outline" 
                       className="w-full flex items-center justify-center mt-3"
-                      onClick={() => window.location.href = "/tools/personalized-plant-advisor"}
+                      onClick={() => window.location.href = "/tools/personalized-advice"}
                     >
                       <BrainIcon className="h-4 w-4 mr-2" />
                       Get More AI Recommendations
