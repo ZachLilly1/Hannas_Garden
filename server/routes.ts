@@ -1347,6 +1347,314 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Community Tips Routes
+  // Get all community tips with optional filtering
+  apiRouter.get("/api/community-tips", async (req, res) => {
+    try {
+      // Parse filter parameters from query
+      const filters: {
+        plantType?: string;
+        careCategory?: string;
+        userId?: number;
+        featured?: boolean;
+      } = {};
+      
+      if (req.query.plantType) {
+        filters.plantType = req.query.plantType as string;
+      }
+      
+      if (req.query.careCategory) {
+        filters.careCategory = req.query.careCategory as string;
+      }
+      
+      if (req.query.userId) {
+        const userId = parseInt(req.query.userId as string);
+        if (!isNaN(userId)) {
+          filters.userId = userId;
+        }
+      }
+      
+      if (req.query.featured === 'true') {
+        filters.featured = true;
+      }
+      
+      // Add voted status for authenticated users
+      let userVotedTips: number[] = [];
+      if (req.isAuthenticated()) {
+        userVotedTips = await storage.getUserVotedTips(req.user!.id);
+      }
+      
+      // Get the community tips
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const tips = await storage.getCommunityTips(filters, limit);
+      
+      // Add userHasLiked flag to tips for authenticated users
+      const tipsWithUserLikes = tips.map(tip => ({
+        ...tip,
+        userHasLiked: userVotedTips.includes(tip.id)
+      }));
+      
+      res.json(tipsWithUserLikes);
+    } catch (error: any) {
+      console.error("Error getting community tips:", error);
+      res.status(500).json({
+        message: "Failed to get community tips",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Get a single community tip by ID
+  apiRouter.get("/api/community-tips/:id", async (req, res) => {
+    try {
+      const tipId = parseInt(req.params.id);
+      if (isNaN(tipId)) {
+        return res.status(400).json({ message: "Invalid tip ID" });
+      }
+      
+      const tip = await storage.getCommunityTip(tipId);
+      if (!tip) {
+        return res.status(404).json({ message: "Community tip not found" });
+      }
+      
+      // Add userHasLiked flag if user is authenticated
+      let userHasLiked = false;
+      if (req.isAuthenticated()) {
+        const userVotedTips = await storage.getUserVotedTips(req.user!.id);
+        userHasLiked = userVotedTips.includes(tipId);
+      }
+      
+      res.json({
+        ...tip,
+        userHasLiked
+      });
+    } catch (error: any) {
+      console.error("Error getting community tip:", error);
+      res.status(500).json({
+        message: "Failed to get community tip",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Create a new community tip (requires authentication)
+  apiRouter.post("/api/community-tips", isAuthenticated, async (req, res) => {
+    try {
+      const validation = validateRequest(insertCommunityTipSchema, req, res);
+      if (!validation.success) return;
+      
+      // Set the user ID from the authenticated user
+      const tipData: InsertCommunityTip = {
+        ...validation.data,
+        userId: req.user!.id
+      };
+      
+      const tip = await storage.createCommunityTip(tipData);
+      res.status(201).json(tip);
+    } catch (error: any) {
+      console.error("Error creating community tip:", error);
+      res.status(500).json({
+        message: "Failed to create community tip",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Update a community tip (only by the original author or admin)
+  apiRouter.put("/api/community-tips/:id", isAuthenticated, async (req, res) => {
+    try {
+      const tipId = parseInt(req.params.id);
+      if (isNaN(tipId)) {
+        return res.status(400).json({ message: "Invalid tip ID" });
+      }
+      
+      // Get the existing tip
+      const existingTip = await storage.getCommunityTip(tipId);
+      if (!existingTip) {
+        return res.status(404).json({ message: "Community tip not found" });
+      }
+      
+      // Only allow the original author or admins to update the tip
+      // For now, we'll assume user ID 1 is an admin
+      if (existingTip.userId !== req.user!.id && req.user!.id !== 1) {
+        return res.status(403).json({ message: "You don't have permission to update this tip" });
+      }
+      
+      const validation = validateRequest(insertCommunityTipSchema.partial(), req, res);
+      if (!validation.success) return;
+      
+      const updatedTip = await storage.updateCommunityTip(tipId, validation.data);
+      if (!updatedTip) {
+        return res.status(404).json({ message: "Community tip not found" });
+      }
+      
+      res.json(updatedTip);
+    } catch (error: any) {
+      console.error("Error updating community tip:", error);
+      res.status(500).json({
+        message: "Failed to update community tip",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Delete a community tip (only by the original author or admin)
+  apiRouter.delete("/api/community-tips/:id", isAuthenticated, async (req, res) => {
+    try {
+      const tipId = parseInt(req.params.id);
+      if (isNaN(tipId)) {
+        return res.status(400).json({ message: "Invalid tip ID" });
+      }
+      
+      // Get the existing tip
+      const existingTip = await storage.getCommunityTip(tipId);
+      if (!existingTip) {
+        return res.status(404).json({ message: "Community tip not found" });
+      }
+      
+      // Only allow the original author or admins to delete the tip
+      // For now, we'll assume user ID 1 is an admin
+      if (existingTip.userId !== req.user!.id && req.user!.id !== 1) {
+        return res.status(403).json({ message: "You don't have permission to delete this tip" });
+      }
+      
+      const success = await storage.deleteCommunityTip(tipId);
+      if (!success) {
+        return res.status(404).json({ message: "Community tip not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error deleting community tip:", error);
+      res.status(500).json({
+        message: "Failed to delete community tip",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Like a community tip (requires authentication)
+  apiRouter.post("/api/community-tips/:id/like", isAuthenticated, async (req, res) => {
+    try {
+      const tipId = parseInt(req.params.id);
+      if (isNaN(tipId)) {
+        return res.status(400).json({ message: "Invalid tip ID" });
+      }
+      
+      const success = await storage.addTipVote(tipId, req.user!.id);
+      
+      // If false, user likely already voted
+      if (!success) {
+        return res.status(400).json({ message: "You have already liked this tip" });
+      }
+      
+      res.status(200).json({ message: "Tip liked successfully" });
+    } catch (error: any) {
+      console.error("Error liking community tip:", error);
+      res.status(500).json({
+        message: "Failed to like community tip",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Unlike a community tip (requires authentication)
+  apiRouter.delete("/api/community-tips/:id/like", isAuthenticated, async (req, res) => {
+    try {
+      const tipId = parseInt(req.params.id);
+      if (isNaN(tipId)) {
+        return res.status(400).json({ message: "Invalid tip ID" });
+      }
+      
+      const success = await storage.removeTipVote(tipId, req.user!.id);
+      
+      // If false, user likely didn't vote
+      if (!success) {
+        return res.status(400).json({ message: "You have not liked this tip" });
+      }
+      
+      res.status(200).json({ message: "Tip unliked successfully" });
+    } catch (error: any) {
+      console.error("Error unliking community tip:", error);
+      res.status(500).json({
+        message: "Failed to unlike community tip",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Get care categories (used for filtering tips)
+  apiRouter.get("/api/community-tips/categories", (req, res) => {
+    res.json(CARE_CATEGORIES);
+  });
+  
+  // Admin-only routes for community tip moderation
+  
+  // Feature/unfeature a community tip (admin only)
+  apiRouter.post("/api/admin/community-tips/:id/feature", isAuthenticated, async (req, res) => {
+    try {
+      // For now, we'll assume user ID 1 is an admin
+      if (req.user!.id !== 1) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
+      const tipId = parseInt(req.params.id);
+      if (isNaN(tipId)) {
+        return res.status(400).json({ message: "Invalid tip ID" });
+      }
+      
+      const featured = req.body.featured === true;
+      const success = await storage.featureCommunityTip(tipId, featured);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Community tip not found" });
+      }
+      
+      res.status(200).json({ message: `Tip ${featured ? 'featured' : 'unfeatured'} successfully` });
+    } catch (error: any) {
+      console.error("Error featuring community tip:", error);
+      res.status(500).json({
+        message: "Failed to update feature status",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // Update tip status (active, reported, removed) (admin only)
+  apiRouter.post("/api/admin/community-tips/:id/status", isAuthenticated, async (req, res) => {
+    try {
+      // For now, we'll assume user ID 1 is an admin
+      if (req.user!.id !== 1) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
+      const tipId = parseInt(req.params.id);
+      if (isNaN(tipId)) {
+        return res.status(400).json({ message: "Invalid tip ID" });
+      }
+      
+      // Validate status value
+      const { status } = req.body;
+      if (!status || !['active', 'reported', 'removed'].includes(status)) {
+        return res.status(400).json({ message: "Invalid status value" });
+      }
+      
+      const success = await storage.updateTipStatus(tipId, status);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Community tip not found" });
+      }
+      
+      res.status(200).json({ message: `Tip status updated to ${status} successfully` });
+    } catch (error: any) {
+      console.error("Error updating community tip status:", error);
+      res.status(500).json({
+        message: "Failed to update tip status",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
