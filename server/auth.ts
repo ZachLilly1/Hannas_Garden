@@ -121,9 +121,22 @@ export function setupAuth(app: Express) {
   // Add regular session middleware instead of the custom error handling
   app.use(session(sessionSettings));
   
-  // Log session activity for debugging
+  // Enhanced logging for better session debugging
   app.use((req, res, next) => {
+    // Log basic session info
     console.log(`Session ID: ${req.session.id}, Auth: ${req.isAuthenticated ? req.isAuthenticated() : 'undefined'}`);
+    
+    // Add debug endpoint to check session state if needed
+    if (req.path === '/api/debug/session') {
+      return res.json({
+        sessionId: req.session.id,
+        isAuthenticated: req.isAuthenticated(),
+        sessionData: req.session,
+        user: req.user || null,
+        cookies: req.headers.cookie
+      });
+    }
+    
     next();
   });
   
