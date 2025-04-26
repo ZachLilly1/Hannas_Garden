@@ -112,8 +112,7 @@ export default function Tools() {
 
   return (
     <MainLayout>
-      <div className="p-4 pt-4">
-        <h1 className="text-2xl font-semibold mb-2">Garden Tools</h1>
+      <div className="p-4">
         <div className="mb-6">
           <p className="text-muted-foreground">
             Specialized tools to help with your gardening tasks
