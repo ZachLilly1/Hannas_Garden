@@ -1,42 +1,26 @@
-import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
+import React, { useState } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
-import { useLocation } from "wouter";
-import { queryClient } from "@/lib/queryClient";
+import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { LeafIcon } from "@/lib/icons";
 
 export default function DirectLoginPage() {
-  const { toast } = useToast();
-  const [username, setUsername] = useState("Zach"); // Default to the username with plants
-  const [password, setPassword] = useState("password");
+  const [username, setUsername] = useState("Zach");
+  const [password, setPassword] = useState("password123");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [sessionInfo, setSessionInfo] = useState<any>(null);
   const [, setLocation] = useLocation();
-  
-  // Check session status on component mount
-  useEffect(() => {
-    checkSessionStatus();
-  }, []);
+  const { isAuthenticated } = useAuth();
 
-  const handleLogin = async () => {
-    if (!username || !password) {
-      toast({
-        title: "Missing information",
-        description: "Please enter both username and password",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleDirectLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
-    setError(null);
 
     try {
-      const res = await fetch("/api/auth/direct-login", {
+      const response = await fetch("/api/auth/direct-login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -45,34 +29,24 @@ export default function DirectLoginPage() {
         credentials: "include",
       });
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText || "Login failed");
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Login failed");
       }
 
-      const userData = await res.json();
-      
-      // Store user data in React Query cache
-      queryClient.setQueryData(["/api/auth/user"], userData);
-      
+      const user = await response.json();
       toast({
         title: "Login successful",
-        description: `Welcome ${userData.displayName || userData.username}!`,
+        description: `Welcome, ${user.username}!`,
       });
-      
-      // Get session status to verify
-      await checkSessionStatus();
-      
-      // Redirect to dashboard
-      setTimeout(() => {
-        setLocation("/");
-      }, 2000);
-    } catch (err) {
-      console.error("Login error:", err);
-      setError(err instanceof Error ? err.message : "Login failed");
+
+      // Force reload the application to refresh auth state
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Login error:", error);
       toast({
         title: "Login failed",
-        description: err instanceof Error ? err.message : "Please try again",
+        description: error instanceof Error ? error.message : "Please check your credentials",
         variant: "destructive",
       });
     } finally {
@@ -80,88 +54,60 @@ export default function DirectLoginPage() {
     }
   };
 
-  const checkSessionStatus = async () => {
-    try {
-      const res = await fetch("/api/auth/session-check", {
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to check session status");
-      }
-
-      const data = await res.json();
-      setSessionInfo(data);
-      return data;
-    } catch (err) {
-      console.error("Session check error:", err);
-      return null;
-    }
-  };
-
   return (
-    <div className="container py-10 max-w-md mx-auto">
-      <Card>
-        <CardHeader>
-          <CardTitle>Direct Login</CardTitle>
-          <CardDescription>
-            This is a special login page for debugging authentication issues.
+    <div className="container max-w-md py-10">
+      <Card className="w-full">
+        <CardHeader className="space-y-1">
+          <div className="flex items-center justify-center mb-4">
+            <LeafIcon className="h-12 w-12 text-primary" />
+          </div>
+          <CardTitle className="text-2xl text-center">Direct Login</CardTitle>
+          <CardDescription className="text-center">
+            Use this form to directly login to the application.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
-            <Input
-              id="username"
-              placeholder="Enter username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          
-          {error && (
-            <div className="bg-red-50 text-red-500 p-3 rounded text-sm">
-              {error}
+        <CardContent className="grid gap-4">
+          <form onSubmit={handleDirectLogin}>
+            <div className="grid gap-2">
+              <div className="grid gap-1">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  placeholder="Username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+              <Button type="submit" disabled={isLoading} className="mt-4">
+                {isLoading ? "Logging in..." : "Login"}
+              </Button>
             </div>
-          )}
-          
-          {sessionInfo && (
-            <div className="bg-green-50 text-green-700 p-3 rounded text-sm">
-              <p><strong>Session status:</strong></p>
-              <p>Authenticated: {sessionInfo.authenticated ? "Yes" : "No"}</p>
-              <p>Session ID: {sessionInfo.sessionId}</p>
-              {sessionInfo.user && (
-                <p>User: {sessionInfo.user.username} (ID: {sessionInfo.user.id})</p>
-              )}
-            </div>
-          )}
+          </form>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={checkSessionStatus}>
-            Check Session
-          </Button>
-          <Button onClick={handleLogin} disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Logging in...
-              </>
-            ) : (
-              "Login"
-            )}
-          </Button>
+        <CardFooter>
+          <p className="text-xs text-muted-foreground text-center w-full">
+            This is a special direct login route for development purposes.
+          </p>
         </CardFooter>
       </Card>
+
+      <div className="flex justify-center mt-4">
+        <Button variant="link" onClick={() => setLocation("/")}>
+          Return to Home
+        </Button>
+      </div>
     </div>
   );
 }
