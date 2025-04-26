@@ -268,6 +268,11 @@ function setupAuthRoutes(app: Express) {
   const csrfProtection = csrf({
     cookie: false,  // Use session instead of cookie for CSRF token
   });
+  
+  // CSRF token endpoint
+  app.get('/api/auth/csrf-token', csrfProtection, (req: Request, res: Response) => {
+    res.json({ csrfToken: req.csrfToken() });
+  });
 
   // Register new user
   app.post("/api/auth/register", csrfProtection, async (req, res, next) => {

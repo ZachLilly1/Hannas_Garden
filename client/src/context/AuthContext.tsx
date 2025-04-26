@@ -2,6 +2,7 @@ import { createContext, useContext, ReactNode, useState, useEffect } from "react
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { User } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { clearCsrfToken } from "@/lib/csrf";
 import { useToast } from "@/hooks/use-toast";
 
 type LoginData = {
@@ -172,7 +173,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return res;
     },
     onSuccess: () => {
+      // Clear the CSRF token to prevent using old tokens
+      clearCsrfToken();
+      
+      // Clear user data from cache
       queryClient.setQueryData(['/api/auth/user'], null);
+      
       // Clear out only user-specific queries
       queryClient.invalidateQueries({ 
         predicate: (query) => {
@@ -181,6 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return typeof queryKey === 'string' && queryKey.startsWith('/api/');
         }
       });
+      
       toast({
         title: "Logged out",
         description: "You have been logged out successfully",
