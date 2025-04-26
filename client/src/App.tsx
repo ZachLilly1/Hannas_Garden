@@ -27,7 +27,6 @@ import GrowthAnalyzerPage from "@/pages/tools/growth-analyzer";
 import PlantExpertPage from "@/pages/tools/plant-expert";
 import CareSchedulerPage from "@/pages/tools/care-scheduler";
 import CommunityInsightsPage from "@/pages/tools/community-insights";
-import DirectLoginPage from "@/pages/tools/direct-login";
 import HealthDiagnosisDemo from "@/pages/health-diagnosis-demo";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
@@ -37,32 +36,31 @@ function Router() {
     <Switch>
       {/* Public routes */}
       <Route path="/auth" component={AuthPage} />
-      <Route path="/tools/direct-login" component={DirectLoginPage} />
       
-      {/* Temporarily bypassed routes - these can be accessed without authentication */}
+      {/* Protected routes - require authentication */}
       <Route path="/">
-        <ProtectedRoute bypassAuth={true}>
+        <ProtectedRoute>
           <MainLayout>
             <Dashboard />
           </MainLayout>
         </ProtectedRoute>
       </Route>
       <Route path="/plants">
-        <ProtectedRoute bypassAuth={true}>
+        <ProtectedRoute>
           <MainLayout>
             <Plants />
           </MainLayout>
         </ProtectedRoute>
       </Route>
       <Route path="/schedule">
-        <ProtectedRoute bypassAuth={true}>
+        <ProtectedRoute>
           <MainLayout>
             <CareSchedule />
           </MainLayout>
         </ProtectedRoute>
       </Route>
       <Route path="/guides">
-        <ProtectedRoute bypassAuth={true}>
+        <ProtectedRoute>
           <MainLayout>
             <Guides />
           </MainLayout>
