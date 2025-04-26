@@ -27,6 +27,7 @@ import GrowthAnalyzerPage from "@/pages/tools/growth-analyzer";
 import PlantExpertPage from "@/pages/tools/plant-expert";
 import CareSchedulerPage from "@/pages/tools/care-scheduler";
 import CommunityInsightsPage from "@/pages/tools/community-insights";
+import DirectLoginPage from "@/pages/tools/direct-login";
 import HealthDiagnosisDemo from "@/pages/health-diagnosis-demo";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
