@@ -75,6 +75,16 @@ export function MainLayout({ children }: MainLayoutProps) {
         </div>
       </header>
 
+      {/* Guest Mode Banner */}
+      {!isAuthenticated && (
+        <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-900/30 mb-0">
+          <AlertIcon className="h-4 w-4 text-amber-500" />
+          <AlertDescription className="text-amber-700 dark:text-amber-300 text-sm">
+            You are viewing in guest mode. Some features may be limited.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Main Content */}
       <main className="flex-1 dark:bg-gray-900 dark:text-white">
         {children}
