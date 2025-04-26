@@ -1,16 +1,13 @@
 import { useState, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Loader2, Camera, Upload, X, MapPin, Plus } from "lucide-react";
+import { Loader2, Camera, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { PlantWithCare } from "@shared/schema";
 
 // Types for plant identification result from OpenAI
 interface PlantIdentificationResult {
@@ -26,14 +23,9 @@ interface PlantIdentificationResult {
   confidence: "high" | "medium" | "low";
 }
 
-export function PlantIdentifier({ onAddToCollection }: { 
-  onAddToCollection?: (plant: Partial<PlantWithCare>) => void 
-}) {
+export function PlantIdentifier() {
   const [image, setImage] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [plantLocation, setPlantLocation] = useState<string>("Living Room");
-  const [customLocation, setCustomLocation] = useState<string>("");
-  const [showCustomLocation, setShowCustomLocation] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -131,43 +123,7 @@ export function PlantIdentifier({ onAddToCollection }: {
     },
   });
 
-  // Add the identified plant to the user's collection
-  const handleAddToCollection = () => {
-    if (!identifyMutation.data) return;
-    
-    const { commonName, scientificName, careRecommendations } = identifyMutation.data;
-    
-    // Use the image data in its current format (with the data:image/* prefix)
-    // This ensures we send a properly formatted base64 image to the server
-    
-    // Use custom location if it's selected and has a value, otherwise use the dropdown selection
-    const finalLocation = showCustomLocation && customLocation.trim() !== "" 
-      ? customLocation.trim() 
-      : plantLocation;
-    
-    // Make sure all required fields in the insertPlantSchema are provided
-    const newPlant = {
-      name: commonName,
-      scientificName: scientificName || null, // Scientific name is optional, null if not available
-      type: identifyMutation.data.plantType.toLowerCase(),
-      location: finalLocation,
-      waterFrequency: Number(careRecommendations.waterFrequency), // Ensure numbers are sent as numbers
-      fertilizerFrequency: Number(careRecommendations.fertilizerFrequency),
-      sunlightLevel: careRecommendations.sunlightLevel,
-      notes: careRecommendations.additionalCare || '',
-      image: image, // Keep the full data URL format for consistency
-      // These fields are handled by the server:
-      // userId - server side adds from auth
-      // status - defaults to healthy
-      // lastWatered & lastFertilized - optional
-    };
-    
-    console.log("Adding plant to collection:", newPlant);
-    
-    if (onAddToCollection) {
-      onAddToCollection(newPlant);
-    }
-  };
+  // Plant identification functionality only - no collection adding
 
   // Identify the plant from the image
   const identifyPlant = () => {
@@ -313,78 +269,6 @@ export function PlantIdentifier({ onAddToCollection }: {
             </div>
           )}
         </CardContent>
-        
-        {identifyMutation.data && onAddToCollection && (
-          <CardFooter className="flex-col space-y-4">
-            <div className="w-full">
-              <Label htmlFor="location" className="mb-2 block">
-                <MapPin className="h-4 w-4 inline mr-1" />
-                Plant Location
-              </Label>
-              {!showCustomLocation ? (
-                <div className="space-y-2">
-                  <Select
-                    value={plantLocation}
-                    onValueChange={setPlantLocation}
-                  >
-                    <SelectTrigger id="location">
-                      <SelectValue placeholder="Select a location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Living Room">Living Room</SelectItem>
-                      <SelectItem value="Kitchen">Kitchen</SelectItem>
-                      <SelectItem value="Bedroom">Bedroom</SelectItem>
-                      <SelectItem value="Bathroom">Bathroom</SelectItem>
-                      <SelectItem value="Office">Office</SelectItem>
-                      <SelectItem value="Balcony">Balcony</SelectItem>
-                      <SelectItem value="Garden">Garden</SelectItem>
-                      <SelectItem value="Patio">Patio</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowCustomLocation(true)}
-                    className="w-full mt-1"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Custom Location
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Input
-                    id="customLocation"
-                    value={customLocation}
-                    onChange={(e) => setCustomLocation(e.target.value)}
-                    placeholder="Enter custom location..."
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setShowCustomLocation(false);
-                      setCustomLocation("");
-                    }}
-                    className="w-full mt-1"
-                  >
-                    Use Predefined Location
-                  </Button>
-                </div>
-              )}
-            </div>
-            
-            <Button 
-              onClick={handleAddToCollection} 
-              className="w-full"
-              variant="secondary"
-            >
-              Add to My Collection
-            </Button>
-          </CardFooter>
-        )}
       </Card>
     </div>
   );
