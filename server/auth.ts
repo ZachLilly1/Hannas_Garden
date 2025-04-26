@@ -8,6 +8,7 @@ import { storage } from "./storage";
 import { loginSchema, User as SelectUser } from "@shared/schema";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
+import csrf from "csurf";
 
 // Add a global property to track the last validated username
 declare global {
@@ -145,8 +146,26 @@ export function setupAuth(app: Express) {
   // Setup middleware
   app.set("trust proxy", 1);
   
-  // Add regular session middleware instead of the custom error handling
+  // Add regular session middleware
   app.use(session(sessionSettings));
+  
+  // Setup CSRF protection - must be after session middleware
+  const csrfProtection = csrf({
+    cookie: false,  // Use session instead of cookie for CSRF token
+    ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],  // These methods are not vulnerable to CSRF
+  });
+  
+  // CSRF error handler
+  app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+    if (err.code === 'EBADCSRFTOKEN') {
+      console.error('CSRF attack detected:', req.path);
+      return res.status(403).json({ 
+        message: "Invalid or missing CSRF token", 
+        error: "Security validation failed" 
+      });
+    }
+    next(err);
+  });
   
   // Enhanced logging for better session debugging
   app.use((req, res, next) => {
@@ -169,6 +188,11 @@ export function setupAuth(app: Express) {
   
   app.use(passport.initialize());
   app.use(passport.session());
+  
+  // Set up CSRF token endpoint - allows clients to get a token
+  app.get('/api/auth/csrf-token', csrfProtection, (req, res) => {
+    res.json({ csrfToken: req.csrfToken() });
+  });
 
   // Configure Passport with Local Strategy
   passport.use(
@@ -229,10 +253,24 @@ export function setupAuth(app: Express) {
   setupAuthRoutes(app);
 }
 
+// Create CSRF token types for Express Request
+declare global {
+  namespace Express {
+    interface Request {
+      csrfToken(): string;
+    }
+  }
+}
+
 // Authentication routes
 function setupAuthRoutes(app: Express) {
+  // Initialize CSRF protection
+  const csrfProtection = csrf({
+    cookie: false,  // Use session instead of cookie for CSRF token
+  });
+
   // Register new user
-  app.post("/api/auth/register", async (req, res, next) => {
+  app.post("/api/auth/register", csrfProtection, async (req, res, next) => {
     try {
       // Check if user already exists
       const existingUser = await storage.getUserByUsername(req.body.username);
@@ -279,7 +317,7 @@ function setupAuthRoutes(app: Express) {
     }
   });
 
-  // Login user
+  // Login user - no CSRF protection for login since user isn't authenticated yet
   app.post("/api/auth/login", (req, res, next) => {
     try {
       console.log("POST /api/auth/login - Attempting login with:", req.body.username);
@@ -328,7 +366,7 @@ function setupAuthRoutes(app: Express) {
   });
 
   // Logout user
-  app.post("/api/auth/logout", (req, res, next) => {
+  app.post("/api/auth/logout", csrfProtection, (req, res, next) => {
     req.logout((err) => {
       if (err) return next(err);
       req.session.destroy((err) => {
@@ -362,7 +400,7 @@ function setupAuthRoutes(app: Express) {
   });
 
   // Update user profile
-  app.put("/api/auth/profile", isAuthenticated, async (req, res, next) => {
+  app.put("/api/auth/profile", isAuthenticated, csrfProtection, async (req, res, next) => {
     try {
       const userId = (req.user as SelectUser).id;
       const updatedUser = await storage.updateUserProfile(userId, req.body);
@@ -380,7 +418,7 @@ function setupAuthRoutes(app: Express) {
   });
 
   // Change password
-  app.post("/api/auth/password", isAuthenticated, async (req, res, next) => {
+  app.post("/api/auth/password", isAuthenticated, csrfProtection, async (req, res, next) => {
     try {
       const { currentPassword, newPassword } = req.body;
       const userId = (req.user as SelectUser).id;
