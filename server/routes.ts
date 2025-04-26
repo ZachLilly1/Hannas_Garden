@@ -1588,6 +1588,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(CARE_CATEGORIES);
   });
   
+  // Debug endpoint to create a community tip without authentication
+  apiRouter.post("/api/debug/community-tips", async (req, res) => {
+    try {
+      console.log("Debug community tip creation request:", req.body);
+      
+      // Validate request data
+      const validation = validateRequest(insertCommunityTipSchema, req, res);
+      if (!validation.success) return;
+      
+      // Set user ID to 1 (Zach) for debugging
+      const tipData: InsertCommunityTip = {
+        ...validation.data,
+        userId: 1
+      };
+      
+      // Create the community tip
+      const tip = await storage.createCommunityTip(tipData);
+      res.status(201).json(tip);
+    } catch (error: any) {
+      console.error("Error in debug community tip creation:", error);
+      res.status(500).json({
+        message: "Failed to create community tip",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   // Admin-only routes for community tip moderation
   
   // Feature/unfeature a community tip (admin only)
