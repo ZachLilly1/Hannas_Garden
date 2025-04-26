@@ -343,7 +343,7 @@ function setupAuthRoutes(app: Express) {
   });
 
   // Login user - no CSRF protection for login since user isn't authenticated yet
-  app.post("/api/auth/login", (req, res, next) => {
+  app.post("/api/auth/login", authLimiter, (req, res, next) => {
     try {
       console.log("POST /api/auth/login - Attempting login with:", req.body.username);
       console.log("Session ID before auth:", req.session.id);
@@ -443,7 +443,7 @@ function setupAuthRoutes(app: Express) {
   });
 
   // Change password
-  app.post("/api/auth/password", isAuthenticated, csrfProtection, async (req, res, next) => {
+  app.post("/api/auth/password", isAuthenticated, authLimiter, csrfProtection, async (req, res, next) => {
     try {
       const { currentPassword, newPassword } = req.body;
       const userId = (req.user as SelectUser).id;
