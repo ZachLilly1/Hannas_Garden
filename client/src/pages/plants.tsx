@@ -1,14 +1,12 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PlantCard } from "@/components/plants/PlantCard";
-import PlantGridView from "@/components/plants/PlantGridView";
 import { PlantDetailModal } from "@/components/plants/PlantDetailModal";
 import { AddPlantModal } from "@/components/plants/AddPlantModal";
 import { SortIcon, WaterDropIcon, LeafIcon, SunIcon, CameraIcon } from "@/lib/icons";
 import { usePlants } from "@/context/PlantContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Button } from "@/components/ui/button";
-import { ViewToggle } from "@/components/ui/view-toggle";
 import { CalendarIcon } from "lucide-react";
 import { getStatusColor, formatRelativeDate } from "@/lib/utils";
 import {
@@ -39,7 +37,7 @@ export default function Plants() {
     plantToEdit,
   } = usePlants();
   
-  const { viewMode } = useTheme();
+  // We don't need theme-related variables anymore
   const [searchTerm, setSearchTerm] = useState("");
 
   const sortOptions = [
@@ -95,7 +93,6 @@ export default function Plants() {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-medium dark:text-white">All Plants</h2>
           <div className="flex items-center gap-2">
-            <ViewToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="text-primary text-sm">
@@ -119,41 +116,26 @@ export default function Plants() {
         
         {/* Plant Cards List */}
         {isLoading ? (
-          // Loading skeleton - Use appropriate layout based on view mode
-          <div className={viewMode === 'grid' ? "grid grid-cols-2 gap-4" : "space-y-4"}>
-            {Array.from({ length: viewMode === 'grid' ? 4 : 3 }).map((_, index) => (
-              viewMode === 'grid' ? (
-                <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
-                  <Skeleton className="w-full h-32" />
-                  <div className="p-3">
-                    <Skeleton className="h-5 w-full mb-2" />
-                    <Skeleton className="h-3 w-3/4 mb-3" />
-                    <div className="space-y-2 mt-2">
-                      <Skeleton className="h-3 w-full" />
-                      <Skeleton className="h-3 w-full" />
-                      <Skeleton className="h-3 w-full" />
+          // Loading skeleton for list view
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+                <div className="flex">
+                  <Skeleton className="w-24 h-24" />
+                  <div className="flex-1 p-3">
+                    <div className="flex justify-between items-start">
+                      <Skeleton className="h-5 w-40 mb-2" />
+                      <Skeleton className="h-4 w-20" />
+                    </div>
+                    <Skeleton className="h-3 w-24 mb-3" />
+                    <div className="flex space-x-4 mt-3">
+                      <Skeleton className="h-5 w-12" />
+                      <Skeleton className="h-5 w-12" />
+                      <Skeleton className="h-5 w-12" />
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
-                  <div className="flex">
-                    <Skeleton className="w-24 h-24" />
-                    <div className="flex-1 p-3">
-                      <div className="flex justify-between items-start">
-                        <Skeleton className="h-5 w-40 mb-2" />
-                        <Skeleton className="h-4 w-20" />
-                      </div>
-                      <Skeleton className="h-3 w-24 mb-3" />
-                      <div className="flex space-x-4 mt-3">
-                        <Skeleton className="h-5 w-12" />
-                        <Skeleton className="h-5 w-12" />
-                        <Skeleton className="h-5 w-12" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
+              </div>
             ))}
           </div>
         ) : filteredPlants.length === 0 ? (
@@ -167,74 +149,16 @@ export default function Plants() {
             )}
           </div>
         ) : (
-          // Plants list/grid view
-          viewMode === 'grid' ? (
-            <div className="grid grid-cols-2 gap-4">
-              {filteredPlants.map((plant) => (
-                <div key={plant.id} className="plant-grid-item">
-                  {/* Use the same component from PlantGridView but pass filtered plants */}
-                  <div 
-                    onClick={() => openPlantDetail(plant)}
-                    className="rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col"
-                  >
-                    {/* Status indicator */}
-                    <div className={`h-1 ${getStatusColor(plant.status)} w-full`}></div>
-                    
-                    {/* Image */}
-                    <div className="h-32 bg-neutral-100 dark:bg-gray-700 relative">
-                      {plant.image ? (
-                        <img 
-                          src={plant.image} 
-                          alt={plant.name} 
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-neutral-400 dark:text-gray-500">
-                          No Image
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Content */}
-                    <div className="p-3 flex flex-col flex-1">
-                      <h3 className="font-medium text-sm mb-1 truncate dark:text-white">{plant.name}</h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 italic mb-2 truncate">
-                        {plant.scientificName || "Plant"}
-                      </p>
-                      
-                      <div className="mt-auto space-y-1">
-                        {/* Watering info */}
-                        <div className="flex items-center text-xs">
-                          <WaterDropIcon className="h-3 w-3 text-blue-500 mr-1" />
-                          <span className="text-gray-600 dark:text-gray-300">
-                            {plant.nextWatering ? formatRelativeDate(plant.nextWatering) : 'Not set'}
-                          </span>
-                        </div>
-                        
-                        {/* Location */}
-                        <div className="flex items-center text-xs">
-                          <CalendarIcon className="h-3 w-3 text-gray-500 mr-1" />
-                          <span className="text-gray-600 dark:text-gray-300">
-                            {plant.location}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredPlants.map((plant) => (
-                <PlantCard
-                  key={plant.id}
-                  plant={plant}
-                  onClick={() => openPlantDetail(plant)}
-                />
-              ))}
-            </div>
-          )
+          // Always use list view
+          <div className="space-y-4">
+            {filteredPlants.map((plant) => (
+              <PlantCard
+                key={plant.id}
+                plant={plant}
+                onClick={() => openPlantDetail(plant)}
+              />
+            ))}
+          </div>
         )}
       </section>
 
