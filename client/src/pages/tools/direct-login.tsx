@@ -9,8 +9,8 @@ import { useAuth } from "@/context/AuthContext";
 import { LeafIcon } from "@/lib/icons";
 
 export default function DirectLoginPage() {
-  const [username, setUsername] = useState("Zach");
-  const [password, setPassword] = useState("password123");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [, setLocation] = useLocation();
   const { isAuthenticated } = useAuth();
@@ -61,9 +61,10 @@ export default function DirectLoginPage() {
           <div className="flex items-center justify-center mb-4">
             <LeafIcon className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl text-center">Direct Login</CardTitle>
+          <CardTitle className="text-2xl text-center">Emergency Access</CardTitle>
           <CardDescription className="text-center">
-            Use this form to directly login to the application.
+            This is an alternative login method for cases when the standard login isn't working.
+            Please enter your regular account credentials.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
