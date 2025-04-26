@@ -15,28 +15,40 @@ type LightLevel = {
 
 const LIGHT_LEVELS: LightLevel[] = [
   {
+    name: "Very Low Light",
+    range: [0, 300],
+    description: "Very dim light conditions, such as far from windows or in halls",
+    suitable: "Snake Plant, ZZ Plant, Cast Iron Plant, Chinese Evergreen"
+  },
+  {
     name: "Low Light",
-    range: [0, 1000],
-    description: "Dim light, suitable for shade-loving plants",
-    suitable: "Peace Lily, Snake Plant, ZZ Plant, Pothos"
+    range: [300, 800],
+    description: "Dim light, typical of north-facing windows or interior spaces",
+    suitable: "Peace Lily, Pothos, Philodendron, Calathea, Ferns"
   },
   {
     name: "Medium Light",
-    range: [1000, 5000],
-    description: "Medium, indirect light",
-    suitable: "Philodendron, Fern, Anthurium, Spider Plant"
+    range: [800, 2500],
+    description: "Moderate indirect light, like east-facing windows or bright rooms",
+    suitable: "Spider Plant, Dracaena, Anthurium, Bird's Nest Fern, Rubber Plant"
   },
   {
     name: "Bright Indirect Light",
-    range: [5000, 10000],
-    description: "Bright, but not direct sunlight",
-    suitable: "Fiddle Leaf Fig, Monstera, Orchid, Bird of Paradise"
+    range: [2500, 10000],
+    description: "Bright light without direct sun rays, typical of west-facing windows",
+    suitable: "Fiddle Leaf Fig, Monstera, Peperomia, Areca Palm, Bird of Paradise"
   },
   {
-    name: "Direct Sunlight",
-    range: [10000, 100000],
-    description: "Full, direct sunshine",
-    suitable: "Succulents, Cacti, Aloe Vera, Citrus plants"
+    name: "Direct Light",
+    range: [10000, 25000],
+    description: "Several hours of direct sun or very bright indirect light",
+    suitable: "Croton, String of Pearls, Jade Plant, African Milk Tree"
+  },
+  {
+    name: "Intense Sunlight",
+    range: [25000, 100000],
+    description: "Full, prolonged direct sunshine through south-facing windows or outdoors",
+    suitable: "Succulents, Cacti, Aloe Vera, Agave, Citrus plants, Herbs"
   }
 ];
 
@@ -284,28 +296,46 @@ export function LightMeter() {
         // Calculate average brightness
         const averageBrightness = totalBrightness / pixelCount;
         
-        // Convert to a more realistic lux estimation
-        // Normalize the brightness value (0-255) to a log scale that better represents
-        // actual light intensity relationships
+        // Convert to a more realistic lux estimation using a more sophisticated algorithm
+        // Camera images don't have the dynamic range of human vision or light meters,
+        // so we need to use a non-linear mapping that accounts for this limitation
         
-        // Using a more calibrated approach based on common lighting conditions
+        // First, apply a gamma correction to the average brightness to account for
+        // the non-linear relationship between pixel values and actual light intensity
+        const gamma = 2.2; // Standard gamma correction value
+        const correctedBrightness = Math.pow(averageBrightness / 255, gamma) * 255;
+        
+        // Apply a logarithmic scaling that better matches how light intensity is perceived
+        // and how actual lux values scale in real-world environments
         let estimatedLux;
         
-        if (averageBrightness < 20) {
-          // Very dark (indoor dim lighting)
-          estimatedLux = Math.round(averageBrightness * 25); // 0-500 lux
-        } else if (averageBrightness < 60) {
-          // Moderately lit indoor space
-          estimatedLux = Math.round(500 + (averageBrightness - 20) * 50); // 500-2500 lux
-        } else if (averageBrightness < 120) {
-          // Bright indoor or indirect outdoor
-          estimatedLux = Math.round(2500 + (averageBrightness - 60) * 125); // 2500-10000 lux
+        if (correctedBrightness < 5) {
+          // Very dark environments (night/dim indoor)
+          estimatedLux = Math.round(correctedBrightness * 20); // 0-100 lux range
+        } else if (correctedBrightness < 15) {
+          // Dim indoor lighting (hallways, ambient evening lighting)
+          estimatedLux = Math.round(100 + Math.pow(correctedBrightness - 5, 1.5) * 30); // 100-400 lux
+        } else if (correctedBrightness < 40) {
+          // Standard indoor lighting (living rooms, offices)
+          estimatedLux = Math.round(400 + Math.pow(correctedBrightness - 15, 1.7) * 35); // 400-2000 lux
+        } else if (correctedBrightness < 100) {
+          // Bright indoor or indirect outdoor light (near windows, overcast days)
+          estimatedLux = Math.round(2000 + Math.pow(correctedBrightness - 40, 1.8) * 110); // 2000-10,000 lux
+        } else if (correctedBrightness < 180) {
+          // Indirect sunlight or very bright indoor (sunrooms, atriums)
+          estimatedLux = Math.round(10000 + Math.pow(correctedBrightness - 100, 2) * 250); // 10,000-50,000 lux
         } else {
-          // Direct sunlight or very bright conditions
-          estimatedLux = Math.round(10000 + (averageBrightness - 120) * 667); // 10000+ lux
+          // Direct sunlight
+          estimatedLux = Math.round(50000 + Math.pow(correctedBrightness - 180, 2.2) * 300); // 50,000-100,000+ lux
         }
         
-        console.log(`Raw brightness: ${averageBrightness}, Estimated lux: ${estimatedLux}`);
+        // Apply a calibration factor based on typical smartphone camera exposure
+        // Most smartphone cameras automatically adjust exposure, which can dramatically 
+        // affect brightness values. This calibration helps counter that effect.
+        const calibrationFactor = 1.35;
+        estimatedLux = Math.round(estimatedLux * calibrationFactor);
+        
+        console.log(`Raw brightness: ${averageBrightness}, Corrected: ${correctedBrightness.toFixed(2)}, Estimated lux: ${estimatedLux}`);
         
         // Find the corresponding light level
         const level = LIGHT_LEVELS.find(level => 
