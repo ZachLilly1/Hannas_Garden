@@ -387,7 +387,38 @@ export function LightMeter() {
               <h3 className="text-lg font-medium mb-4 text-center">Measure Light Levels</h3>
               <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                 <Button 
-                  onClick={openCameraView}
+                  onClick={() => {
+                    // Create a temporary file input for camera capture
+                    const cameraInput = document.createElement('input');
+                    cameraInput.type = 'file';
+                    cameraInput.accept = 'image/*';
+                    cameraInput.capture = 'environment'; // This forces camera on supported devices
+                    cameraInput.style.display = 'none';
+                    
+                    // Add to DOM, trigger click, then clean up
+                    document.body.appendChild(cameraInput);
+                    
+                    // Handle the file selection
+                    cameraInput.addEventListener('change', (e) => {
+                      const target = e.target as HTMLInputElement;
+                      if (target.files && target.files[0]) {
+                        const file = target.files[0];
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          if (event.target?.result) {
+                            setCapturedImage(event.target.result as string);
+                            processImageForLight(event.target.result as string);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                      
+                      // Clean up
+                      document.body.removeChild(cameraInput);
+                    });
+                    
+                    cameraInput.click();
+                  }}
                   className="flex items-center justify-center gap-2 h-32 bg-primary/10 hover:bg-primary/20 text-primary-foreground border-2 border-dashed border-neutral-medium"
                   variant="outline"
                 >
