@@ -1,10 +1,12 @@
 import { 
-  users, plants, careLogs, plantGuides, reminders,
+  users, plants, careLogs, plantGuides, reminders, communityTips, tipVotes,
   type User, type InsertUser, 
   type Plant, type InsertPlant,
   type CareLog, type InsertCareLog,
   type PlantGuide, type InsertPlantGuide,
-  type PlantWithCare, type Reminder, type InsertReminder
+  type PlantWithCare, type Reminder, type InsertReminder,
+  type CommunityTip, type InsertCommunityTip, type CommunityTipWithUser,
+  type TipVote, type InsertTipVote
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, sql } from "drizzle-orm";
@@ -52,6 +54,31 @@ export interface IStorage {
   markReminderComplete(id: number): Promise<Reminder | undefined>;
   markReminderDismissed(id: number): Promise<Reminder | undefined>;
   getOverdueReminders(userId: number): Promise<Reminder[]>;
+  
+  // Community Tips methods
+  getCommunityTips(
+    filters?: {
+      plantType?: string;
+      careCategory?: string;
+      userId?: number;
+      featured?: boolean;
+    }, 
+    limit?: number
+  ): Promise<CommunityTipWithUser[]>;
+  
+  getCommunityTip(id: number): Promise<CommunityTipWithUser | undefined>;
+  createCommunityTip(tip: InsertCommunityTip): Promise<CommunityTip>;
+  updateCommunityTip(id: number, data: Partial<InsertCommunityTip>): Promise<CommunityTip | undefined>;
+  deleteCommunityTip(id: number): Promise<boolean>;
+  
+  // Tip Voting methods
+  addTipVote(tipId: number, userId: number): Promise<boolean>;
+  removeTipVote(tipId: number, userId: number): Promise<boolean>;
+  getUserVotedTips(userId: number): Promise<number[]>;
+  
+  // Admin functions for community tips
+  featureCommunityTip(id: number, featured: boolean): Promise<boolean>;
+  updateTipStatus(id: number, status: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -598,6 +625,214 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(asc(reminders.dueDate));
+  }
+  
+  // Community Tips methods
+  async getCommunityTips(
+    filters?: {
+      plantType?: string;
+      careCategory?: string;
+      userId?: number;
+      featured?: boolean;
+    },
+    limit = 50
+  ): Promise<CommunityTipWithUser[]> {
+    // Start with a base query
+    let query = db
+      .select({
+        ...communityTips,
+        username: users.username,
+        displayName: users.displayName,
+        avatarUrl: users.avatarUrl
+      })
+      .from(communityTips)
+      .innerJoin(users, eq(communityTips.userId, users.id))
+      .where(eq(communityTips.status, 'active'))
+      .orderBy(desc(communityTips.createdAt))
+      .limit(limit);
+    
+    // Apply filters if provided
+    if (filters) {
+      // Filter by plant type
+      if (filters.plantType) {
+        query = query.where(eq(communityTips.plantType, filters.plantType));
+      }
+      
+      // Filter by care category
+      if (filters.careCategory) {
+        query = query.where(eq(communityTips.careCategory, filters.careCategory));
+      }
+      
+      // Filter by user ID
+      if (filters.userId) {
+        query = query.where(eq(communityTips.userId, filters.userId));
+      }
+      
+      // Filter by featured status
+      if (filters.featured !== undefined) {
+        query = query.where(eq(communityTips.featured, filters.featured));
+      }
+    }
+    
+    // Execute the query
+    const tips = await query;
+    
+    return tips as CommunityTipWithUser[];
+  }
+  
+  async getCommunityTip(id: number): Promise<CommunityTipWithUser | undefined> {
+    const [tip] = await db
+      .select({
+        ...communityTips,
+        username: users.username,
+        displayName: users.displayName,
+        avatarUrl: users.avatarUrl
+      })
+      .from(communityTips)
+      .innerJoin(users, eq(communityTips.userId, users.id))
+      .where(eq(communityTips.id, id));
+    
+    return tip as CommunityTipWithUser || undefined;
+  }
+  
+  async createCommunityTip(tipData: InsertCommunityTip): Promise<CommunityTip> {
+    const now = new Date();
+    
+    const [tip] = await db
+      .insert(communityTips)
+      .values({
+        ...tipData,
+        createdAt: now,
+        updatedAt: now,
+        status: 'active',
+        featured: false,
+        likesCount: 0
+      })
+      .returning();
+    
+    return tip;
+  }
+  
+  async updateCommunityTip(id: number, data: Partial<InsertCommunityTip>): Promise<CommunityTip | undefined> {
+    const [tip] = await db
+      .update(communityTips)
+      .set({
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(communityTips.id, id))
+      .returning();
+    
+    return tip || undefined;
+  }
+  
+  async deleteCommunityTip(id: number): Promise<boolean> {
+    const [tip] = await db
+      .delete(communityTips)
+      .where(eq(communityTips.id, id))
+      .returning();
+    
+    return !!tip;
+  }
+  
+  // Tip Voting methods
+  async addTipVote(tipId: number, userId: number): Promise<boolean> {
+    // Check if the user already voted for this tip
+    const existingVotes = await db
+      .select()
+      .from(tipVotes)
+      .where(and(
+        eq(tipVotes.tipId, tipId),
+        eq(tipVotes.userId, userId)
+      ));
+    
+    // If user already voted, don't add another vote
+    if (existingVotes.length > 0) {
+      return false;
+    }
+    
+    // Add the vote
+    const [vote] = await db
+      .insert(tipVotes)
+      .values({
+        tipId,
+        userId,
+        vote: 1
+      })
+      .returning();
+    
+    // Update the like count on the tip
+    if (vote) {
+      await db
+        .update(communityTips)
+        .set({
+          likesCount: sql`${communityTips.likesCount} + 1`
+        })
+        .where(eq(communityTips.id, tipId));
+      
+      return true;
+    }
+    
+    return false;
+  }
+  
+  async removeTipVote(tipId: number, userId: number): Promise<boolean> {
+    // Delete the vote
+    const [deletedVote] = await db
+      .delete(tipVotes)
+      .where(and(
+        eq(tipVotes.tipId, tipId),
+        eq(tipVotes.userId, userId)
+      ))
+      .returning();
+    
+    // Update the like count on the tip
+    if (deletedVote) {
+      await db
+        .update(communityTips)
+        .set({
+          likesCount: sql`${communityTips.likesCount} - 1`
+        })
+        .where(eq(communityTips.id, tipId));
+      
+      return true;
+    }
+    
+    return false;
+  }
+  
+  async getUserVotedTips(userId: number): Promise<number[]> {
+    const userVotes = await db
+      .select()
+      .from(tipVotes)
+      .where(eq(tipVotes.userId, userId));
+    
+    return userVotes.map(vote => vote.tipId);
+  }
+  
+  // Admin functions for community tips
+  async featureCommunityTip(id: number, featured: boolean): Promise<boolean> {
+    const [tip] = await db
+      .update(communityTips)
+      .set({ featured })
+      .where(eq(communityTips.id, id))
+      .returning();
+    
+    return !!tip;
+  }
+  
+  async updateTipStatus(id: number, status: string): Promise<boolean> {
+    if (!['active', 'reported', 'removed'].includes(status)) {
+      throw new Error("Invalid status value");
+    }
+    
+    const [tip] = await db
+      .update(communityTips)
+      .set({ status })
+      .where(eq(communityTips.id, id))
+      .returning();
+    
+    return !!tip;
   }
 }
 

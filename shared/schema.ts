@@ -165,6 +165,64 @@ export type PlantWithCare = Plant & {
   guide?: PlantGuide;
 };
 
+// Community Tips schema
+export const communityTips = pgTable("community_tips", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  plantType: text("plant_type").notNull(), // General plant type (e.g., succulent, herb)
+  scientificName: text("scientific_name"), // Optional specific plant scientific name
+  careCategory: text("care_category").notNull(), // watering, sunlight, soil, pests, etc.
+  image: text("image"), // Optional image to illustrate the tip
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  status: text("status").default("active"), // active, reported, removed
+  featured: boolean("featured").default(false),
+  likesCount: integer("likes_count").default(0),
+});
+
+export const insertCommunityTipSchema = createInsertSchema(communityTips).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  status: true,
+  featured: true,
+  likesCount: true,
+});
+
+// Tip Votes schema (for likes/upvotes)
+export const tipVotes = pgTable("tip_votes", {
+  id: serial("id").primaryKey(),
+  tipId: integer("tip_id").notNull(),
+  userId: integer("user_id").notNull(),
+  vote: integer("vote").default(1), // 1 for upvote, -1 for downvote (if we implement that)
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertTipVoteSchema = createInsertSchema(tipVotes).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Enum-like constants for community tips
+export const CARE_CATEGORIES = ['watering', 'sunlight', 'soil', 'fertilizing', 'pests', 'diseases', 'propagation', 'general'] as const;
+export const TIP_STATUSES = ['active', 'reported', 'removed'] as const;
+
 // Type definitions
 export type Reminder = typeof reminders.$inferSelect;
 export type InsertReminder = z.infer<typeof insertReminderSchema>;
+
+export type CommunityTip = typeof communityTips.$inferSelect;
+export type InsertCommunityTip = z.infer<typeof insertCommunityTipSchema>;
+
+export type TipVote = typeof tipVotes.$inferSelect;
+export type InsertTipVote = z.infer<typeof insertTipVoteSchema>;
+
+// Extended community tip type (with user info)
+export type CommunityTipWithUser = CommunityTip & {
+  username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  userHasLiked?: boolean;
+};
