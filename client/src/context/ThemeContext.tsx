@@ -6,8 +6,6 @@ import { apiRequest } from '@/lib/queryClient';
 interface ThemeContextType {
   isDarkMode: boolean;
   toggleDarkMode: () => void;
-  viewMode: 'list' | 'grid';
-  setViewMode: (mode: 'list' | 'grid') => void;
   isOnboarding: boolean;
   completeOnboarding: () => void;
 }
@@ -22,10 +20,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Initialize with user preferences if available, otherwise use system preference for dark mode
   const [isDarkMode, setIsDarkMode] = useState<boolean>(
     user?.prefersDarkMode === true || window.matchMedia('(prefers-color-scheme: dark)').matches
-  );
-  
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>(
-    ((user?.viewPreference as 'list' | 'grid') === 'grid') ? 'grid' : 'list'
   );
   
   const [isOnboarding, setIsOnboarding] = useState<boolean>(
@@ -45,7 +39,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (user) {
       setIsDarkMode(user.prefersDarkMode === true);
-      setViewMode(user.viewPreference === 'grid' ? 'grid' : 'list');
       setIsOnboarding(!(user.onboardingCompleted === true));
     }
   }, [user]);
@@ -82,20 +75,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Update view mode preference
-  const updateViewMode = async (mode: 'list' | 'grid') => {
-    setViewMode(mode);
-    
-    // Save preference if logged in
-    if (isAuthenticated && user) {
-      try {
-        await updateUserPreference({ viewPreference: mode });
-      } catch (error) {
-        console.error("Failed to save view mode preference", error);
-      }
-    }
-  };
-
   // Mark onboarding as complete
   const completeOnboarding = async () => {
     setIsOnboarding(false);
@@ -115,8 +94,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       value={{
         isDarkMode,
         toggleDarkMode,
-        viewMode,
-        setViewMode: updateViewMode,
         isOnboarding,
         completeOnboarding,
       }}
