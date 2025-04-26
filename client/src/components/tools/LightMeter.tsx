@@ -79,7 +79,7 @@ export function LightMeter() {
   }, [stream]);
 
   // Handle file selection from device
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     
@@ -93,10 +93,10 @@ export function LightMeter() {
     
     // Read the selected file and process it
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const imageDataUrl = e.target?.result as string;
       setCapturedImage(imageDataUrl);
-      processImageForLight(imageDataUrl);
+      await processImageForLight(imageDataUrl);
     };
     reader.onerror = () => {
       setErrorMessage('Failed to read selected file. Please try again.');
@@ -203,7 +203,7 @@ export function LightMeter() {
   };
   
   // Capture image from camera
-  const captureImageFromCamera = () => {
+  const captureImageFromCamera = async () => {
     if (!videoRef.current || !canvasRef.current) {
       setErrorMessage('Camera not initialized correctly.');
       return;
@@ -240,7 +240,7 @@ export function LightMeter() {
       closeCameraView();
       
       // Process the captured image
-      processImageForLight(imageDataUrl);
+      await processImageForLight(imageDataUrl);
     } catch (error) {
       console.error('Error capturing image:', error);
       setErrorMessage('Failed to capture image. Please try again.');
