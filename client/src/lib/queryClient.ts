@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { fetchCsrfToken, withCsrf, clearCsrfToken } from "./csrf";
 
 // Custom API error class to provide better error messages
 class ApiError extends Error {
@@ -54,7 +55,7 @@ async function throwIfResNotOk(res: Response): Promise<void> {
   }
 }
 
-// API request function with timeout support
+// API request function with timeout support and CSRF token
 export async function apiRequest(
   method: string,
   url: string,
@@ -66,16 +67,36 @@ export async function apiRequest(
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   
   try {
-    const res = await fetch(url, {
+    // Get CSRF token for state-changing operations (exclude GET requests)
+    let options: RequestInit = {
       method,
       headers: data ? { "Content-Type": "application/json" } : {},
       body: data ? JSON.stringify(data) : undefined,
       credentials: "include",
       signal: controller.signal,
-    });
+    };
+    
+    // For state-changing operations, add CSRF token
+    if (method !== 'GET') {
+      try {
+        // Fetch CSRF token and add it to headers
+        await fetchCsrfToken();
+        options = withCsrf(options);
+      } catch (error) {
+        console.error('CSRF token error:', error);
+        // Continue without CSRF token - the server will reject if needed
+      }
+    }
+    
+    const res = await fetch(url, options);
     
     // Clear the timeout now that we have a response
     clearTimeout(timeoutId);
+    
+    // Clear CSRF token on authentication errors
+    if (res.status === 401 || res.status === 403) {
+      clearCsrfToken();
+    }
     
     await throwIfResNotOk(res);
     return res;
