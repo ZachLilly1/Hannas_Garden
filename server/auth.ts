@@ -10,6 +10,12 @@ import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
 import csrf from "csurf";
 
+// Initialize CSRF protection middleware
+const csrfProtection = csrf({
+  cookie: false,  // Use session instead of cookie for CSRF token
+  ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],  // These methods are not vulnerable to CSRF
+});
+
 // Add a global property to track the last validated username
 declare global {
   namespace NodeJS {
@@ -83,7 +89,7 @@ export async function comparePasswords(supplied: string, stored: string): Promis
       
       // Check if username was just validated against one of our known users
       // This is safer than a universal password check
-      const lastUser = global.lastValidatedUsername;
+      const lastUser = (global as any).lastValidatedUsername;
       if (lastUser) {
         const knownUser = knownUsers.find(u => u.username.toLowerCase() === lastUser.toLowerCase());
         if (knownUser && supplied === knownUser.password) {
@@ -149,11 +155,7 @@ export function setupAuth(app: Express) {
   // Add regular session middleware
   app.use(session(sessionSettings));
   
-  // Setup CSRF protection - must be after session middleware
-  const csrfProtection = csrf({
-    cookie: false,  // Use session instead of cookie for CSRF token
-    ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],  // These methods are not vulnerable to CSRF
-  });
+  // Reference global CSRF protection - must be after session middleware
   
   // CSRF error handler
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {
@@ -189,10 +191,7 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
   
-  // Set up CSRF token endpoint - allows clients to get a token
-  app.get('/api/auth/csrf-token', csrfProtection, (req, res) => {
-    res.json({ csrfToken: req.csrfToken() });
-  });
+  // CSRF token endpoint will be set up in setupAuthRoutes
 
   // Configure Passport with Local Strategy
   passport.use(
@@ -264,10 +263,7 @@ declare global {
 
 // Authentication routes
 function setupAuthRoutes(app: Express) {
-  // Initialize CSRF protection
-  const csrfProtection = csrf({
-    cookie: false,  // Use session instead of cookie for CSRF token
-  });
+  // Using the global csrfProtection middleware defined at the top of the file
   
   // CSRF token endpoint
   app.get('/api/auth/csrf-token', csrfProtection, (req: Request, res: Response) => {
