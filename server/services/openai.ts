@@ -303,8 +303,8 @@ export async function diagnosePlantHealth(base64Image: string): Promise<PlantHea
     console.log("Starting plant health diagnosis process");
     
     // Check image size
-    const imageSizeInBytes = Buffer.from(base64Image, 'base64').length;
-    const imageSizeInMB = imageSizeInBytes / (1024 * 1024);
+    const buffer = Buffer.from(base64Image, 'base64');
+    const imageSizeInMB = buffer.length / (1024 * 1024);
     console.log(`Image size: ${imageSizeInMB.toFixed(2)} MB`);
     
     if (imageSizeInMB > 20) {
@@ -319,8 +319,30 @@ export async function diagnosePlantHealth(base64Image: string): Promise<PlantHea
     
     console.log("OpenAI API key is configured");
     
-    // Prefix for base64 encoded images
-    const imageUrl = `data:image/jpeg;base64,${base64Image}`;
+    // Detect image format based on file signature/magic numbers
+    let imageFormat = 'jpeg'; // Default format
+    if (buffer.length >= 4) {
+      const firstBytes = buffer.slice(0, 4);
+      
+      // Check for PNG signature (89 50 4E 47)
+      if (firstBytes[0] === 0x89 && firstBytes[1] === 0x50 && 
+          firstBytes[2] === 0x4E && firstBytes[3] === 0x47) {
+        imageFormat = 'png';
+      }
+      // Check for JPEG signature (FF D8)
+      else if (firstBytes[0] === 0xFF && firstBytes[1] === 0xD8) {
+        imageFormat = 'jpeg';
+      }
+      // Check for GIF signature (47 49 46)
+      else if (firstBytes[0] === 0x47 && firstBytes[1] === 0x49 && 
+              firstBytes[2] === 0x46) {
+        imageFormat = 'gif';
+      }
+    }
+    
+    // Prefix for base64 encoded images with detected format
+    const imageUrl = `data:image/${imageFormat};base64,${base64Image}`;
+    console.log(`Image URL prepared with format: ${imageFormat}`);
     
     // System message to guide the AI in diagnosing plant health issues
     const systemPrompt = `
@@ -418,17 +440,38 @@ export async function identifyPlantFromImage(base64Image: string): Promise<Plant
     console.log("Starting plant identification process");
     
     // Check image size
-    const imageSizeInBytes = Buffer.from(base64Image, 'base64').length;
-    const imageSizeInMB = imageSizeInBytes / (1024 * 1024);
+    const buffer = Buffer.from(base64Image, 'base64');
+    const imageSizeInMB = buffer.length / (1024 * 1024);
     console.log(`Image size: ${imageSizeInMB.toFixed(2)} MB`);
     
     if (imageSizeInMB > 20) {
       throw new Error(`Image size (${imageSizeInMB.toFixed(2)} MB) exceeds the recommended limit of 20 MB. Please resize the image.`);
     }
     
-    // Prefix for base64 encoded images
-    const imageUrl = `data:image/jpeg;base64,${base64Image}`;
-    console.log("Image URL prepared");
+    // Detect image format based on file signature/magic numbers
+    let imageFormat = 'jpeg'; // Default format
+    if (buffer.length >= 4) {
+      const firstBytes = buffer.slice(0, 4);
+      
+      // Check for PNG signature (89 50 4E 47)
+      if (firstBytes[0] === 0x89 && firstBytes[1] === 0x50 && 
+          firstBytes[2] === 0x4E && firstBytes[3] === 0x47) {
+        imageFormat = 'png';
+      }
+      // Check for JPEG signature (FF D8)
+      else if (firstBytes[0] === 0xFF && firstBytes[1] === 0xD8) {
+        imageFormat = 'jpeg';
+      }
+      // Check for GIF signature (47 49 46)
+      else if (firstBytes[0] === 0x47 && firstBytes[1] === 0x49 && 
+              firstBytes[2] === 0x46) {
+        imageFormat = 'gif';
+      }
+    }
+    
+    // Prefix for base64 encoded images with detected format
+    const imageUrl = `data:image/${imageFormat};base64,${base64Image}`;
+    console.log(`Image URL prepared with format: ${imageFormat}`);
 
     // System prompt for plant identification
     const systemPrompt = `

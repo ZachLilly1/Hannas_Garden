@@ -814,7 +814,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!validation.success) return;
       
       // Extract base64 image data
-      const { imageBase64 } = validation.data;
+      let { imageBase64 } = validation.data;
+      
+      // Process the image to ensure it's in the right format
+      try {
+        // If it's already a data URL, we need to extract just the base64 part
+        if (imageBase64.startsWith('data:')) {
+          // Extract the base64 content without the mime type prefix
+          const parts = imageBase64.split(',');
+          if (parts.length === 2) {
+            imageBase64 = parts[1];
+          } else {
+            console.warn("Unexpected data URL format. Using as-is.");
+          }
+        }
+        
+        // Verify it's actually a base64 string by attempting to decode it
+        try {
+          const testBuffer = Buffer.from(imageBase64, 'base64');
+          // Check if the buffer is non-empty
+          if (testBuffer.length === 0) {
+            throw new Error("Empty image buffer after base64 decode");
+          }
+          
+          // If we reach here, the base64 string is valid
+          console.log(`Successfully validated base64 string (${Math.floor(testBuffer.length / 1024)} KB)`);
+        } catch (decodeError) {
+          console.error("Error decoding base64 string:", decodeError);
+          throw new Error("Invalid base64 image data");
+        }
+      } catch (imageProcessingError) {
+        console.error("Error processing image data:", imageProcessingError);
+        return res.status(400).json({
+          message: "Invalid image data",
+          error: imageProcessingError instanceof Error ? imageProcessingError.message : String(imageProcessingError)
+        });
+      }
       
       // Process with OpenAI
       const result = await identifyPlantFromImage(imageBase64);
@@ -842,7 +877,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!validation.success) return;
       
       // Extract base64 image data
-      const { imageBase64 } = validation.data;
+      let { imageBase64 } = validation.data;
+      
+      // Process the image to ensure it's in the right format
+      try {
+        // If it's already a data URL, we need to extract just the base64 part
+        if (imageBase64.startsWith('data:')) {
+          // Extract the base64 content without the mime type prefix
+          const parts = imageBase64.split(',');
+          if (parts.length === 2) {
+            imageBase64 = parts[1];
+          } else {
+            console.warn("Unexpected data URL format for diagnosis. Using as-is.");
+          }
+        }
+        
+        // Verify it's actually a base64 string by attempting to decode it
+        try {
+          const testBuffer = Buffer.from(imageBase64, 'base64');
+          // Check if the buffer is non-empty
+          if (testBuffer.length === 0) {
+            throw new Error("Empty image buffer after base64 decode");
+          }
+          
+          // If we reach here, the base64 string is valid
+          console.log(`Successfully validated base64 string for diagnosis (${Math.floor(testBuffer.length / 1024)} KB)`);
+        } catch (decodeError) {
+          console.error("Error decoding base64 string for diagnosis:", decodeError);
+          throw new Error("Invalid base64 image data");
+        }
+      } catch (imageProcessingError) {
+        console.error("Error processing image data for diagnosis:", imageProcessingError);
+        return res.status(400).json({
+          message: "Invalid image data",
+          error: imageProcessingError instanceof Error ? imageProcessingError.message : String(imageProcessingError)
+        });
+      }
       
       // Process with OpenAI
       const result = await diagnosePlantHealth(imageBase64);
