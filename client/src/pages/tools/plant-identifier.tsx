@@ -11,8 +11,18 @@ export default function PlantIdentifierPage() {
   // Mutation to add plant to collection
   const addPlantMutation = useMutation({
     mutationFn: async (plantData: Partial<InsertPlant>) => {
-      const res = await apiRequest("POST", "/api/plants", plantData);
-      return res.json();
+      try {
+        const res = await apiRequest("POST", "/api/plants", plantData);
+        if (!res.ok) {
+          const errorData = await res.json();
+          console.error("Server error:", errorData);
+          throw new Error(errorData.message || "Failed to add plant");
+        }
+        return res.json();
+      } catch (err) {
+        console.error("Plant creation error:", err);
+        throw err;
+      }
     },
     onSuccess: () => {
       // Invalidate plants query to refetch

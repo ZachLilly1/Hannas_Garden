@@ -133,17 +133,22 @@ export function PlantIdentifier({ onAddToCollection }: {
       ? customLocation.trim() 
       : plantLocation;
     
+    // Make sure all required fields in the insertPlantSchema are provided
     const newPlant = {
       name: commonName,
-      scientificName: scientificName,
+      scientificName: scientificName || null, // Scientific name is optional, null if not available
       type: identifyMutation.data.plantType.toLowerCase(),
       location: finalLocation,
       waterFrequency: careRecommendations.waterFrequency,
       fertilizerFrequency: careRecommendations.fertilizerFrequency,
       sunlightLevel: careRecommendations.sunlightLevel,
-      notes: careRecommendations.additionalCare,
+      notes: careRecommendations.additionalCare || '',
       image: imageBase64, // Use 'image' field name instead of 'imageBase64'
+      // userId is handled on the server side based on user's authentication
+      status: 'healthy', // Default status
     };
+    
+    console.log("Adding plant to collection:", newPlant);
     
     if (onAddToCollection) {
       onAddToCollection(newPlant);
