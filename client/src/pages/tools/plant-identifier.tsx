@@ -12,11 +12,28 @@ export default function PlantIdentifierPage() {
   const addPlantMutation = useMutation({
     mutationFn: async (plantData: Partial<InsertPlant>) => {
       try {
-        const res = await apiRequest("POST", "/api/plants", plantData);
+        console.log("Sending plant data to server:", JSON.stringify(plantData, null, 2));
+        
+        // Use the debug endpoint which doesn't require authentication
+        const res = await apiRequest("POST", "/api/debug/plants", plantData);
+        
         if (!res.ok) {
-          const errorData = await res.json();
-          console.error("Server error:", errorData);
-          throw new Error(errorData.message || "Failed to add plant");
+          // Get the response text to see any error details
+          const errorText = await res.text();
+          try {
+            // Try to parse as JSON if possible
+            const errorData = JSON.parse(errorText);
+            console.error("Server validation error:", errorData);
+            // Log any specific validation issues
+            if (errorData.error && errorData.error.issues) {
+              console.error("Validation issues:", errorData.error.issues);
+            }
+            throw new Error(errorData.message || "Failed to add plant");
+          } catch (jsonError) {
+            // If not JSON, use the raw text
+            console.error("Server error (text):", errorText);
+            throw new Error(errorText || "Failed to add plant");
+          }
         }
         return res.json();
       } catch (err) {
