@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useLocation } from "wouter";
-import { LeafIcon, SearchIcon, BellIcon } from "@/lib/icons";
+import { LeafIcon, SearchIcon, BellIcon, AlertIcon } from "@/lib/icons";
 import BottomNavigation from "@/components/ui/bottom-navigation";
 import AddPlantModal from "@/components/plants/AddPlantModal";
 import { useOnboarding } from "@/hooks/use-onboarding";
@@ -9,6 +9,8 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { SimpleViewToggle } from "@/components/ui/view-toggle";
 import SearchModal from "@/components/search/SearchModal";
 import NotificationsModal from "@/components/notifications/NotificationsModal";
+import { useAuth } from "@/context/AuthContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -21,6 +23,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
   const { isDarkMode } = useTheme();
   const { OnboardingComponent } = useOnboarding();
+  const { isAuthenticated } = useAuth();
 
   // Function to determine page title based on current route
   const getPageTitle = () => {

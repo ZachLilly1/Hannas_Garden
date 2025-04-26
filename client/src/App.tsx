@@ -39,30 +39,30 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/tools/direct-login" component={DirectLoginPage} />
       
-      {/* Protected routes */}
+      {/* Temporarily bypassed routes - these can be accessed without authentication */}
       <Route path="/">
-        <ProtectedRoute>
+        <ProtectedRoute bypassAuth={true}>
           <MainLayout>
             <Dashboard />
           </MainLayout>
         </ProtectedRoute>
       </Route>
       <Route path="/plants">
-        <ProtectedRoute>
+        <ProtectedRoute bypassAuth={true}>
           <MainLayout>
             <Plants />
           </MainLayout>
         </ProtectedRoute>
       </Route>
       <Route path="/schedule">
-        <ProtectedRoute>
+        <ProtectedRoute bypassAuth={true}>
           <MainLayout>
             <CareSchedule />
           </MainLayout>
         </ProtectedRoute>
       </Route>
       <Route path="/guides">
-        <ProtectedRoute>
+        <ProtectedRoute bypassAuth={true}>
           <MainLayout>
             <Guides />
           </MainLayout>
