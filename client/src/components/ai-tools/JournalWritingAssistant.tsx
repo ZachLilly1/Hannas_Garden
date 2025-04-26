@@ -12,14 +12,11 @@ import { apiRequest } from '@/lib/queryClient';
 import { CareLog, PlantWithCare } from '@shared/schema';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Interface for the OpenAI response
+// Interface for the OpenAI response - simplified
 interface EnhancedJournalEntry {
   title: string;
-  narrative: string;
   observations: string[];
-  careDetails: string;
   growthProgress: string;
-  nextSteps: string[];
 }
 
 export function JournalWritingAssistant() {
@@ -94,25 +91,17 @@ export function JournalWritingAssistant() {
     setTimeout(() => setCopied(false), 2000);
   };
   
-  // Generate the full journal text
+  // Generate the full journal text - simplified
   const getFullJournalText = () => {
     if (!journalEntry) return "";
     
     return `# ${journalEntry.title}
 
-${journalEntry.narrative}
-
 ## Observations
 ${journalEntry.observations.map(obs => `- ${obs}`).join('\n')}
 
-## Care Details
-${journalEntry.careDetails}
-
 ## Growth Progress
 ${journalEntry.growthProgress}
-
-## Next Steps
-${journalEntry.nextSteps.map(step => `- ${step}`).join('\n')}
 `;
   };
   
@@ -230,18 +219,11 @@ ${journalEntry.nextSteps.map(step => `- ${step}`).join('\n')}
             </div>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="narrative" className="w-full">
+            <Tabs defaultValue="observations" className="w-full">
               <TabsList className="w-full justify-start mb-4">
-                <TabsTrigger value="narrative">Narrative</TabsTrigger>
                 <TabsTrigger value="observations">Observations</TabsTrigger>
-                <TabsTrigger value="care">Care Details</TabsTrigger>
                 <TabsTrigger value="progress">Growth Progress</TabsTrigger>
-                <TabsTrigger value="nextSteps">Next Steps</TabsTrigger>
               </TabsList>
-              
-              <TabsContent value="narrative" className="space-y-4">
-                <p className="text-md leading-relaxed whitespace-pre-line">{journalEntry.narrative}</p>
-              </TabsContent>
               
               <TabsContent value="observations" className="space-y-4">
                 <ul className="space-y-2 pl-6 list-disc">
@@ -251,20 +233,8 @@ ${journalEntry.nextSteps.map(step => `- ${step}`).join('\n')}
                 </ul>
               </TabsContent>
               
-              <TabsContent value="care" className="space-y-4">
-                <p className="text-md leading-relaxed whitespace-pre-line">{journalEntry.careDetails}</p>
-              </TabsContent>
-              
               <TabsContent value="progress" className="space-y-4">
                 <p className="text-md leading-relaxed whitespace-pre-line">{journalEntry.growthProgress}</p>
-              </TabsContent>
-              
-              <TabsContent value="nextSteps" className="space-y-4">
-                <ul className="space-y-2 pl-6 list-disc">
-                  {journalEntry.nextSteps.map((step, index) => (
-                    <li key={index} className="text-md">{step}</li>
-                  ))}
-                </ul>
               </TabsContent>
             </Tabs>
           </CardContent>

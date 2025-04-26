@@ -15,6 +15,7 @@ import { type CareLog, type PlantWithCare } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlantHealthDiagnosis } from "@/types/plant-health";
+import { CareLogJournal } from "./CareLogJournal";
 
 // Define severity and confidence levels for use in the component
 type SeverityLevel = 'high' | 'medium' | 'low';
