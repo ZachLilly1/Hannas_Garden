@@ -99,17 +99,13 @@ export function setupAuth(app: Express) {
   // Setup middleware
   app.set("trust proxy", 1);
   
-  // Add error handling for session middleware
+  // Add regular session middleware instead of the custom error handling
+  app.use(session(sessionSettings));
+  
+  // Log session activity for debugging
   app.use((req, res, next) => {
-    session(sessionSettings)(req, res, (err) => {
-      if (err) {
-        console.error('Session middleware error:', err);
-        // Continue without a session in case of error
-        next();
-      } else {
-        next();
-      }
-    });
+    console.log(`Session ID: ${req.session.id}, Auth: ${req.isAuthenticated ? req.isAuthenticated() : 'undefined'}`);
+    next();
   });
   
   app.use(passport.initialize());

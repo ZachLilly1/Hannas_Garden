@@ -54,12 +54,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryFn: async () => {
       try {
         // Use fetch directly instead of apiRequest to handle 401 gracefully
+        console.log('Fetching user authentication state...');
         const res = await fetch('/api/auth/user', {
-          credentials: 'include'
+          credentials: 'include',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
         });
         
         if (res.status === 401) {
           // This is expected when not logged in, return null silently
+          console.log('Not authenticated (401)');
           return null;
         }
         
@@ -67,7 +73,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw new Error(`Error ${res.status}: ${res.statusText}`);
         }
         
-        return await res.json();
+        const userData = await res.json();
+        console.log('User authenticated:', userData.username);
+        return userData;
       } catch (err) {
         // Only log real errors, not 401s
         if (!(err instanceof Error && err.message.includes('401'))) {
@@ -76,8 +84,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return null;
       }
     },
-    retry: false,
+    retry: 1, // Try twice in case of network issues
+    retryDelay: 1000,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: true, // Refresh when window gains focus
   });
 
   // Set error from query
