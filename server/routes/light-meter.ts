@@ -106,14 +106,30 @@ async function analyzeWithOpenAI(
           Important: You should be critical of the estimated lux value which is calculated by a simple algorithm. 
           The image's visual characteristics (shadows, highlights, light sources) are often more reliable than the estimated lux.
           
-          Respond with a detailed light level analysis and specific plant suggestions for this environment.`
+          Respond with a detailed light level analysis and specific plant suggestions for this environment.
+          
+          Your response must be in JSON format with the following structure:
+          {
+            "lightLevel": {
+              "name": string,
+              "luxRange": [number, number],
+              "description": string
+            },
+            "plantRecommendations": {
+              "recommended": string[],
+              "notRecommended": string[],
+              "explanation": string
+            },
+            "additionalAdvice": string,
+            "confidence": "high" | "medium" | "low"
+          }`
         },
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: `Please analyze this image for light conditions. Here are the algorithm measurements:
+              text: `Please analyze this image for light conditions and respond with JSON. Here are the algorithm measurements:
               - Raw brightness value: ${rawBrightness.toFixed(2)}
               - Corrected brightness: ${correctedBrightness.toFixed(2)}
               - Estimated lux: ${estimatedLux}
@@ -123,7 +139,9 @@ async function analyzeWithOpenAI(
               1. The actual light level based on the image
               2. Recommended plants that would thrive in this light
               3. Plants to avoid
-              4. Additional advice for this lighting situation`
+              4. Additional advice for this lighting situation
+              
+              Remember to respond with a valid JSON object containing lightLevel, plantRecommendations, additionalAdvice, and confidence properties.`
             },
             {
               type: "image_url",
