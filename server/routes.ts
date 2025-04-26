@@ -37,9 +37,14 @@ import fs from "fs";
 import path from "path";
 import { setupAuth, isAuthenticated, hashPassword } from "./auth";
 
+import { setupDirectLoginRoute } from "./routes/direct-login";
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
+  
+  // Set up direct login route for debugging
+  setupDirectLoginRoute(app);
   
   // API routes
   const apiRouter = app;
