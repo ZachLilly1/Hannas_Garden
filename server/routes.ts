@@ -38,6 +38,7 @@ import path from "path";
 import { setupAuth, isAuthenticated, hashPassword } from "./auth";
 
 import { setupDirectLoginRoute } from "./routes/direct-login";
+import { setupLightMeterRoutes } from "./routes/light-meter";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
@@ -45,6 +46,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up direct login route for debugging
   setupDirectLoginRoute(app);
+  
+  // Set up light meter routes with OpenAI integration
+  setupLightMeterRoutes(app);
   
   // API routes
   const apiRouter = app;

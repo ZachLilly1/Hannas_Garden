@@ -248,7 +248,7 @@ export function LightMeter() {
   };
   
   // Process image to measure light
-  const processImageForLight = (imageDataUrl: string) => {
+  const processImageForLight = async (imageDataUrl: string) => {
     setIsProcessing(true);
     setErrorMessage(null);
     
@@ -256,7 +256,7 @@ export function LightMeter() {
     const img = new Image();
     img.crossOrigin = 'Anonymous';
     
-    img.onload = () => {
+    img.onload = async () => {
       try {
         // Create a canvas to process the image
         const canvas = document.createElement('canvas');
@@ -344,14 +344,77 @@ export function LightMeter() {
         
         console.log(`Measured light level: ${estimatedLux} lux (${level.name})`);
         
-        // Update state with results
+        // Update state with initial calculations
         setLightValue(estimatedLux);
         setCurrentLevel(level);
         
-        toast({
-          title: "Light measured successfully!",
-          description: `Detected ${level.name} (${estimatedLux} lux) - ideal for ${level.suitable}.`
-        });
+        // Check if OpenAI API Key is available for enhanced analysis
+        // We don't need to display the API key in the UI, but we'll use it silently
+        try {
+          // Send to OpenAI for enhanced analysis
+          const response = await fetch('/api/light-meter/analyze', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              imageData: imageDataUrl,
+              rawBrightness: averageBrightness,
+              correctedBrightness: correctedBrightness,
+              estimatedLux: estimatedLux,
+              calculatedLevel: level
+            }),
+          });
+          
+          if (response.ok) {
+            const aiAnalysis = await response.json();
+            console.log('OpenAI light analysis:', aiAnalysis);
+            
+            // Update with AI-enhanced results if confidence is medium or high
+            if (aiAnalysis.confidence !== 'low') {
+              // Find the closest light level to the AI recommendation
+              const aiLuxMidpoint = (aiAnalysis.lightLevel.luxRange[0] + aiAnalysis.lightLevel.luxRange[1]) / 2;
+              const closestLevel = LIGHT_LEVELS.reduce((prev, curr) => {
+                const prevMidpoint = (prev.range[0] + prev.range[1]) / 2;
+                const currMidpoint = (curr.range[0] + curr.range[1]) / 2;
+                return Math.abs(currMidpoint - aiLuxMidpoint) < Math.abs(prevMidpoint - aiLuxMidpoint) ? curr : prev;
+              });
+              
+              // Silently update the level with AI recommendations
+              setCurrentLevel({
+                ...closestLevel,
+                name: aiAnalysis.lightLevel.name || closestLevel.name,
+                description: aiAnalysis.lightLevel.description || closestLevel.description,
+                suitable: aiAnalysis.plantRecommendations.recommended.join(", ")
+              });
+              
+              toast({
+                title: "Light analyzed with AI!",
+                description: `Detected ${aiAnalysis.lightLevel.name} (${estimatedLux} lux) - ideal for specialized plants.`,
+                variant: "default"
+              });
+            } else {
+              // Use our algorithmic calculation if AI confidence is low
+              toast({
+                title: "Light measured successfully!",
+                description: `Detected ${level.name} (${estimatedLux} lux) - ideal for ${level.suitable}.`
+              });
+            }
+          } else {
+            // Fallback to algorithm if AI analysis fails
+            toast({
+              title: "Light measured successfully!",
+              description: `Detected ${level.name} (${estimatedLux} lux) - ideal for ${level.suitable}.`
+            });
+          }
+        } catch (error) {
+          console.error('Error in OpenAI light analysis:', error);
+          // Fallback to algorithm in case of error
+          toast({
+            title: "Light measured successfully!",
+            description: `Detected ${level.name} (${estimatedLux} lux) - ideal for ${level.suitable}.`
+          });
+        }
       } catch (error) {
         console.error('Error processing image:', error);
         setErrorMessage('Could not analyze image. Please try again with a different image.');
@@ -451,15 +514,15 @@ export function LightMeter() {
                     document.body.appendChild(cameraInput);
                     
                     // Handle the file selection
-                    cameraInput.addEventListener('change', (e) => {
+                    cameraInput.addEventListener('change', async (e) => {
                       const target = e.target as HTMLInputElement;
                       if (target.files && target.files[0]) {
                         const file = target.files[0];
                         const reader = new FileReader();
-                        reader.onload = (event) => {
+                        reader.onload = async (event) => {
                           if (event.target?.result) {
                             setCapturedImage(event.target.result as string);
-                            processImageForLight(event.target.result as string);
+                            await processImageForLight(event.target.result as string);
                           }
                         };
                         reader.readAsDataURL(file);
