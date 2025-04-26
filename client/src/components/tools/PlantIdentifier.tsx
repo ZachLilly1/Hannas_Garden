@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Loader2, Camera, Upload, X, MapPin } from "lucide-react";
+import { Loader2, Camera, Upload, X, MapPin, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { PlantWithCare } from "@shared/schema";
 
 // Types for plant identification result from OpenAI
@@ -31,6 +32,8 @@ export function PlantIdentifier({ onAddToCollection }: {
   const [image, setImage] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [plantLocation, setPlantLocation] = useState<string>("Living Room");
+  const [customLocation, setCustomLocation] = useState<string>("");
+  const [showCustomLocation, setShowCustomLocation] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -125,11 +128,16 @@ export function PlantIdentifier({ onAddToCollection }: {
       imageBase64 = preview.split(',')[1];
     }
     
+    // Use custom location if it's selected and has a value, otherwise use the dropdown selection
+    const finalLocation = showCustomLocation && customLocation.trim() !== "" 
+      ? customLocation.trim() 
+      : plantLocation;
+    
     const newPlant = {
       name: commonName,
       scientificName: scientificName,
       type: identifyMutation.data.plantType.toLowerCase(),
-      location: plantLocation, // Use the selected location from state
+      location: finalLocation,
       waterFrequency: careRecommendations.waterFrequency,
       fertilizerFrequency: careRecommendations.fertilizerFrequency,
       sunlightLevel: careRecommendations.sunlightLevel,
@@ -294,24 +302,59 @@ export function PlantIdentifier({ onAddToCollection }: {
                 <MapPin className="h-4 w-4 inline mr-1" />
                 Plant Location
               </Label>
-              <Select
-                value={plantLocation}
-                onValueChange={setPlantLocation}
-              >
-                <SelectTrigger id="location">
-                  <SelectValue placeholder="Select a location" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Living Room">Living Room</SelectItem>
-                  <SelectItem value="Kitchen">Kitchen</SelectItem>
-                  <SelectItem value="Bedroom">Bedroom</SelectItem>
-                  <SelectItem value="Bathroom">Bathroom</SelectItem>
-                  <SelectItem value="Office">Office</SelectItem>
-                  <SelectItem value="Balcony">Balcony</SelectItem>
-                  <SelectItem value="Garden">Garden</SelectItem>
-                  <SelectItem value="Patio">Patio</SelectItem>
-                </SelectContent>
-              </Select>
+              {!showCustomLocation ? (
+                <div className="space-y-2">
+                  <Select
+                    value={plantLocation}
+                    onValueChange={setPlantLocation}
+                  >
+                    <SelectTrigger id="location">
+                      <SelectValue placeholder="Select a location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Living Room">Living Room</SelectItem>
+                      <SelectItem value="Kitchen">Kitchen</SelectItem>
+                      <SelectItem value="Bedroom">Bedroom</SelectItem>
+                      <SelectItem value="Bathroom">Bathroom</SelectItem>
+                      <SelectItem value="Office">Office</SelectItem>
+                      <SelectItem value="Balcony">Balcony</SelectItem>
+                      <SelectItem value="Garden">Garden</SelectItem>
+                      <SelectItem value="Patio">Patio</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowCustomLocation(true)}
+                    className="w-full mt-1"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Custom Location
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Input
+                    id="customLocation"
+                    value={customLocation}
+                    onChange={(e) => setCustomLocation(e.target.value)}
+                    placeholder="Enter custom location..."
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowCustomLocation(false);
+                      setCustomLocation("");
+                    }}
+                    className="w-full mt-1"
+                  >
+                    Use Predefined Location
+                  </Button>
+                </div>
+              )}
             </div>
             
             <Button 
