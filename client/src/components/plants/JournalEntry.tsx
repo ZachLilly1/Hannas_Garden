@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Brain, ChevronDown, ChevronUp, Loader2, Camera } from "lucide-react";
+import { Brain, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,21 +7,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
 // Define interface for the journal entry
-interface JournalEntry {
+interface JournalEntryData {
   title: string;
   observations: string[];
   growthProgress: string;
 }
 
-interface CareLogJournalProps {
+interface JournalEntryProps {
   careLogId: number;
   plantId: number;
   hasPhoto: boolean;
 }
 
-export function CareLogJournal({ careLogId, plantId, hasPhoto }: CareLogJournalProps) {
+export function JournalEntry({ careLogId, plantId, hasPhoto }: JournalEntryProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [journalEntry, setJournalEntry] = useState<JournalEntry | null>(null);
+  const [journalEntry, setJournalEntry] = useState<JournalEntryData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
