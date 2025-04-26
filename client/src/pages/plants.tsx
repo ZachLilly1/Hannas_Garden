@@ -5,7 +5,7 @@ import { PlantDetailModal } from "@/components/plants/PlantDetailModal";
 import { AddPlantModal } from "@/components/plants/AddPlantModal";
 import { SortIcon, WaterDropIcon, LeafIcon, SunIcon, CameraIcon } from "@/lib/icons";
 import { usePlants } from "@/context/PlantContext";
-import { useTheme } from "@/context/ThemeContext";
+
 import { Button } from "@/components/ui/button";
 import { CalendarIcon } from "lucide-react";
 import { getStatusColor, formatRelativeDate } from "@/lib/utils";
