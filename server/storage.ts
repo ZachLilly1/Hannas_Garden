@@ -637,62 +637,93 @@ export class DatabaseStorage implements IStorage {
     },
     limit = 50
   ): Promise<CommunityTipWithUser[]> {
-    // Start with a base query
-    let query = db
-      .select({
-        ...communityTips,
-        username: users.username,
-        displayName: users.displayName,
-        avatarUrl: users.avatarUrl
-      })
-      .from(communityTips)
-      .innerJoin(users, eq(communityTips.userId, users.id))
-      .where(eq(communityTips.status, 'active'))
-      .orderBy(desc(communityTips.createdAt))
-      .limit(limit);
+    // Build the conditions array
+    let conditions = [eq(communityTips.status, 'active')];
     
-    // Apply filters if provided
+    // Add filters to conditions if provided
     if (filters) {
-      // Filter by plant type
       if (filters.plantType) {
-        query = query.where(eq(communityTips.plantType, filters.plantType));
+        conditions.push(eq(communityTips.plantType, filters.plantType));
       }
       
-      // Filter by care category
       if (filters.careCategory) {
-        query = query.where(eq(communityTips.careCategory, filters.careCategory));
+        conditions.push(eq(communityTips.careCategory, filters.careCategory));
       }
       
-      // Filter by user ID
       if (filters.userId) {
-        query = query.where(eq(communityTips.userId, filters.userId));
+        conditions.push(eq(communityTips.userId, filters.userId));
       }
       
-      // Filter by featured status
       if (filters.featured !== undefined) {
-        query = query.where(eq(communityTips.featured, filters.featured));
+        conditions.push(eq(communityTips.featured, filters.featured));
       }
     }
     
-    // Execute the query
-    const tips = await query;
-    
-    return tips as CommunityTipWithUser[];
-  }
-  
-  async getCommunityTip(id: number): Promise<CommunityTipWithUser | undefined> {
-    const [tip] = await db
+    // Execute the query with all conditions
+    const tips = await db
       .select({
-        ...communityTips,
+        id: communityTips.id,
+        userId: communityTips.userId,
+        title: communityTips.title,
+        content: communityTips.content,
+        plantType: communityTips.plantType,
+        scientificName: communityTips.scientificName,
+        careCategory: communityTips.careCategory,
+        image: communityTips.image,
+        createdAt: communityTips.createdAt,
+        updatedAt: communityTips.updatedAt,
+        status: communityTips.status,
+        featured: communityTips.featured,
+        likesCount: communityTips.likesCount,
         username: users.username,
         displayName: users.displayName,
         avatarUrl: users.avatarUrl
       })
       .from(communityTips)
       .innerJoin(users, eq(communityTips.userId, users.id))
-      .where(eq(communityTips.id, id));
+      .where(and(...conditions))
+      .orderBy(desc(communityTips.createdAt))
+      .limit(limit);
     
-    return tip as CommunityTipWithUser || undefined;
+    return tips.map(tip => ({
+      ...tip,
+      userHasLiked: false // Will be updated in the API endpoint if needed
+    }));
+  }
+  
+  async getCommunityTip(id: number): Promise<CommunityTipWithUser | undefined> {
+    const tips = await db
+      .select({
+        id: communityTips.id,
+        userId: communityTips.userId,
+        title: communityTips.title,
+        content: communityTips.content,
+        plantType: communityTips.plantType,
+        scientificName: communityTips.scientificName,
+        careCategory: communityTips.careCategory,
+        image: communityTips.image,
+        createdAt: communityTips.createdAt,
+        updatedAt: communityTips.updatedAt,
+        status: communityTips.status,
+        featured: communityTips.featured,
+        likesCount: communityTips.likesCount,
+        username: users.username,
+        displayName: users.displayName,
+        avatarUrl: users.avatarUrl
+      })
+      .from(communityTips)
+      .innerJoin(users, eq(communityTips.userId, users.id))
+      .where(eq(communityTips.id, id))
+      .limit(1);
+    
+    if (tips.length === 0) {
+      return undefined;
+    }
+    
+    return {
+      ...tips[0],
+      userHasLiked: false // Will be updated in the API endpoint if needed
+    };
   }
   
   async createCommunityTip(tipData: InsertCommunityTip): Promise<CommunityTip> {
