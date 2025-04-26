@@ -38,11 +38,19 @@ export function LoginForm({ onSuccess, onRegisterClick }: LoginFormProps) {
   async function onSubmit(data: FormValues) {
     setIsSubmitting(true);
     try {
-      await login(data);
+      console.log("Attempting login with username:", data.username);
+      const result = await login(data);
+      console.log("Login successful for user:", result.username);
+      
+      // Force a page reload to ensure session is properly established
       if (onSuccess) {
-        onSuccess();
+        setTimeout(() => {
+          console.log("Executing success callback");
+          onSuccess();
+        }, 500);
       }
     } catch (error) {
+      console.error("Login error:", error);
       toast({
         title: "Login failed",
         description: error instanceof Error ? error.message : "Please try again",
