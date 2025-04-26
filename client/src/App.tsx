@@ -35,8 +35,9 @@ import NotFound from "@/pages/not-found";
 function Router() {
   return (
     <Switch>
-      {/* Auth page (public) */}
+      {/* Public routes */}
       <Route path="/auth" component={AuthPage} />
+      <Route path="/tools/direct-login" component={DirectLoginPage} />
       
       {/* Protected routes */}
       <Route path="/">

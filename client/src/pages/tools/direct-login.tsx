@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,12 +10,17 @@ import { queryClient } from "@/lib/queryClient";
 
 export default function DirectLoginPage() {
   const { toast } = useToast();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("Zach"); // Default to the username with plants
+  const [password, setPassword] = useState("password");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionInfo, setSessionInfo] = useState<any>(null);
   const [, setLocation] = useLocation();
+  
+  // Check session status on component mount
+  useEffect(() => {
+    checkSessionStatus();
+  }, []);
 
   const handleLogin = async () => {
     if (!username || !password) {
