@@ -362,6 +362,13 @@ export function CareTimeline({ plant }: CareTimelineProps) {
                     </div>
                   </div>
                 )}
+                
+                {/* Add Journal Entry component for logs with photos */}
+                <JournalEntry 
+                  careLogId={log.id} 
+                  plantId={plant.id} 
+                  hasPhoto={!!log.photo} 
+                />
               </div>
             </div>
           </div>
