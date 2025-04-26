@@ -49,7 +49,9 @@ export function MainLayout({ children }: MainLayoutProps) {
         <div className="flex justify-between items-center">
           <div className="flex items-center">
             <LeafIcon className="text-primary mr-2" />
-            <h1 className="text-lg font-playfair font-semibold dark:text-white">{getPageTitle()}</h1>
+            {!location.startsWith('/tools') && (
+              <h1 className="text-lg font-playfair font-semibold dark:text-white">{getPageTitle()}</h1>
+            )}
           </div>
           <div className="flex items-center space-x-2">
             <ThemeToggle />
