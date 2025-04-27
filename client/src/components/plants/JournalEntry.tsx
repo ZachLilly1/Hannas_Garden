@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Brain, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/queryClient";
@@ -25,28 +25,30 @@ export function JournalEntry({ careLogId, plantId, hasPhoto }: JournalEntryProps
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const generateJournalEntry = async () => {
-    try {
-      setIsLoading(true);
-      const res = await apiRequest(
-        "POST", 
-        `/api/ai/journal-entry/${careLogId}?plantId=${plantId}`, 
-        {}
-      );
-      const data = await res.json();
-      setJournalEntry(data);
-      setIsExpanded(true);
-    } catch (error) {
-      console.error("Failed to generate journal entry:", error);
-      toast({
-        title: "Failed to generate journal entry",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+  // Automatically generate journal entry when component mounts
+  useEffect(() => {
+    const fetchJournalEntry = async () => {
+      try {
+        setIsLoading(true);
+        const res = await apiRequest(
+          "POST", 
+          `/api/ai/journal-entry/${careLogId}?plantId=${plantId}`, 
+          {}
+        );
+        const data = await res.json();
+        setJournalEntry(data);
+      } catch (error) {
+        console.error("Failed to generate journal entry:", error);
+        // Don't show error toast - the analysis will be more silent
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (hasPhoto && careLogId && plantId) {
+      fetchJournalEntry();
     }
-  };
+  }, [careLogId, plantId, hasPhoto]);
 
   // If the log doesn't have a photo, don't render the journal section
   if (!hasPhoto) {
@@ -55,27 +57,12 @@ export function JournalEntry({ careLogId, plantId, hasPhoto }: JournalEntryProps
 
   return (
     <div className="mt-2">
-      {!journalEntry && !isLoading ? (
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="text-xs flex items-center"
-          onClick={generateJournalEntry}
-        >
-          <Brain className="h-3 w-3 mr-1" />
-          Generate AI Analysis
-        </Button>
-      ) : isLoading ? (
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="text-xs flex items-center"
-          disabled
-        >
+      {isLoading ? (
+        <div className="text-xs flex items-center mt-1 text-muted-foreground">
           <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-          Generating Analysis...
-        </Button>
-      ) : (
+          Analyzing...
+        </div>
+      ) : journalEntry && (
         <div className="mt-3">
           <div 
             className="flex items-center justify-between cursor-pointer" 
