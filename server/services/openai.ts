@@ -69,6 +69,14 @@ export interface UserEnvironment {
   averageWateringFrequency?: number;
 }
 
+// Simple plant analysis for care logs
+export interface SimpleHealthAnalysis {
+  healthAssessment: string;
+  growthRate: "slow" | "moderate" | "fast";
+  careRecommendations: string[];
+  confidenceLevel: "low" | "medium" | "high";
+}
+
 // Interface for personalized plant advice
 export interface PersonalizedAdvice {
   careActions: {
