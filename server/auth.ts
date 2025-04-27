@@ -10,6 +10,8 @@ import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
 import csrf from "csurf";
 import rateLimit from "express-rate-limit";
+import { checkPasswordStrength, meetsMinimumRequirements } from "./services/passwordStrength";
+import logger from "./services/logger";
 
 // Initialize CSRF protection middleware
 const csrfProtection = csrf({
@@ -307,6 +309,31 @@ function setupAuthRoutes(app: Express) {
       if (existingEmail) {
         return res.status(400).json({ message: "Email already exists" });
       }
+      
+      // Check password strength
+      if (!meetsMinimumRequirements(req.body.password)) {
+        return res.status(400).json({ 
+          message: "Password is too weak. Please use at least 8 characters.", 
+          code: "WEAK_PASSWORD"
+        });
+      }
+      
+      // Evaluate password for common patterns and user information
+      const userInputs = [req.body.username, req.body.email];
+      if (req.body.displayName) userInputs.push(req.body.displayName);
+      
+      const strengthResult = checkPasswordStrength(req.body.password, userInputs);
+      
+      // Warn about weak passwords but don't block creation entirely at score 2
+      // Block only very weak passwords (score 0-1)
+      if (strengthResult.score < 2) {
+        return res.status(400).json({
+          message: "Password is too weak or too common.",
+          warning: strengthResult.feedback.warning || "Please choose a stronger password.",
+          suggestions: strengthResult.feedback.suggestions,
+          code: "WEAK_PASSWORD"
+        });
+      }
 
       // Create user with hashed password
       const hashedPassword = await hashPassword(req.body.password);
@@ -345,13 +372,13 @@ function setupAuthRoutes(app: Express) {
   // Login user - no CSRF protection for login since user isn't authenticated yet
   app.post("/api/auth/login", authLimiter, (req, res, next) => {
     try {
-      console.log("POST /api/auth/login - Attempting login with:", req.body.username);
-      console.log("Session ID before auth:", req.session.id);
+      logger.info(`Login attempt for user: ${req.body.username}`);
+      logger.debug(`Session ID before auth: ${req.session.id}`);
       
       // Validate login data
       const validatedData = loginSchema.safeParse(req.body);
       if (!validatedData.success) {
-        console.log("Login validation failed:", validatedData.error.errors);
+        logger.warn("Login validation failed", validatedData.error.errors);
         return res.status(400).json({ 
           message: "Invalid login data", 
           errors: validatedData.error.errors 
@@ -360,24 +387,24 @@ function setupAuthRoutes(app: Express) {
       
       passport.authenticate("local", (err: Error, user: SelectUser) => {
         if (err) {
-          console.log("Login authentication error:", err);
+          logger.error("Login authentication error", err);
           return next(err);
         }
         if (!user) {
-          console.log("Login failed: Invalid username or password");
+          logger.info(`Login failed for user: ${req.body.username}`);
           return res.status(401).json({ message: "Invalid username or password" });
         }
         
-        console.log("User authenticated successfully:", user.username);
+        logger.info(`User authenticated successfully: ${user.username}`);
         
         req.login(user, (err) => {
           if (err) {
-            console.log("Login session error:", err);
+            logger.error("Login session error", err);
             return next(err);
           }
           
-          console.log("Login completed, session established. Session ID:", req.session.id);
-          console.log("User in session:", req.user?.username);
+          logger.debug(`Login completed, session established. Session ID: ${req.session.id}`);
+          logger.debug(`User in session: ${req.user?.username}`);
           
           // Return user info without password
           const { password, ...userInfo } = user;
@@ -385,7 +412,7 @@ function setupAuthRoutes(app: Express) {
         });
       })(req, res, next);
     } catch (error) {
-      console.log("Login error:", error);
+      logger.error("Login error", error as Error);
       next(error);
     }
   });
@@ -410,10 +437,10 @@ function setupAuthRoutes(app: Express) {
 
   // Get current user
   app.get("/api/auth/user", (req, res) => {
-    console.log("GET /api/auth/user - Session ID:", req.session.id);
-    console.log("Is authenticated:", req.isAuthenticated());
-    console.log("Session data:", JSON.stringify(req.session));
-    console.log("User data:", req.user ? JSON.stringify(req.user) : "No user data");
+    logger.debug(`GET /api/auth/user - Session ID: ${req.session.id}`);
+    logger.debug(`Is authenticated: ${req.isAuthenticated()}`);
+    logger.debug(`Session data: ${JSON.stringify(req.session)}`);
+    logger.debug(`User data: ${req.user ? `${req.user.username} (ID: ${req.user.id})` : "No user data"}`);
     
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
@@ -458,6 +485,33 @@ function setupAuthRoutes(app: Express) {
       const isPasswordValid = await comparePasswords(currentPassword, user.password);
       if (!isPasswordValid) {
         return res.status(400).json({ message: "Current password is incorrect" });
+      }
+      
+      // Check password strength
+      if (!meetsMinimumRequirements(newPassword)) {
+        return res.status(400).json({ 
+          message: "Password is too weak. Please use at least 8 characters.", 
+          code: "WEAK_PASSWORD"
+        });
+      }
+      
+      // Evaluate password for common patterns and user information
+      const userInputs = [
+        user.username, 
+        user.email, 
+        user.displayName || ''
+      ].filter(Boolean);
+      
+      const strengthResult = checkPasswordStrength(newPassword, userInputs);
+      
+      // For password changes, we require a bit stronger passwords (score 2+)
+      if (strengthResult.score < 2) {
+        return res.status(400).json({
+          message: "Password is too weak or too common.",
+          warning: strengthResult.feedback.warning || "Please choose a stronger password.",
+          suggestions: strengthResult.feedback.suggestions,
+          code: "WEAK_PASSWORD"
+        });
       }
       
       // Hash new password and update
