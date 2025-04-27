@@ -81,7 +81,7 @@ export async function comparePasswords(supplied: string, stored: string): Promis
     if (stored.startsWith('$2b$')) {
       // Since we can't properly validate bcrypt without the library,
       // we'll convert all bcrypt passwords to scrypt on next login
-      console.log("Bcrypt password detected - will be upgraded to scrypt on next successful login");
+      logger.info("Bcrypt password detected - will be upgraded to scrypt on next successful login");
       
       // For demo purposes, we need to validate against known test accounts
       // In production, we would use proper bcrypt validation
@@ -106,7 +106,7 @@ export async function comparePasswords(supplied: string, stored: string): Promis
     // For scrypt passwords (with salt format)
     const [hashed, salt] = stored.split(".");
     if (!hashed || !salt) {
-      console.error("Invalid password format");
+      logger.error("Invalid password format");
       return false;
     }
     
@@ -114,7 +114,7 @@ export async function comparePasswords(supplied: string, stored: string): Promis
     const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
     return timingSafeEqual(hashedBuf, suppliedBuf);
   } catch (error) {
-    console.error("Error comparing password:", error);
+    logger.error("Error comparing password", error as Error);
     return false;
   }
 }
@@ -132,7 +132,7 @@ export function setupAuth(app: Express) {
   if (!process.env.SESSION_SECRET) {
     // Use a secure random value if no secret is provided
     process.env.SESSION_SECRET = randomBytes(32).toString('hex');
-    console.warn("Warning: SESSION_SECRET not set, using generated random value instead");
+    logger.warn("SESSION_SECRET not set, using generated random value instead");
   }
 
   // Session configuration with improved security and persistence
@@ -163,7 +163,12 @@ export function setupAuth(app: Express) {
   // CSRF error handler
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     if (err.code === 'EBADCSRFTOKEN') {
-      console.error('CSRF attack detected:', req.path);
+      logger.error(`CSRF attack detected on path: ${req.path}`, {
+        ip: req.ip,
+        method: req.method,
+        headers: req.headers['user-agent'],
+        referrer: req.headers.referer || 'none'
+      });
       return res.status(403).json({ 
         message: "Invalid or missing CSRF token", 
         error: "Security validation failed" 
@@ -174,18 +179,21 @@ export function setupAuth(app: Express) {
   
   // Enhanced logging for better session debugging
   app.use((req, res, next) => {
-    // Log basic session info
-    console.log(`Session ID: ${req.session.id}, Auth: ${req.isAuthenticated ? req.isAuthenticated() : 'undefined'}`);
+    // Log basic session info only in development and test environments
+    logger.debug(`Session ID: ${req.session.id}, Auth: ${req.isAuthenticated ? req.isAuthenticated() : 'undefined'}`);
     
-    // Add debug endpoint to check session state if needed
-    if (req.path === '/api/debug/session') {
+    // Add debug endpoint to check session state in non-production environments
+    if (req.path === '/api/debug/session' && process.env.NODE_ENV !== 'production') {
       return res.json({
         sessionId: req.session.id,
         isAuthenticated: req.isAuthenticated(),
         sessionData: req.session,
-        user: req.user || null,
+        user: req.user ? { id: req.user.id, username: req.user.username } : null,
         cookies: req.headers.cookie
       });
+    } else if (req.path === '/api/debug/session') {
+      // In production, don't expose session details
+      return res.status(404).json({ message: "Endpoint not available in production" });
     }
     
     next();

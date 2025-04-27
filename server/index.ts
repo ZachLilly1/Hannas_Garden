@@ -4,29 +4,12 @@ import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
 import fs from "fs";
 import { applyMigrations } from "./migrations";
-import helmet from "helmet";
+import { setupSecurityMiddleware } from "./middleware/security";
 
 const app = express();
 
-// Apply secure headers with Helmet
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Required for development
-      connectSrc: ["'self'", "https://api.openai.com"], // Allow connections to OpenAI API
-      imgSrc: ["'self'", "data:", "blob:", "https://*"], // Allow image sources from various locations
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      fontSrc: ["'self'", "data:"],
-      objectSrc: ["'none'"],
-      upgradeInsecureRequests: [],
-    },
-  },
-  // Disable XSS filter in development since it can interfere with some dev tools
-  xssFilter: process.env.NODE_ENV === 'production',
-  // Don't force HTTPS in development
-  hsts: process.env.NODE_ENV === 'production',
-}));
+// Apply comprehensive security middleware (including Helmet)
+setupSecurityMiddleware(app);
 
 // Increase JSON payload size limit to 50MB for handling image data
 app.use(express.json({ limit: '50mb' }));
