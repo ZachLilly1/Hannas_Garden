@@ -43,6 +43,8 @@ import { setupAuth, isAuthenticated, hashPassword } from "./auth";
 
 import { setupDirectLoginRoute } from "./routes/direct-login";
 import { setupLightMeterRoutes } from "./routes/light-meter";
+import { setupPlantLightAnalyzerRoutes } from "./routes/plant-light-analyzer";
+import { analyzePlantImageLightLevel } from "./services/lightAnalyzer";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication

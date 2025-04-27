@@ -1,5 +1,8 @@
 import OpenAI from "openai";
-import { SunlightLevel } from "@shared/schema";
+import { SUNLIGHT_LEVELS } from "@shared/schema";
+
+// Define the type for light level responses
+type SunlightLevel = typeof SUNLIGHT_LEVELS[number];
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
