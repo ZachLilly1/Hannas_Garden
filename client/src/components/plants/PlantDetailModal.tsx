@@ -6,7 +6,6 @@ import {
   SunIcon, 
   SeedlingIcon, 
   EditIcon, 
-  CloseIcon, 
   HistoryIcon, 
   BellIcon, 
   CircleDotIcon, 
@@ -249,12 +248,6 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
               alt={plant.name}
               className="w-full h-full object-cover"
             />
-            <button 
-              className="absolute top-4 right-4 bg-black bg-opacity-20 text-white rounded-full p-2"
-              onClick={onClose}
-            >
-              <CloseIcon className="h-5 w-5" />
-            </button>
           </div>
 
           <div className="px-4 sm:px-6 py-5 w-full">
