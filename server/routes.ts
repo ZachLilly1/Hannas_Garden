@@ -712,7 +712,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
     
-    // Perform light level analysis in the background if there's a photo
+    // Perform background analysis if there's a photo
     // This runs after we've already responded to the client to avoid delay in the response
     if (photoForLightAnalysis && plant) {
       // Use a Promise to run the analysis asynchronously
@@ -733,13 +733,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else {
             console.log(`Low confidence in light analysis result, not updating plant record.`);
           }
+          
+          // Generate journal entry with comprehensive analysis including plant verification
+          try {
+            console.log(`Generating journal entry for care log ${careLog.id}...`);
+            const { generateJournalEntry } = await import("./services/openai");
+            
+            // We need to get the plant with care details for the journal entry
+            const plantWithCare = await storage.getPlantWithCare(plant.id);
+            if (!plantWithCare) {
+              throw new Error("Failed to get plant with care details");
+            }
+            
+            // Generate journal entry with AI analysis
+            const journalEntry = await generateJournalEntry(careLog, plantWithCare);
+            
+            // Extract plant identity info if available
+            if (journalEntry.plantIdentityMatch && 
+                journalEntry.plantIdentityMatch.confidence !== "low" && 
+                !journalEntry.plantIdentityMatch.matches) {
+              
+              console.log(`⚠️ Plant identity mismatch detected in care log ${careLog.id}!`);
+              console.log(`Expected: ${plant.name}, Detected: ${journalEntry.plantIdentityMatch.detectedPlant || 'Unknown'}`);
+              
+              // Add a mismatch warning to the metadata
+              const metadata = {
+                plantIdentityMismatch: true,
+                expectedPlant: plant.name,
+                detectedPlant: journalEntry.plantIdentityMatch.detectedPlant,
+                confidence: journalEntry.plantIdentityMatch.confidence
+              };
+              
+              // Store this information in the care log metadata
+              await storage.updateCareLog(careLog.id, {
+                metadata: JSON.stringify(metadata)
+              });
+            }
+          } catch (journalError) {
+            console.error('Error generating journal entry:', journalError);
+            // Don't block the process, continue with other tasks
+          }
         } catch (error) {
-          console.error('Error performing background light analysis:', error);
+          console.error('Error performing background analysis:', error);
           // No need to handle this error since this is a background task
           // and doesn't affect the response to the client
         }
       })().catch(err => {
-        console.error('Unhandled error in background light analysis task:', err);
+        console.error('Unhandled error in background analysis task:', err);
       });
     }
     

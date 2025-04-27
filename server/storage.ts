@@ -32,6 +32,8 @@ export interface IStorage {
   // Care log methods
   getCareLogs(plantId: number): Promise<CareLog[]>;
   createCareLog(careLog: InsertCareLog): Promise<CareLog>;
+  updateCareLog(id: number, data: Partial<InsertCareLog>): Promise<CareLog | undefined>;
+  getPlantWithCare(id: number): Promise<PlantWithCare | undefined>;
   
   // Plant guide methods
   getPlantGuides(): Promise<PlantGuide[]>;
@@ -340,6 +342,22 @@ export class DatabaseStorage implements IStorage {
     }
     
     return careLog;
+  }
+  
+  async updateCareLog(id: number, data: Partial<InsertCareLog>): Promise<CareLog | undefined> {
+    const [updatedCareLog] = await db
+      .update(careLogs)
+      .set(data)
+      .where(eq(careLogs.id, id))
+      .returning();
+    
+    return updatedCareLog || undefined;
+  }
+  
+  async getPlantWithCare(id: number): Promise<PlantWithCare | undefined> {
+    // This is essentially the same as getPlant but with a more descriptive name
+    // for the purpose of the journal entry generation
+    return this.getPlant(id);
   }
 
   // Plant guide methods
