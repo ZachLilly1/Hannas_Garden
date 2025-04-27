@@ -132,6 +132,11 @@ export interface EnhancedJournalEntry {
   title: string;
   observations: string[];
   growthProgress: string;
+  plantIdentityMatch?: {
+    matches: boolean;
+    confidence: "low" | "medium" | "high";
+    detectedPlant?: string;
+  };
 }
 
 // Interface for growth analysis
@@ -894,6 +899,99 @@ export async function getPlantArrangementSuggestions(
 }
 
 /**
+ * Verify if a plant in a photo matches the expected plant type
+ * @param photoUrl URL of the plant photo (data URI or web URL)
+ * @param expectedPlantName Name of the expected plant
+ * @param expectedScientificName Scientific name of the expected plant (if available)
+ * @returns Plant identity match result
+ */
+export async function verifyPlantIdentity(
+  photoUrl: string,
+  expectedPlantName: string,
+  expectedScientificName?: string
+): Promise<{
+  matches: boolean;
+  confidence: "low" | "medium" | "high";
+  detectedPlant?: string;
+}> {
+  try {
+    console.log(`Verifying plant identity in photo - Expected: ${expectedPlantName}`);
+    
+    // Verify API key is set
+    if (!process.env.OPENAI_API_KEY) {
+      console.error("OPENAI_API_KEY is not set");
+      throw new Error("OpenAI API key is not configured");
+    }
+    
+    // System prompt for plant verification
+    const systemPrompt = `
+      You are an expert botanist specializing in plant identification. Analyze the provided 
+      image and determine if the plant shown matches the expected plant type.
+      
+      Return your analysis as a JSON object with this structure:
+      {
+        "matches": true or false,
+        "confidence": "low" | "medium" | "high",
+        "detectedPlant": "Name of the plant you identified in the image (if different from expected)",
+        "explanation": "Brief explanation of your determination"
+      }
+    `;
+    
+    // Call OpenAI API with the image
+    console.log("Making request to OpenAI API for plant identity verification...");
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text", 
+              text: `Is this plant a ${expectedPlantName}${expectedScientificName ? ` (${expectedScientificName})` : ''}? 
+                If not, what plant is it?`
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: photoUrl,
+              },
+            },
+          ],
+        },
+      ],
+      response_format: { type: "json_object" },
+      max_tokens: 600,
+    });
+    
+    // Validate response
+    if (!response.choices || response.choices.length === 0 || !response.choices[0].message.content) {
+      throw new Error("Invalid response from OpenAI");
+    }
+    
+    const rawContent = response.choices[0].message.content;
+    const result = JSON.parse(rawContent);
+    
+    return {
+      matches: result.matches === true,
+      confidence: ["low", "medium", "high"].includes(result.confidence) ? 
+        result.confidence : "medium",
+      detectedPlant: result.matches === false ? result.detectedPlant : undefined
+    };
+  } catch (error) {
+    console.error("Error verifying plant identity:", error);
+    // Return a default response instead of throwing
+    return {
+      matches: true, // Default to true to avoid false alarms
+      confidence: "low"
+    };
+  }
+}
+
+/**
  * Generate an enhanced journal entry based on a care log
  * @param careLog The care log to enhance
  * @param plant The plant the care log is for
@@ -912,9 +1010,29 @@ export async function generateJournalEntry(
       throw new Error("OpenAI API key is not configured");
     }
     
+    // Check if there's a photo and verify plant identity
+    let plantIdentityMatch = undefined;
+    
+    if (careLog.photo) {
+      try {
+        plantIdentityMatch = await verifyPlantIdentity(
+          careLog.photo,
+          plant.name,
+          plant.scientificName || undefined
+        );
+        
+        console.log(`Plant identity verification result: ${plantIdentityMatch.matches ? 'Match' : 'Mismatch'} (confidence: ${plantIdentityMatch.confidence})`);
+      } catch (verifyError) {
+        console.error("Error during plant identity verification:", verifyError);
+        // Continue without verification result
+      }
+    }
+    
     // System prompt for journal entry generation - simplified
     const systemPrompt = `
       You are a plant journaling expert. Create an engaging, detailed journal entry from a basic plant care log.
+      Include observations about plant health, suggestions for care improvements, and growth assessment.
+      
       Return a JSON object with the following simplified structure:
       {
         "title": "An engaging title for this journal entry",
@@ -978,7 +1096,13 @@ export async function generateJournalEntry(
       throw new Error("Incomplete journal entry");
     }
     
-    return result as EnhancedJournalEntry;
+    // Include plant identity verification result if available
+    const journalEntry: EnhancedJournalEntry = {
+      ...result,
+      plantIdentityMatch
+    };
+    
+    return journalEntry;
   } catch (error) {
     console.error("Error generating journal entry:", error);
     throw new Error(error instanceof Error ? error.message : "Failed to generate journal entry. Please try again.");
