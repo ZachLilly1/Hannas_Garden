@@ -163,12 +163,18 @@ export function setupAuth(app: Express) {
   // CSRF error handler
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     if (err.code === 'EBADCSRFTOKEN') {
-      logger.error(`CSRF attack detected on path: ${req.path}`, {
+      // First log the error with primary message
+      logger.error(`CSRF attack detected on path: ${req.path}`);
+      
+      // Then log additional context info separately
+      console.info('CSRF attack details:', {
+        path: req.path,
         ip: req.ip,
         method: req.method,
-        headers: req.headers['user-agent'],
+        userAgent: req.headers['user-agent'],
         referrer: req.headers.referer || 'none'
       });
+      
       return res.status(403).json({ 
         message: "Invalid or missing CSRF token", 
         error: "Security validation failed" 
@@ -227,11 +233,11 @@ export function setupAuth(app: Express) {
         // If user has a bcrypt password, migrate it to scrypt for future logins
         if (user.password.startsWith('$2b$')) {
           try {
-            console.log("Upgrading password from bcrypt to scrypt for user:", username);
+            logger.info(`Upgrading password from bcrypt to scrypt for user: ${username}`);
             const newHashedPassword = await hashPassword(password);
             await storage.updateUserPassword(user.id, newHashedPassword);
           } catch (err) {
-            console.error("Failed to upgrade password:", err);
+            logger.error("Failed to upgrade password", err as Error);
             // Non-critical error, can continue with login
           }
         }
@@ -359,10 +365,12 @@ function setupAuthRoutes(app: Express) {
         res.status(201).json(userInfo);
       });
     } catch (error) {
-      console.error("Registration error:", error);
+      logger.error("Registration error", error as Error);
+      
       // Provide a more specific error message for database issues
       if (error instanceof Error) {
         if (error.message.includes("column") && error.message.includes("does not exist")) {
+          logger.error(`Database schema error during registration: ${error.message}`);
           return res.status(500).json({ 
             message: "Database schema error. Please try again or contact support.",
             error: error.message
