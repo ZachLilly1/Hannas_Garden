@@ -1378,7 +1378,7 @@ export async function generateCommunityInsights(
 }
 
 // Helper function to get the current season
-function getCurrentSeason(): string {
+export function getCurrentSeason(): string {
   const now = new Date();
   const month = now.getMonth();
   
@@ -1386,4 +1386,106 @@ function getCurrentSeason(): string {
   if (month >= 5 && month <= 7) return "Summer";
   if (month >= 8 && month <= 10) return "Fall";
   return "Winter";
+}
+
+/**
+ * Analyzes a plant photo and provides a simple health and growth analysis for care logs
+ * @param photoUrl URL of the plant photo (data URI or web URL)
+ * @param plantName Name of the plant for context
+ * @param plantType Type/species of the plant for context
+ * @returns A simple health analysis with growth rate and care recommendations
+ */
+export async function analyzePhotoForCareLog(
+  photoUrl: string, 
+  plantName: string, 
+  plantType: string
+): Promise<SimpleHealthAnalysis> {
+  try {
+    console.log(`Analyzing photo for care log of plant: ${plantName} (${plantType})`);
+    
+    // Verify API key is set
+    if (!process.env.OPENAI_API_KEY) {
+      console.error("OPENAI_API_KEY is not set");
+      throw new Error("OpenAI API key is not configured");
+    }
+    
+    // System prompt for simple plant analysis
+    const systemPrompt = `
+      You are a plant health specialist. You'll analyze a photo of a plant and provide a brief assessment
+      of its health and growth rate, along with 2-3 care recommendations.
+      
+      Return your analysis as a JSON object with this exact structure:
+      {
+        "healthAssessment": "Brief assessment of the plant's health (1-2 sentences)",
+        "growthRate": "slow" | "moderate" | "fast",
+        "careRecommendations": ["Recommendation 1", "Recommendation 2", "Recommendation 3"],
+        "confidenceLevel": "low" | "medium" | "high"
+      }
+      
+      Keep your assessment concise and practical. Focus on actionable care recommendations.
+    `;
+    
+    // Call OpenAI API with the image
+    console.log("Making request to OpenAI API for plant photo analysis...");
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text", 
+              text: `This is my ${plantType} plant named "${plantName}". Please analyze its health and growth.`
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: photoUrl,
+              },
+            },
+          ],
+        },
+      ],
+      response_format: { type: "json_object" },
+      max_tokens: 600,
+    });
+    
+    // Validate response
+    if (!response.choices || response.choices.length === 0) {
+      console.error("No choices returned from OpenAI");
+      throw new Error("Invalid response from OpenAI");
+    }
+    
+    if (!response.choices[0].message.content) {
+      console.error("Empty content in OpenAI response");
+      throw new Error("Empty response from OpenAI");
+    }
+    
+    const rawContent = response.choices[0].message.content;
+    
+    // Parse and validate the JSON response
+    const analysisData = JSON.parse(rawContent);
+    
+    // Ensure we have all required fields with fallbacks
+    const result: SimpleHealthAnalysis = {
+      healthAssessment: analysisData.healthAssessment || 
+        "This plant appears to be in average condition. Continue with regular care.",
+      growthRate: ["slow", "moderate", "fast"].includes(analysisData.growthRate) ? 
+        analysisData.growthRate : "moderate",
+      careRecommendations: Array.isArray(analysisData.careRecommendations) && analysisData.careRecommendations.length > 0 ? 
+        analysisData.careRecommendations : ["Maintain regular watering schedule", "Monitor for any changes in leaf color or texture"],
+      confidenceLevel: ["low", "medium", "high"].includes(analysisData.confidenceLevel) ? 
+        analysisData.confidenceLevel : "medium"
+    };
+    
+    console.log("Successfully analyzed plant photo for care log");
+    return result;
+  } catch (error) {
+    console.error("Error analyzing plant photo:", error);
+    throw new Error(error instanceof Error ? error.message : "Failed to analyze plant photo. Using default values.");
+  }
 }
