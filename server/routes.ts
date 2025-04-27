@@ -579,10 +579,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Remove base64 data from the separate field before storing in DB
         delete careLogData.photoBase64;
         
-        // If a photo is provided, attempt to immediately analyze light level
-        // and include it in the notes
+        // If a photo is provided, attempt to immediately analyze light level and plant health
+        // and include them in the notes
         if (processedPhoto) {
           try {
+            // Get plant info for context
+            const plant = await storage.getPlant(careLogData.plantId);
+            if (!plant) {
+              throw new Error("Plant not found");
+            }
+            
             // Perform immediate light analysis to include in the notes
             const { sunlightLevel, confidence } = await analyzePlantImageLightLevel(processedPhoto);
             
@@ -607,9 +613,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (confidence !== "low") {
               careLogData.notes = (careLogData.notes || "") + lightInfo;
             }
-          } catch (lightError) {
-            console.error("Error adding light analysis to notes:", lightError);
-            // Continue without adding light analysis to notes, don't block the main flow
+            
+            // Now perform health analysis
+            try {
+              const { analyzePhotoForCareLog } = await import("./services/openai");
+              const healthAnalysis = await analyzePhotoForCareLog(
+                processedPhoto, 
+                plant.name, 
+                plant.scientificName || plant.name
+              );
+              
+              // Format health analysis for adding to notes
+              let healthInfo = "\n\n";
+              healthInfo += `Health: ${healthAnalysis.healthAssessment}\n`;
+              healthInfo += `Growth Rate: ${healthAnalysis.growthRate.charAt(0).toUpperCase() + healthAnalysis.growthRate.slice(1)}\n`;
+              healthInfo += "Care Tips:\n";
+              
+              // Format care recommendations as a bullet list
+              healthAnalysis.careRecommendations.forEach(tip => {
+                healthInfo += `• ${tip}\n`;
+              });
+              
+              // Add health analysis to notes
+              if (healthAnalysis.confidenceLevel !== "low") {
+                careLogData.notes = (careLogData.notes || "") + healthInfo;
+              }
+            } catch (healthError) {
+              console.error("Error adding health analysis to notes:", healthError);
+              // Continue without adding health analysis, don't block the main flow
+            }
+          } catch (analysisError) {
+            console.error("Error performing analysis on photo:", analysisError);
+            // Continue without adding analysis to notes, don't block the main flow
           }
         }
       } catch (error) {
