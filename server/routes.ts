@@ -56,6 +56,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up light meter routes with OpenAI integration
   setupLightMeterRoutes(app);
   
+  // Set up plant light analyzer routes
+  setupPlantLightAnalyzerRoutes(app);
+  
   // API routes
   const apiRouter = app;
 
@@ -554,16 +557,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
     
+    // Flag to track if we have a photo for light analysis
+    let photoForLightAnalysis = null;
+    
     // Handle photoBase64 if provided - store directly in the database for persistence
     if (careLogData.photoBase64) {
       try {
         // Store the base64 image data directly in the photo field
         // Add data URL prefix if it doesn't already have one
+        let processedPhoto;
         if (!careLogData.photoBase64.startsWith('data:image/')) {
-          careLogData.photo = `data:image/jpeg;base64,${careLogData.photoBase64}`;
+          processedPhoto = `data:image/jpeg;base64,${careLogData.photoBase64}`;
         } else {
-          careLogData.photo = careLogData.photoBase64;
+          processedPhoto = careLogData.photoBase64;
         }
+        
+        // Save the processed photo both for storage and light analysis
+        careLogData.photo = processedPhoto;
+        photoForLightAnalysis = processedPhoto;
         
         // Remove base64 data from the separate field before storing in DB
         delete careLogData.photoBase64;
@@ -659,6 +670,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lastFertilized: new Date().toISOString()
         });
       }
+    }
+    
+    // Perform light level analysis in the background if there's a photo
+    // This runs after we've already responded to the client to avoid delay in the response
+    if (photoForLightAnalysis && plant) {
+      // Use a Promise to run the analysis asynchronously
+      (async () => {
+        try {
+          console.log(`Analyzing light level for plant ID ${plant.id} from care log photo...`);
+          
+          // Analyze the image for light level
+          const { sunlightLevel, confidence } = await analyzePlantImageLightLevel(photoForLightAnalysis);
+          
+          console.log(`Light analysis result: ${sunlightLevel} (confidence: ${confidence})`);
+          
+          // Only update the plant if we have medium or high confidence in the result
+          if (confidence !== "low") {
+            // Update the plant's sunlight level
+            await storage.updatePlant(plant.id, { sunlightLevel });
+            console.log(`Updated plant ${plant.id} (${plant.name}) sunlight level to: ${sunlightLevel}`);
+          } else {
+            console.log(`Low confidence in light analysis result, not updating plant record.`);
+          }
+        } catch (error) {
+          console.error('Error performing background light analysis:', error);
+          // No need to handle this error since this is a background task
+          // and doesn't affect the response to the client
+        }
+      })().catch(err => {
+        console.error('Unhandled error in background light analysis task:', err);
+      });
     }
     
     res.status(201).json(careLog);
