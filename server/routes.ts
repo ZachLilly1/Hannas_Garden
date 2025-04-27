@@ -578,6 +578,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Remove base64 data from the separate field before storing in DB
         delete careLogData.photoBase64;
+        
+        // If a photo is provided, attempt to immediately analyze light level
+        // and include it in the notes
+        if (processedPhoto) {
+          try {
+            // Perform immediate light analysis to include in the notes
+            const { sunlightLevel, confidence } = await analyzePlantImageLightLevel(processedPhoto);
+            
+            // Convert sunlight level to estimated lux range
+            let luxRange = "0";
+            switch(sunlightLevel) {
+              case "low":
+                luxRange = "100-500";
+                break;
+              case "medium":
+                luxRange = "500-2500";
+                break;
+              case "high":
+                luxRange = "2500+";
+                break;
+            }
+            
+            // Add light level data to notes
+            const lightInfo = `\n\nlux: ${luxRange} (${sunlightLevel.charAt(0).toUpperCase() + sunlightLevel.slice(1)} Light)`;
+            
+            // Include analysis info only if confidence is medium or high
+            if (confidence !== "low") {
+              careLogData.notes = (careLogData.notes || "") + lightInfo;
+            }
+          } catch (lightError) {
+            console.error("Error adding light analysis to notes:", lightError);
+            // Continue without adding light analysis to notes, don't block the main flow
+          }
+        }
       } catch (error) {
         console.error('Error processing photo data:', error);
         return res.status(500).json({ message: 'Failed to process photo' });
