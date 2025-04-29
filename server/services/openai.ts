@@ -999,7 +999,8 @@ export async function verifyPlantIdentity(
  */
 export async function generateJournalEntry(
   careLog: CareLog,
-  plant: PlantWithCare
+  plant: PlantWithCare,
+  careHistory?: CareLog[]
 ): Promise<EnhancedJournalEntry> {
   try {
     console.log(`Generating journal entry for ${plant.name} care log (${careLog.careType})`);
@@ -1028,10 +1029,41 @@ export async function generateJournalEntry(
       }
     }
     
+    // Get care history for analysis if not provided
+    let careHistoryData = careHistory || [];
+    
+    // Get care history from database if not provided
+    if (!careHistoryData.length) {
+      try {
+        // Import at use site to avoid circular dependencies
+        const { storage } = await import('../storage');
+        careHistoryData = await storage.getPlantCareHistory(plant.id, 10);
+        
+        // Filter out the current care log from history to avoid duplication
+        careHistoryData = careHistoryData.filter(log => log.id !== careLog.id);
+        
+        console.log(`Retrieved ${careHistoryData.length} previous care logs for plant ${plant.id}`);
+      } catch (error) {
+        console.error("Error retrieving care history:", error);
+        // Continue without care history
+      }
+    }
+    
+    // Format care history for the prompt
+    const careHistoryText = careHistoryData.length > 0 
+      ? careHistoryData.map(log => {
+          const date = log.timestamp ? new Date(log.timestamp).toISOString().split('T')[0] : 'Unknown date';
+          return `- ${date}: ${log.careType}${log.notes ? ` (Notes: "${log.notes}")` : ''}`;
+        }).join('\n')
+      : "No previous care history available.";
+    
     // System prompt for journal entry generation - simplified
     const systemPrompt = `
       You are a plant journaling expert. Create an engaging, detailed journal entry from a basic plant care log.
       Include observations about plant health, suggestions for care improvements, and growth assessment.
+      
+      IMPORTANT: Use the plant's care history to provide a meaningful analysis that reflects all past care activities.
+      For example, if the plant has been watered recently, acknowledge that instead of suggesting a generic watering schedule.
       
       Return a JSON object with the following simplified structure:
       {
@@ -1066,7 +1098,11 @@ export async function generateJournalEntry(
             - Last watered: ${plant.lastWatered ? new Date(plant.lastWatered).toISOString().split('T')[0] : 'Unknown'}
             - Last fertilized: ${plant.lastFertilized ? new Date(plant.lastFertilized).toISOString().split('T')[0] : 'Unknown'}
             
+            Recent care history (from newest to oldest):
+            ${careHistoryText}
+            
             Season: ${getCurrentSeason()}
+            Today's date: ${new Date().toISOString().split('T')[0]}
           `
         }
       ],
