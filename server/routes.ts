@@ -745,8 +745,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               throw new Error("Failed to get plant with care details");
             }
             
-            // Generate journal entry with AI analysis
-            const journalEntry = await generateJournalEntry(careLog, plantWithCare);
+            // Get all past care logs for this plant for comprehensive analysis
+            const careHistory = await storage.getPlantCareHistory(plant.id);
+            
+            // Filter out the current care log since we're analyzing it
+            const pastCareHistory = careHistory.filter(log => log.id !== careLog.id);
+            
+            console.log(`Including ${pastCareHistory.length} previous care logs in the AI analysis for plant ${plant.id}`);
+            
+            // Generate journal entry with AI analysis and care history
+            const journalEntry = await generateJournalEntry(careLog, plantWithCare, pastCareHistory);
             
             // Create summary to add to the care log notes
             let aiAnalysisSummary = "\n\n--- AI Analysis ---\n";
@@ -1346,8 +1354,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Care log not found" });
       }
 
-      // Generate enhanced journal entry
-      const journalEntry = await generateJournalEntry(careLog, plant);
+      // Get care history for better insights
+      const careHistory = await storage.getPlantCareHistory(plantId);
+      
+      // Filter out the current care log from history to avoid duplication
+      const pastCareHistory = careHistory.filter(log => log.id !== careLogId);
+      
+      console.log(`Including ${pastCareHistory.length} previous care logs in AI journal analysis for plant ${plantId}`);
+      
+      // Generate enhanced journal entry with care history
+      const journalEntry = await generateJournalEntry(careLog, plant, pastCareHistory);
 
       res.json(journalEntry);
     } catch (error: any) {

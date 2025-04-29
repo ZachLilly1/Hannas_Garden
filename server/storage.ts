@@ -31,6 +31,7 @@ export interface IStorage {
   
   // Care log methods
   getCareLogs(plantId: number): Promise<CareLog[]>;
+  getPlantCareHistory(plantId: number, limit?: number): Promise<CareLog[]>;
   createCareLog(careLog: InsertCareLog): Promise<CareLog>;
   updateCareLog(id: number, data: Partial<InsertCareLog>): Promise<CareLog | undefined>;
   getPlantWithCare(id: number): Promise<PlantWithCare | undefined>;
@@ -305,11 +306,27 @@ export class DatabaseStorage implements IStorage {
 
   // Care log methods
   async getCareLogs(plantId: number): Promise<CareLog[]> {
+    console.log(`Serving care logs for plant ${plantId}`);
     return db
       .select()
       .from(careLogs)
       .where(eq(careLogs.plantId, plantId))
       .orderBy(desc(careLogs.timestamp));
+  }
+  
+  async getPlantCareHistory(plantId: number, limit?: number): Promise<CareLog[]> {
+    console.log(`Retrieving care history for plant ${plantId}${limit ? ` (limit: ${limit})` : ''}`);
+    const query = db
+      .select()
+      .from(careLogs)
+      .where(eq(careLogs.plantId, plantId))
+      .orderBy(desc(careLogs.timestamp));
+    
+    if (limit) {
+      return query.limit(limit);
+    }
+    
+    return query;
   }
 
   async createCareLog(careLogData: InsertCareLog): Promise<CareLog> {
