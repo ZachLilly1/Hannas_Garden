@@ -71,7 +71,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
         } catch (error) {
           console.error('Error fetching care logs:', error);
           toast({
-            title: "Could not load care logs",
+            title: "Could not load data",
             description: "An unexpected error occurred. Please try again.",
             variant: "destructive",
           });
@@ -100,7 +100,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
         } catch (error) {
           console.error('Error fetching AI advice:', error);
           toast({
-            title: "Could not load AI insights",
+            title: "Could not load data",
             description: "An unexpected error occurred. Please try again.",
             variant: "destructive",
           });
