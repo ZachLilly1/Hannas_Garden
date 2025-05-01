@@ -101,7 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: async (data: LoginData) => {
-      const res = await apiRequest('POST', '/api/auth/login', data);
+      // Use direct-login endpoint which is working correctly
+      const res = await apiRequest('POST', '/api/auth/direct-login', data);
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || 'Login failed');
