@@ -20,7 +20,7 @@ import { type PlantWithCare, type CareLog, type InsertCareLog } from "@shared/sc
 import { apiRequest } from "@/lib/queryClient";
 import { differenceInDays } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CareTimeline } from "./CareTimeline";
@@ -70,15 +70,20 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
           }
         } catch (error) {
           console.error('Error fetching care logs:', error);
+          toast({
+            title: "Could not load care logs",
+            description: "An unexpected error occurred. Please try again.",
+            variant: "destructive",
+          });
         } finally {
           setIsLoadingLogs(false);
         }
       };
-      
+
       fetchCareLogs();
     }
   }, [plant, isOpen]);
-  
+
   // Load AI insights when the AI tab is selected
   useEffect(() => {
     if (plant && isOpen && activeTab === "ai-insights") {
@@ -88,42 +93,42 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
           setIsLoadingAiAdvice(true);
           // In production, this would be a real API call to the OpenAI endpoint
           // await apiRequest('GET', `/api/plants/${plant.id}/ai-insights`);
-          
+
           // Simulate network delay
           await new Promise(resolve => setTimeout(resolve, 1500));
-          
+
         } catch (error) {
           console.error('Error fetching AI advice:', error);
           toast({
-            title: "AI advice unavailable",
-            description: "Could not retrieve AI recommendations at this time. Please try again later.",
-            variant: "destructive"
+            title: "Could not load AI insights",
+            description: "An unexpected error occurred. Please try again.",
+            variant: "destructive",
           });
         } finally {
           setIsLoadingAiAdvice(false);
         }
       };
-      
+
       fetchAiAdvice();
     }
   }, [plant, isOpen, activeTab]);
 
   if (!plant) return null;
-  
+
   const handleDeletePlant = async () => {
     try {
       setIsDeleting(true);
       await apiRequest('DELETE', `/api/plants/${plant.id}`);
-      
+
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/plants'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/care-needed'] });
-      
+
       toast({
         title: "Plant deleted",
         description: `${plant.name} has been removed from your garden.`,
       });
-      
+
       // Close both the confirm dialog and the plant detail modal
       setShowDeleteConfirm(false);
       onClose();
@@ -147,12 +152,12 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
       };
 
       await apiRequest('POST', '/api/care-logs', careLog);
-      
+
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/plants'] });
       queryClient.invalidateQueries({ queryKey: ['/api/plants', plant.id.toString()] });
       queryClient.invalidateQueries({ queryKey: ['/api/plants', plant.id.toString(), 'care-logs'] });
-      
+
       toast({
         title: "Care logged successfully",
         description: `${careType.charAt(0).toUpperCase() + careType.slice(1)} care logged for ${plant.name}`,
@@ -165,12 +170,12 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
       });
     }
   };
-  
+
   // Calculate water status and remaining days
   const waterRemainingDays = plant.nextWatering 
     ? differenceInDays(new Date(plant.nextWatering), new Date())
     : null;
-    
+
   // Calculate fertilizer status and remaining days
   const fertilizerRemainingDays = plant.nextFertilizing 
     ? differenceInDays(new Date(plant.nextFertilizing), new Date()) 
@@ -179,7 +184,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
   const getSunlightAdequacy = () => {
     const plantGuide = plant.guide;
     if (!plantGuide) return "Unknown";
-    
+
     if (plantGuide.idealSunlight === plant.sunlightLevel) {
       return "Adequate";
     } else {
@@ -194,7 +199,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
 
   const handleCareLogSuccess = async () => {
     setShowLogCareForm(false);
-    
+
     // Refresh care logs
     try {
       setIsLoadingLogs(true);
@@ -244,7 +249,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
+
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="mx-auto p-0 rounded-xl overflow-y-auto overflow-x-hidden max-h-[90vh] w-[95vw] max-w-[450px] flex flex-col">
           <div className="h-64 relative">
@@ -354,7 +359,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                   <span className="whitespace-nowrap overflow-hidden text-ellipsis">AI</span>
                 </TabsTrigger>
               </TabsList>
-              
+
               {/* Care Schedule Tab Content */}
               <TabsContent value="care-schedule" className="mt-4">
                 <div className="space-y-4">
@@ -505,7 +510,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                   </div>
                 )}
               </TabsContent>
-              
+
               {/* History Tab Content */}
               <TabsContent value="history" className="mt-4">
                 {showLogCareForm ? (
@@ -536,10 +541,10 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                     </Button>
                   </div>
                 )}
-                
+
                 <CareTimeline plant={plant} />
               </TabsContent>
-              
+
               {/* Reminders Tab Content */}
               <TabsContent value="reminders" className="mt-4">
                 {showReminderForm ? (
@@ -574,10 +579,10 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                     </Button>
                   </div>
                 )}
-                
+
                 <ReminderList type="plant" plantId={plant.id} onAddReminder={() => setShowReminderForm(true)} />
               </TabsContent>
-              
+
               {/* AI Insights Tab Content */}
               <TabsContent value="ai-insights" className="mt-4">
                 {isLoadingAiAdvice ? (
@@ -599,7 +604,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                             Based on your {plant.type || plant.scientificName || "plant"}'s current condition and environmental factors, adjust watering to every {Math.max(plant.waterFrequency - 1, 2)} days during summer months.
                           </p>
                         </div>
-                        
+
                         <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md text-sm">
                           <p className="font-medium">Light Adjustment</p>
                           <p className="text-muted-foreground text-xs mt-1">
@@ -610,7 +615,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                               "Current light conditions appear optimal for this plant species."}
                           </p>
                         </div>
-                        
+
                         <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md text-sm">
                           <p className="font-medium">Growth Potential</p>
                           <p className="text-muted-foreground text-xs mt-1">
@@ -619,7 +624,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="p-4 bg-muted/50 dark:bg-muted/20 rounded-lg">
                       <h3 className="text-sm font-medium flex items-center">
                         <LeafIcon className="h-4 w-4 mr-2 text-primary" />
@@ -628,7 +633,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                       <p className="text-xs text-muted-foreground mt-1 mb-3">
                         AI-powered recommendations for the current season.
                       </p>
-                      
+
                       <div className="p-3 bg-background border border-border rounded-md text-sm">
                         <p className="font-medium">Spring-Summer Transition</p>
                         <ul className="mt-2 space-y-2 text-xs text-muted-foreground">
@@ -647,7 +652,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                         </ul>
                       </div>
                     </div>
-                    
+
                     <Button 
                       variant="outline" 
                       className="w-full flex items-center justify-center mt-3"
@@ -685,7 +690,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                 Remind Me
               </Button>
             </div>
-            
+
             {/* Health Check Button */}
             <div className="mt-3">
               <Button 
