@@ -1023,6 +1023,27 @@ export async function generateJournalEntry(
         );
         
         console.log(`Plant identity verification result: ${plantIdentityMatch.matches ? 'Match' : 'Mismatch'} (confidence: ${plantIdentityMatch.confidence})`);
+        
+        // If plant doesn't match and we have medium or high confidence in that assessment,
+        // return a simplified journal entry with just a mismatch note instead of doing a full health check
+        if (!plantIdentityMatch.matches && 
+            plantIdentityMatch.confidence !== "low" && 
+            plantIdentityMatch.detectedPlant) {
+          
+          console.log(`Skipping health check due to plant identity mismatch. Detected ${plantIdentityMatch.detectedPlant} instead of ${plant.name}`);
+          
+          // Return a simple journal entry noting the mismatch
+          return {
+            title: "Plant Identity Mismatch Detected",
+            observations: [
+              `This appears to be a ${plantIdentityMatch.detectedPlant} rather than the expected ${plant.name}.`,
+              "No health analysis was performed due to the plant identity mismatch.",
+              "Please verify that this is the correct plant before logging care activities."
+            ],
+            growthProgress: "Plant identity mismatch detected. Health check and growth assessment skipped.",
+            plantIdentityMatch
+          };
+        }
       } catch (verifyError) {
         console.error("Error during plant identity verification:", verifyError);
         // Continue without verification result
