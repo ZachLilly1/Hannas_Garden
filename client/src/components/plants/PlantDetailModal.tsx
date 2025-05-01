@@ -205,15 +205,14 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
           setCareLogs(logs);
         }
       }
-      // NEW CODE
-catch (error) {
-  console.error("Error fetching care logs:", error);
-  toast({
-    title: "Could not load care logs",
-    description: "Please try again in a moment.",
-    variant: "destructive",
-  });
-} finally {
+    } catch (error) {
+      console.error("Error fetching care logs:", error);
+      toast({
+        title: "Could not load care logs",
+        description: "Please try again in a moment.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoadingLogs(false);
     }
   };
