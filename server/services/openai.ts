@@ -1073,17 +1073,21 @@ export async function generateJournalEntry(
       }
     `;
 
-    // Query OpenAI
-    const response = await openai.chat.completions.create({
-      model: MODEL,
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        {
-          role: "user",
-          content: `Create a detailed journal entry about ${careLog.careType} for my ${plant.name} (${plant.scientificName || "scientific name unknown"}).
+    // Query OpenAI with retry logic for rate limits
+    let response;
+    let attempts = 0;
+    const maxAttempts = 3;
+    const initialBackoff = 1000; // 1 second
+    
+    while (attempts < maxAttempts) {
+      try {
+        console.log(`Attempt ${attempts + 1} to generate journal entry...`);
+        
+        // Simplified prompt for rate limit issues
+        const userContent = attempts > 0 
+          ? `Create a short journal entry about ${careLog.careType} for my ${plant.name}.
+             Recent care: ${careHistoryText.slice(0, 200)}...`
+          : `Create a detailed journal entry about ${careLog.careType} for my ${plant.name} (${plant.scientificName || "scientific name unknown"}).
             Care log details:
             - Date: ${careLog.timestamp ? new Date(careLog.timestamp).toISOString().split('T')[0] : 'Unknown'}
             - Care type: ${careLog.careType}
@@ -1103,15 +1107,54 @@ export async function generateJournalEntry(
             
             Season: ${getCurrentSeason()}
             Today's date: ${new Date().toISOString().split('T')[0]}
-          `
+          `;
+        
+        // Lower max_tokens on retry attempts
+        const maxTokens = attempts > 0 ? 600 : 1200;
+        
+        response = await openai.chat.completions.create({
+          model: attempts > 0 ? "gpt-3.5-turbo" : MODEL, // Fallback to smaller model after first attempt
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt,
+            },
+            {
+              role: "user",
+              content: userContent
+            }
+          ],
+          response_format: { type: "json_object" },
+          max_tokens: maxTokens,
+        });
+        
+        // Success, break out of the retry loop
+        break;
+      } catch (error) {
+        attempts++;
+        
+        // Check if it's a rate limit error (with TypeScript error handling)
+        if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'rate_limit_exceeded' && attempts < maxAttempts) {
+          // Get retry time from headers or use exponential backoff
+          const apiError = error as { headers?: { 'retry-after-ms'?: string }, code: string };
+          const retryAfterMs = apiError.headers && apiError.headers['retry-after-ms'] ? 
+            parseInt(apiError.headers['retry-after-ms']) : 
+            initialBackoff * Math.pow(2, attempts - 1);
+          
+          console.log(`Rate limit exceeded. Retrying in ${retryAfterMs}ms...`);
+          await new Promise(resolve => setTimeout(resolve, retryAfterMs));
+        } else if (attempts >= maxAttempts) {
+          console.error(`Failed after ${maxAttempts} attempts:`, error);
+          throw error;
+        } else {
+          // For non-rate-limit errors, rethrow immediately
+          throw error;
         }
-      ],
-      response_format: { type: "json_object" },
-      max_tokens: 1200,
-    });
+      }
+    }
     
     // Check if we got a valid response
-    if (!response.choices || response.choices.length === 0) {
+    if (!response || !response.choices || response.choices.length === 0) {
       console.error("No choices returned from OpenAI");
       throw new Error("Invalid response from OpenAI");
     }
@@ -1197,35 +1240,122 @@ export async function analyzeGrowthProgression(
       }
     `;
 
-    // Query OpenAI
-    const response = await openai.chat.completions.create({
-      model: MODEL,
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: `Compare these two images of my ${plant.name} (${plant.scientificName || "unknown species"}) taken ${imageHistory.length} months apart. The first image is the oldest, and the second is the most recent. Analyze growth, health changes, and provide recommendations.`
-            },
-            {
-              type: "image_url",
-              image_url: { url: oldestImageUrl }
-            },
-            {
-              type: "image_url",
-              image_url: { url: newestImageUrl }
-            }
-          ]
+    // Query OpenAI with retry and error handling
+    let response;
+    let attempts = 0;
+    const maxAttempts = 3;
+    const initialBackoff = 1000; // 1 second
+    
+    while (attempts < maxAttempts) {
+      try {
+        console.log(`Attempt ${attempts + 1} to analyze growth progression...`);
+        
+        // Validate image URLs before sending to prevent invalid URL errors
+        const validatedOldestUrl = validateAndFixImageUrl(oldestImageUrl);
+        const validatedNewestUrl = validateAndFixImageUrl(newestImageUrl);
+        
+        if (!validatedOldestUrl || !validatedNewestUrl) {
+          throw new Error("Invalid image format for analysis. Only base64 encoded images are supported.");
         }
-      ],
-      response_format: { type: "json_object" },
-      max_tokens: 1500,
-    });
+        
+        // Fallback to simpler text-only analysis if first attempt fails
+        if (attempts > 0) {
+          console.log("Using text-only analysis as fallback");
+          response = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo", // Use simpler model for fallback
+            messages: [
+              {
+                role: "system",
+                content: systemPrompt,
+              },
+              {
+                role: "user",
+                content: `Provide a generic growth analysis for a ${plant.name} (${plant.scientificName || "unknown species"}) based on typical growth patterns for this plant. The user's images couldn't be processed.`
+              }
+            ],
+            response_format: { type: "json_object" },
+            max_tokens: 800,
+          });
+          break;
+        }
+        
+        // Try with full vision analysis first
+        response = await openai.chat.completions.create({
+          model: MODEL,
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt,
+            },
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: `Compare these two images of my ${plant.name} (${plant.scientificName || "unknown species"}) taken ${imageHistory.length} months apart. The first image is the oldest, and the second is the most recent. Analyze growth, health changes, and provide recommendations.`
+                },
+                {
+                  type: "image_url",
+                  image_url: { url: validatedOldestUrl }
+                },
+                {
+                  type: "image_url",
+                  image_url: { url: validatedNewestUrl }
+                }
+              ]
+            }
+          ],
+          response_format: { type: "json_object" },
+          max_tokens: 1500,
+        });
+        break;
+      } catch (error) {
+        attempts++;
+        
+        // Check if it's a rate limit error (with TypeScript error handling)
+        if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'rate_limit_exceeded' && attempts < maxAttempts) {
+          // Get retry time from headers or use exponential backoff
+          const apiError = error as { headers?: { 'retry-after-ms'?: string }, code: string };
+          const retryAfterMs = apiError.headers && apiError.headers['retry-after-ms'] ? 
+            parseInt(apiError.headers['retry-after-ms']) : 
+            initialBackoff * Math.pow(2, attempts - 1);
+          
+          console.log(`Rate limit exceeded. Retrying in ${retryAfterMs}ms...`);
+          await new Promise(resolve => setTimeout(resolve, retryAfterMs));
+        } else if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'invalid_image_url' && attempts < maxAttempts) {
+          console.error("Invalid image URL, will try text-only analysis next:", error.message);
+          // Let the loop continue to try text-only analysis
+        } else if (attempts >= maxAttempts) {
+          console.error(`Failed after ${maxAttempts} attempts:`, error);
+          throw error;
+        } else {
+          // For other errors, rethrow immediately
+          throw error;
+        }
+      }
+    }
+    
+    // Helper function to validate and fix image URLs
+    function validateAndFixImageUrl(url: string): string | null {
+      // Check if it's already a valid data URL
+      if (url.startsWith('data:image/')) {
+        return url;
+      }
+      
+      // Check if it's valid base64 that needs a prefix
+      try {
+        // Simple check for base64 format
+        if (/^[A-Za-z0-9+/=]+$/.test(url)) {
+          return `data:image/jpeg;base64,${url}`;
+        }
+        
+        // Return null for invalid formats
+        return null;
+      } catch (e) {
+        console.error("Error validating image URL:", e);
+        return null;
+      }
+    }
     
     // Check if we got a valid response
     if (!response.choices || response.choices.length === 0) {
