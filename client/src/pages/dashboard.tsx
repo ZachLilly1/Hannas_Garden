@@ -1,6 +1,4 @@
-// // NEW CODE   (add:  import { useAuth } from "@/context/AuthContext"; )
-const { user } = useAuth();
-<CareTaskSummary userId={user?.id ?? 0} />import React from "react";
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CareTaskSummary } from "@/components/dashboard/CareTaskSummary";
 import { PlantCard } from "@/components/plants/PlantCard";
@@ -8,6 +6,7 @@ import { PlantDetailModal } from "@/components/plants/PlantDetailModal";
 import { AddPlantModal } from "@/components/plants/AddPlantModal";
 import { SortIcon } from "@/lib/icons";
 import { usePlants } from "@/context/PlantContext";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -34,6 +33,8 @@ export default function Dashboard() {
     closeEditPlant,
     plantToEdit,
   } = usePlants();
+  
+  const { user } = useAuth();
 
   // Get plants needing care for the dashboard
   const { data: careNeeded } = useQuery<{
@@ -64,9 +65,8 @@ export default function Dashboard() {
         
         {/* Care Tasks Summary */}
         <ComponentErrorBoundary>
-// NEW CODE   (add:  import { useAuth } from "@/context/AuthContext"; )
-const { user } = useAuth();
-<CareTaskSummary userId={user?.id ?? 0} />        </ComponentErrorBoundary>
+          <CareTaskSummary userId={user?.id ?? 0} />
+        </ComponentErrorBoundary>
       </section>
       
       {/* Plants Collection */}
