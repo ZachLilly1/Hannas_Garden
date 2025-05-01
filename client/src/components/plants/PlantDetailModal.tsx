@@ -20,7 +20,7 @@ import { type PlantWithCare, type CareLog, type InsertCareLog } from "@shared/sc
 import { apiRequest } from "@/lib/queryClient";
 import { differenceInDays } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CareTimeline } from "./CareTimeline";
