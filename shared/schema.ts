@@ -226,3 +226,12 @@ export type CommunityTipWithUser = CommunityTip & {
   avatarUrl: string | null;
   userHasLiked?: boolean;
 };
+
+// Photos schema
+export const photos = pgTable("photos", {
+  id: serial("id").primaryKey(),
+  plant_id: integer("plant_id").references(() => plants.id, {
+    onDelete: "cascade",
+  }),
+  // ...
+});
