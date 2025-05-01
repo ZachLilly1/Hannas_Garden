@@ -1,4 +1,6 @@
-import React from "react";
+// // NEW CODE   (add:  import { useAuth } from "@/context/AuthContext"; )
+const { user } = useAuth();
+<CareTaskSummary userId={user?.id ?? 0} />import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CareTaskSummary } from "@/components/dashboard/CareTaskSummary";
 import { PlantCard } from "@/components/plants/PlantCard";
@@ -62,8 +64,9 @@ export default function Dashboard() {
         
         {/* Care Tasks Summary */}
         <ComponentErrorBoundary>
-          <CareTaskSummary userId={0} /> {/* userId is determined on the server from the session */}
-        </ComponentErrorBoundary>
+// NEW CODE   (add:  import { useAuth } from "@/context/AuthContext"; )
+const { user } = useAuth();
+<CareTaskSummary userId={user?.id ?? 0} />        </ComponentErrorBoundary>
       </section>
       
       {/* Plants Collection */}
