@@ -320,8 +320,6 @@ export async function diagnosePlantHealth(base64Image: string): Promise<PlantHea
       throw new Error(`Image size (${imageSizeInMB.toFixed(2)} MB) exceeds the recommended limit of 20 MB. Please resize the image.`);
     }
 
-    console.log("OpenAI API key is configured");
-
     // Detect image format based on file signature/magic numbers
     let imageFormat = 'jpeg'; // Default format
     if (buffer.length >= 4) {
