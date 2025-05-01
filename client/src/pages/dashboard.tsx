@@ -33,7 +33,7 @@ export default function Dashboard() {
     closeEditPlant,
     plantToEdit,
   } = usePlants();
-  
+
   const { user } = useAuth();
 
   // Get plants needing care for the dashboard
@@ -52,7 +52,7 @@ export default function Dashboard() {
   ];
 
   const plants = getSortedPlants();
-  
+
   return (
     <>
       <section className="p-4">
@@ -62,13 +62,13 @@ export default function Dashboard() {
             {isLoading ? "..." : `${plants.length} plants`}
           </span>
         </div>
-        
+
         {/* Care Tasks Summary */}
         <ComponentErrorBoundary>
           <CareTaskSummary userId={user?.id ?? 0} />
         </ComponentErrorBoundary>
       </section>
-      
+
       {/* Plants Collection */}
       <section className="p-4 pt-0">
         <div className="flex justify-between items-center mb-4">
@@ -92,7 +92,7 @@ export default function Dashboard() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        
+
         {/* Plant Cards List */}
         <ComponentErrorBoundary>
           <div className="space-y-4">
