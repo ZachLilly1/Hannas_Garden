@@ -1,6 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import * as logger from "./services/logger";
 import { 
   insertPlantSchema, 
   insertCareLogSchema, 
@@ -129,7 +130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // For this example, we'll just use the data URL as the avatar URL
         updateData.avatarUrl = photoBase64;
       } catch (error) {
-        console.error("Error saving profile image:", error);
+        logger.error("Error saving profile image:", error);
         return res.status(500).json({ message: "Failed to save profile image" });
       }
     }
@@ -141,7 +142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(updatedUser);
     } catch (error: any) {
-      console.error("Error updating profile:", error);
+      logger.error("Error updating profile:", error);
       res.status(500).json({ message: "Failed to update profile", error: error.message });
     }
   });
@@ -172,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ message: "Password updated successfully" });
     } catch (error: any) {
-      console.error("Error changing password:", error);
+      logger.error("Error changing password:", error);
       res.status(500).json({ message: "Failed to change password", error: error.message });
     }
   });
@@ -182,9 +183,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Temporary bypass authentication for debugging
     // Instead of using req.user, we'll directly query user ID 1 (Zach)
     const userId = req.isAuthenticated() ? req.user!.id : 1;
-    console.log("Getting plants for user ID:", userId);
+    logger.info("Getting plants for user ID:", userId);
     const plants = await storage.getPlants(userId);
-    console.log(`Found ${plants.length} plants for user ID ${userId}`);
+    logger.info(`Found ${plants.length} plants for user ID ${userId}`);
     res.json(plants);
   });
   
@@ -193,7 +194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Log the request but truncate image data for cleaner logs
       const { image, ...logData } = req.body;
-      console.log("Debug plant creation request:", {
+      logger.info("Debug plant creation request:", {
         ...logData,
         image: image ? `[Base64 image truncated, length: ${image.length}]` : null
       });
@@ -214,7 +215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             }
           } catch (imageError) {
-            console.error("Error processing image data:", imageError);
+            logger.error("Error processing image data:", imageError);
           }
         }
         
@@ -226,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Merge user ID with plant data
         const plantData = { ...validation.data, userId };
-        console.log("Creating plant with data:", {
+        logger.info("Creating plant with data:", {
           ...plantData,
           image: plantData.image ? `[Base64 image truncated, length: ${plantData.image.length}]` : null
         });
@@ -273,14 +274,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         res.status(201).json(plant);
       } catch (validationError) {
-        console.error("Error validating plant data:", validationError);
+        logger.error("Error validating plant data:", validationError);
         res.status(400).json({ 
           message: "Error validating plant data", 
           error: validationError instanceof Error ? validationError.message : String(validationError)
         });
       }
     } catch (error: any) {
-      console.error("Error in debug plant creation:", error);
+      logger.error("Error in debug plant creation:", error);
       res.status(500).json({ 
         message: "Failed to add plant", 
         error: error.message,
@@ -306,7 +307,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(403).json({ message: "You don't have permission to access this plant" });
     }
     
-    console.log(`Serving plant ${plantId} for user ${plant.userId}`);
+    logger.info(`Serving plant ${plantId} for user ${plant.userId}`);
     res.json(plant);
   });
 
@@ -346,7 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                           `Care Tips: ${careInfo.careTips}\n\n` +
                           `Interesting Fact: ${careInfo.interestingFact}`;
       } catch (error) {
-        console.error("Error getting care recommendations:", error);
+        logger.error("Error getting care recommendations:", error);
         // Continue with user-provided data if OpenAI recommendation fails
       }
     }
@@ -534,7 +535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     const logs = await storage.getCareLogs(plantId);
-    console.log(`Serving ${logs.length} care logs for plant ${plantId}`);
+    logger.info(`Serving ${logs.length} care logs for plant ${plantId}`);
     res.json(logs);
   });
 
@@ -553,7 +554,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Store the health diagnosis in the metadata field as JSON
         careLogData.metadata = JSON.stringify({ healthDiagnosis });
       } catch (error) {
-        console.error('Error processing health diagnosis data:', error);
+        logger.error('Error processing health diagnosis data:', error);
       }
     }
     
@@ -614,12 +615,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               careLogData.notes = (careLogData.notes || "") + lightInfo;
             }
           } catch (analysisError) {
-            console.error("Error performing light analysis on photo:", analysisError);
+            logger.error("Error performing light analysis on photo:", analysisError);
             // Continue without adding analysis to notes, don't block the main flow
           }
         }
       } catch (error) {
-        console.error('Error processing photo data:', error);
+        logger.error('Error processing photo data:', error);
         return res.status(500).json({ message: 'Failed to process photo' });
       }
     }
@@ -718,25 +719,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use a Promise to run the analysis asynchronously
       (async () => {
         try {
-          console.log(`Analyzing light level for plant ID ${plant.id} from care log photo...`);
+          logger.info(`Analyzing light level for plant ID ${plant.id} from care log photo...`);
           
           // Analyze the image for light level
           const { sunlightLevel, confidence } = await analyzePlantImageLightLevel(photoForLightAnalysis);
           
-          console.log(`Light analysis result: ${sunlightLevel} (confidence: ${confidence})`);
+          logger.info(`Light analysis result: ${sunlightLevel} (confidence: ${confidence})`);
           
           // Only update the plant if we have medium or high confidence in the result
           if (confidence !== "low") {
             // Update the plant's sunlight level
             await storage.updatePlant(plant.id, { sunlightLevel });
-            console.log(`Updated plant ${plant.id} (${plant.name}) sunlight level to: ${sunlightLevel}`);
+            logger.info(`Updated plant ${plant.id} (${plant.name}) sunlight level to: ${sunlightLevel}`);
           } else {
-            console.log(`Low confidence in light analysis result, not updating plant record.`);
+            logger.info(`Low confidence in light analysis result, not updating plant record.`);
           }
           
           // Generate journal entry with comprehensive analysis including plant verification
           try {
-            console.log(`Generating journal entry for care log ${careLog.id}...`);
+            logger.info(`Generating journal entry for care log ${careLog.id}...`);
             const { generateJournalEntry } = await import("./services/openai");
             
             // We need to get the plant with care details for the journal entry
@@ -751,7 +752,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Filter out the current care log since we're analyzing it
             const pastCareHistory = careHistory.filter(log => log.id !== careLog.id);
             
-            console.log(`Including ${pastCareHistory.length} previous care logs in the AI analysis for plant ${plant.id}`);
+            logger.info(`Including ${pastCareHistory.length} previous care logs in the AI analysis for plant ${plant.id}`);
             
             // Generate journal entry with AI analysis and care history
             const journalEntry = await generateJournalEntry(careLog, plantWithCare, pastCareHistory);
@@ -794,8 +795,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 journalEntry.plantIdentityMatch.confidence !== "low" && 
                 !journalEntry.plantIdentityMatch.matches) {
               
-              console.log(`⚠️ Plant identity mismatch detected in care log ${careLog.id}!`);
-              console.log(`Expected: ${plant.name}, Detected: ${journalEntry.plantIdentityMatch.detectedPlant || 'Unknown'}`);
+              logger.info(`⚠️ Plant identity mismatch detected in care log ${careLog.id}!`);
+              logger.info(`Expected: ${plant.name}, Detected: ${journalEntry.plantIdentityMatch.detectedPlant || 'Unknown'}`);
               
               // Add a mismatch warning to the metadata
               const metadata = {
@@ -811,16 +812,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
             }
           } catch (journalError) {
-            console.error('Error generating journal entry:', journalError);
+            logger.error('Error generating journal entry:', journalError);
             // Don't block the process, continue with other tasks
           }
         } catch (error) {
-          console.error('Error performing background analysis:', error);
+          logger.error('Error performing background analysis:', error);
           // No need to handle this error since this is a background task
           // and doesn't affect the response to the client
         }
       })().catch(err => {
-        console.error('Unhandled error in background analysis task:', err);
+        logger.error('Unhandled error in background analysis task:', err);
       });
     }
     
@@ -830,7 +831,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Plant guides routes
   apiRouter.get("/api/plant-guides", async (req, res) => {
     const guides = await storage.getPlantGuides();
-    console.log(`Serving ${guides.length} plant guides`);
+    logger.info(`Serving ${guides.length} plant guides`);
     res.json(guides);
   });
 
@@ -842,7 +843,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Plant guide not found" });
     }
     
-    console.log(`Serving plant guide for ${plantType}`);
+    logger.info(`Serving plant guide for ${plantType}`);
     res.json(guide);
   });
 
@@ -850,9 +851,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.get("/api/dashboard/care-needed", async (req, res) => {
     // For debugging, always use user ID 1 (Zach) if not authenticated
     const userId = req.isAuthenticated() ? req.user!.id : 1;
-    console.log(`Getting care needed for user ID ${userId}`);
+    logger.info(`Getting care needed for user ID ${userId}`);
     const careNeeded = await storage.getPlantsNeedingCare(userId);
-    console.log(`Found ${careNeeded.needsWater.length} plants needing water and ${careNeeded.needsFertilizer.length} plants needing fertilizer`);
+    logger.info(`Found ${careNeeded.needsWater.length} plants needing water and ${careNeeded.needsFertilizer.length} plants needing fertilizer`);
     res.json(careNeeded);
   });
   
@@ -1007,13 +1008,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           
           // If we reach here, the base64 string is valid
-          console.log(`Successfully validated base64 string (${Math.floor(testBuffer.length / 1024)} KB)`);
+          logger.info(`Successfully validated base64 string (${Math.floor(testBuffer.length / 1024)} KB)`);
         } catch (decodeError) {
-          console.error("Error decoding base64 string:", decodeError);
+          logger.error("Error decoding base64 string:", decodeError);
           throw new Error("Invalid base64 image data");
         }
       } catch (imageProcessingError) {
-        console.error("Error processing image data:", imageProcessingError);
+        logger.error("Error processing image data:", imageProcessingError);
         return res.status(400).json({
           message: "Invalid image data",
           error: imageProcessingError instanceof Error ? imageProcessingError.message : String(imageProcessingError)
@@ -1026,7 +1027,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Return identification results
       res.json(result);
     } catch (error) {
-      console.error("Error identifying plant:", error);
+      logger.error("Error identifying plant:", error);
       res.status(500).json({
         message: "Failed to identify plant",
         error: error instanceof Error ? error.message : String(error),
@@ -1070,13 +1071,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           
           // If we reach here, the base64 string is valid
-          console.log(`Successfully validated base64 string for diagnosis (${Math.floor(testBuffer.length / 1024)} KB)`);
+          logger.info(`Successfully validated base64 string for diagnosis (${Math.floor(testBuffer.length / 1024)} KB)`);
         } catch (decodeError) {
-          console.error("Error decoding base64 string for diagnosis:", decodeError);
+          logger.error("Error decoding base64 string for diagnosis:", decodeError);
           throw new Error("Invalid base64 image data");
         }
       } catch (imageProcessingError) {
-        console.error("Error processing image data for diagnosis:", imageProcessingError);
+        logger.error("Error processing image data for diagnosis:", imageProcessingError);
         return res.status(400).json({
           message: "Invalid image data",
           error: imageProcessingError instanceof Error ? imageProcessingError.message : String(imageProcessingError)
@@ -1089,7 +1090,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Return diagnosis results
       res.json(result);
     } catch (error) {
-      console.error("Error diagnosing plant health:", error);
+      logger.error("Error diagnosing plant health:", error);
       res.status(500).json({
         message: "Failed to diagnose plant health",
         error: error instanceof Error ? error.message : String(error),
@@ -1177,7 +1178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         healthDiagnosis
       });
     } catch (error) {
-      console.error("Error creating sample health diagnosis:", error);
+      logger.error("Error creating sample health diagnosis:", error);
       res.status(500).json({
         message: "Failed to create sample health diagnosis",
         error: error instanceof Error ? error.message : String(error)
@@ -1226,7 +1227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(advice);
     } catch (error: any) {
-      console.error("Error getting personalized plant advice:", error);
+      logger.error("Error getting personalized plant advice:", error);
       res.status(500).json({
         message: "Failed to get personalized plant advice",
         error: error instanceof Error ? error.message : String(error)
@@ -1263,7 +1264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(recommendations);
     } catch (error: any) {
-      console.error("Error getting seasonal care recommendations:", error);
+      logger.error("Error getting seasonal care recommendations:", error);
       res.status(500).json({
         message: "Failed to get seasonal care recommendations",
         error: error instanceof Error ? error.message : String(error)
@@ -1314,7 +1315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(suggestions);
     } catch (error: any) {
-      console.error("Error getting plant arrangement suggestions:", error);
+      logger.error("Error getting plant arrangement suggestions:", error);
       res.status(500).json({
         message: "Failed to get plant arrangement suggestions",
         error: error instanceof Error ? error.message : String(error)
@@ -1360,14 +1361,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Filter out the current care log from history to avoid duplication
       const pastCareHistory = careHistory.filter(log => log.id !== careLogId);
       
-      console.log(`Including ${pastCareHistory.length} previous care logs in AI journal analysis for plant ${plantId}`);
+      logger.info(`Including ${pastCareHistory.length} previous care logs in AI journal analysis for plant ${plantId}`);
       
       // Generate enhanced journal entry with care history
       const journalEntry = await generateJournalEntry(careLog, plant, pastCareHistory);
 
       res.json(journalEntry);
     } catch (error: any) {
-      console.error("Error generating journal entry:", error);
+      logger.error("Error generating journal entry:", error);
       res.status(500).json({
         message: "Failed to generate journal entry",
         error: error instanceof Error ? error.message : String(error)
@@ -1405,7 +1406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(analysis);
     } catch (error: any) {
-      console.error("Error analyzing growth progression:", error);
+      logger.error("Error analyzing growth progression:", error);
       res.status(500).json({
         message: "Failed to analyze growth progression",
         error: error instanceof Error ? error.message : String(error)
@@ -1438,7 +1439,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(answer);
     } catch (error: any) {
-      console.error("Error getting plant care answer:", error);
+      logger.error("Error getting plant care answer:", error);
       res.status(500).json({
         message: "Failed to get plant care answer",
         error: error instanceof Error ? error.message : String(error)
@@ -1477,7 +1478,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(schedule);
     } catch (error: any) {
-      console.error("Error generating optimized care schedule:", error);
+      logger.error("Error generating optimized care schedule:", error);
       res.status(500).json({
         message: "Failed to generate optimized care schedule",
         error: error instanceof Error ? error.message : String(error)
@@ -1512,7 +1513,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(insights);
     } catch (error: any) {
-      console.error("Error generating community insights:", error);
+      logger.error("Error generating community insights:", error);
       res.status(500).json({
         message: "Failed to generate community insights",
         error: error instanceof Error ? error.message : String(error)
@@ -1569,7 +1570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(tipsWithUserLikes);
     } catch (error: any) {
-      console.error("Error getting community tips:", error);
+      logger.error("Error getting community tips:", error);
       res.status(500).json({
         message: "Failed to get community tips",
         error: error instanceof Error ? error.message : String(error)
@@ -1602,7 +1603,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userHasLiked
       });
     } catch (error: any) {
-      console.error("Error getting community tip:", error);
+      logger.error("Error getting community tip:", error);
       res.status(500).json({
         message: "Failed to get community tip",
         error: error instanceof Error ? error.message : String(error)
@@ -1625,7 +1626,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tip = await storage.createCommunityTip(tipData);
       res.status(201).json(tip);
     } catch (error: any) {
-      console.error("Error creating community tip:", error);
+      logger.error("Error creating community tip:", error);
       res.status(500).json({
         message: "Failed to create community tip",
         error: error instanceof Error ? error.message : String(error)
@@ -1663,7 +1664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(updatedTip);
     } catch (error: any) {
-      console.error("Error updating community tip:", error);
+      logger.error("Error updating community tip:", error);
       res.status(500).json({
         message: "Failed to update community tip",
         error: error instanceof Error ? error.message : String(error)
@@ -1698,7 +1699,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(204).send();
     } catch (error: any) {
-      console.error("Error deleting community tip:", error);
+      logger.error("Error deleting community tip:", error);
       res.status(500).json({
         message: "Failed to delete community tip",
         error: error instanceof Error ? error.message : String(error)
@@ -1723,7 +1724,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(200).json({ message: "Tip liked successfully" });
     } catch (error: any) {
-      console.error("Error liking community tip:", error);
+      logger.error("Error liking community tip:", error);
       res.status(500).json({
         message: "Failed to like community tip",
         error: error instanceof Error ? error.message : String(error)
@@ -1748,7 +1749,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(200).json({ message: "Tip unliked successfully" });
     } catch (error: any) {
-      console.error("Error unliking community tip:", error);
+      logger.error("Error unliking community tip:", error);
       res.status(500).json({
         message: "Failed to unlike community tip",
         error: error instanceof Error ? error.message : String(error)
@@ -1764,7 +1765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Debug endpoint to create a community tip without authentication
   apiRouter.post("/api/debug/community-tips", async (req, res) => {
     try {
-      console.log("Debug community tip creation request:", req.body);
+      logger.info("Debug community tip creation request:", req.body);
       
       // Validate request data
       const validation = validateRequest(insertCommunityTipSchema, req, res);
@@ -1780,7 +1781,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tip = await storage.createCommunityTip(tipData);
       res.status(201).json(tip);
     } catch (error: any) {
-      console.error("Error in debug community tip creation:", error);
+      logger.error("Error in debug community tip creation:", error);
       res.status(500).json({
         message: "Failed to create community tip",
         error: error instanceof Error ? error.message : String(error)
@@ -1812,7 +1813,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(200).json({ message: `Tip ${featured ? 'featured' : 'unfeatured'} successfully` });
     } catch (error: any) {
-      console.error("Error featuring community tip:", error);
+      logger.error("Error featuring community tip:", error);
       res.status(500).json({
         message: "Failed to update feature status",
         error: error instanceof Error ? error.message : String(error)
@@ -1847,7 +1848,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(200).json({ message: `Tip status updated to ${status} successfully` });
     } catch (error: any) {
-      console.error("Error updating community tip status:", error);
+      logger.error("Error updating community tip status:", error);
       res.status(500).json({
         message: "Failed to update tip status",
         error: error instanceof Error ? error.message : String(error)

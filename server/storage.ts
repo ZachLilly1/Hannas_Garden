@@ -163,7 +163,7 @@ export class DatabaseStorage implements IStorage {
         }
       }
     } catch (error) {
-      console.error("Failed to initialize database:", error);
+      logger.error("Failed to initialize database:", error);
     }
   }
 
@@ -306,7 +306,7 @@ export class DatabaseStorage implements IStorage {
 
   // Care log methods
   async getCareLogs(plantId: number): Promise<CareLog[]> {
-    console.log(`Serving care logs for plant ${plantId}`);
+    logger.info(`Serving care logs for plant ${plantId}`);
     return db
       .select()
       .from(careLogs)
@@ -315,7 +315,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getPlantCareHistory(plantId: number, limit?: number): Promise<CareLog[]> {
-    console.log(`Retrieving care history for plant ${plantId}${limit ? ` (limit: ${limit})` : ''}`);
+    logger.info(`Retrieving care history for plant ${plantId}${limit ? ` (limit: ${limit})` : ''}`);
     const query = db
       .select()
       .from(careLogs)

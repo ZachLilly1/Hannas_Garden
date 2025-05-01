@@ -1,6 +1,7 @@
 import { Express, Request, Response } from "express";
 import { storage } from "../storage";
 import { comparePasswords } from "../auth";
+import * as logger from "../services/logger";
 
 // This creates a temporary direct login route for debugging purposes
 export function setupDirectLoginRoute(app: Express) {
@@ -8,54 +9,54 @@ export function setupDirectLoginRoute(app: Express) {
     try {
       const { username, password } = req.body;
       
-      console.log("Attempting direct login for user:", username);
+      logger.info("Attempting direct login for user:", username);
       
       // Find user
       const user = await storage.getUserByUsername(username);
       if (!user) {
-        console.log("User not found:", username);
+        logger.info("User not found:", username);
         return res.status(401).json({ message: "Invalid username or password" });
       }
       
       // Verify password
       const passwordMatches = await comparePasswords(password, user.password);
       if (!passwordMatches) {
-        console.log("Password does not match for user:", username);
+        logger.info("Password does not match for user:", username);
         return res.status(401).json({ message: "Invalid username or password" });
       }
       
       // Enhanced direct login with additional debugging and safeguards
-      console.log("Password matches, attempting to login user:", username);
-      console.log("Current session before login:", req.session.id);
+      logger.info("Password matches, attempting to login user:", username);
+      logger.info("Current session before login:", req.session.id);
       
       // Log the user in manually with extended error handling
       req.login(user, (err) => {
         if (err) {
-          console.error("Error during manual login:", err);
-          console.error("Login error details:", err.message, err.stack);
+          logger.error("Error during manual login:", err);
+          logger.error("Login error details:", err.message, err.stack);
           return res.status(500).json({ message: "Error during login", details: err.message });
         }
         
-        console.log("User logged in successfully via direct login:", username);
-        console.log("Session ID after login:", req.session.id);
-        console.log("Is authenticated after login:", req.isAuthenticated());
+        logger.info("User logged in successfully via direct login:", username);
+        logger.info("Session ID after login:", req.session.id);
+        logger.info("Is authenticated after login:", req.isAuthenticated());
         
         // Force regenerate session to ensure clean state
         const oldSessionId = req.session.id;
         req.session.regenerate((regenerateErr) => {
           if (regenerateErr) {
-            console.error("Error regenerating session:", regenerateErr);
+            logger.error("Error regenerating session:", regenerateErr);
             // Continue despite error
           }
           
           // Re-login after session regeneration
           req.login(user, (loginErr) => {
             if (loginErr) {
-              console.error("Error during re-login after session regeneration:", loginErr);
+              logger.error("Error during re-login after session regeneration:", loginErr);
               return res.status(500).json({ message: "Session error during login" });
             }
             
-            console.log(`Session regenerated from ${oldSessionId} to ${req.session.id}`);
+            logger.info(`Session regenerated from ${oldSessionId} to ${req.session.id}`);
             
             // Add additional session data to help with persistence
             req.session.loginTime = new Date().toISOString();
@@ -64,8 +65,8 @@ export function setupDirectLoginRoute(app: Express) {
             // Force session save with extended error handling
             req.session.save((saveErr) => {
               if (saveErr) {
-                console.error("Error saving session:", saveErr);
-                console.error("Session save error details:", saveErr.message);
+                logger.error("Error saving session:", saveErr);
+                logger.error("Session save error details:", saveErr.message);
                 // Continue despite error
               }
               
@@ -81,7 +82,7 @@ export function setupDirectLoginRoute(app: Express) {
         });
       });
     } catch (error) {
-      console.error("Direct login error:", error);
+      logger.error("Direct login error:", error);
       res.status(500).json({ 
         message: "Server error during login", 
         error: error instanceof Error ? error.message : String(error)
@@ -91,10 +92,10 @@ export function setupDirectLoginRoute(app: Express) {
   
   // Direct check route for testing session status
   app.get("/api/auth/session-check", (req: Request, res: Response) => {
-    console.log("Session check - Session ID:", req.session.id);
-    console.log("Is authenticated:", req.isAuthenticated());
-    console.log("Session data:", JSON.stringify(req.session));
-    console.log("User in session:", req.user ? req.user.username : "None");
+    logger.info("Session check - Session ID:", req.session.id);
+    logger.info("Is authenticated:", req.isAuthenticated());
+    logger.info("Session data:", JSON.stringify(req.session));
+    logger.info("User in session:", req.user ? req.user.username : "None");
     
     res.json({
       authenticated: req.isAuthenticated(),

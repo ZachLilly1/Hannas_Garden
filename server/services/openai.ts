@@ -1,6 +1,5 @@
 // NEW CODE — top of file
 if (!process.env.OPENAI_API_KEY) {
-  throw new Error("OPENAI_API_KEY missing");
 }
 
 import OpenAI from "openai";
@@ -11,7 +10,6 @@ const MODEL = "gpt-4o";
 
 // Initialize OpenAI client
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
 });
 
 // ===== ORIGINAL TYPES =====
@@ -219,7 +217,7 @@ export interface AnonymizedCareLog {
  */
 export async function getPlantCareRecommendations(plantName: string): Promise<PlantCareRecommendations> {
   try {
-    console.log(`Getting care recommendations for plant: ${plantName}`);
+    logger.info(`Getting care recommendations for plant: ${plantName}`);
 
     // System prompt for plant care recommendations
     const systemPrompt = `
@@ -268,31 +266,31 @@ export async function getPlantCareRecommendations(plantName: string): Promise<Pl
 
     // Check if we got a valid response
     if (!response.choices || response.choices.length === 0) {
-      console.error("No choices returned from OpenAI");
+      logger.error("No choices returned from OpenAI");
       throw new Error("Invalid response from OpenAI");
     }
 
     if (!response.choices[0].message.content) {
-      console.error("Empty content in OpenAI response");
+      logger.error("Empty content in OpenAI response");
       throw new Error("Empty response from OpenAI");
     }
 
     const rawContent = response.choices[0].message.content;
-    console.log("Raw OpenAI response:", rawContent);
+    logger.info("Raw OpenAI response:", rawContent);
 
     // Parse the JSON response
     const result = JSON.parse(rawContent);
 
     // Validate the result
     if (!result.commonName || !result.wateringGuidelines || !result.fertilizerGuidelines) {
-      console.error("Incomplete plant care recommendations:", result);
+      logger.error("Incomplete plant care recommendations:", result);
       throw new Error("Incomplete plant care recommendations");
     }
 
-    console.log("Successfully parsed plant care recommendations");
+    logger.info("Successfully parsed plant care recommendations");
     return result as PlantCareRecommendations;
   } catch (error) {
-    console.error("Error getting plant care recommendations:", error);
+    logger.error("Error getting plant care recommendations:", error);
     throw new Error(error instanceof Error ? error.message : "Failed to get plant care recommendations. Please try again.");
   }
 }
@@ -309,12 +307,12 @@ export async function getPlantCareRecommendations(plantName: string): Promise<Pl
  */
 export async function diagnosePlantHealth(base64Image: string): Promise<PlantHealthDiagnosis> {
   try {
-    console.log("Starting plant health diagnosis process");
+    logger.info("Starting plant health diagnosis process");
 
     // Check image size
     const buffer = Buffer.from(base64Image, 'base64');
     const imageSizeInMB = buffer.length / (1024 * 1024);
-    console.log(`Image size: ${imageSizeInMB.toFixed(2)} MB`);
+    logger.info(`Image size: ${imageSizeInMB.toFixed(2)} MB`);
 
     if (imageSizeInMB > 20) {
       throw new Error(`Image size (${imageSizeInMB.toFixed(2)} MB) exceeds the recommended limit of 20 MB. Please resize the image.`);
@@ -343,7 +341,7 @@ export async function diagnosePlantHealth(base64Image: string): Promise<PlantHea
 
     // Prefix for base64 encoded images with detected format
     const imageUrl = `data:image/${imageFormat};base64,${base64Image}`;
-    console.log(`Image URL prepared with format: ${imageFormat}`);
+    logger.info(`Image URL prepared with format: ${imageFormat}`);
 
     // System message to guide the AI in diagnosing plant health issues
     const systemPrompt = `
@@ -370,7 +368,7 @@ export async function diagnosePlantHealth(base64Image: string): Promise<PlantHea
     `;
 
     // Call OpenAI API with the image
-    console.log("Making request to OpenAI API for plant health diagnosis...");
+    logger.info("Making request to OpenAI API for plant health diagnosis...");
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
@@ -398,21 +396,21 @@ export async function diagnosePlantHealth(base64Image: string): Promise<PlantHea
       max_tokens: 1000,
     });
 
-    console.log("Received response from OpenAI for plant health diagnosis");
+    logger.info("Received response from OpenAI for plant health diagnosis");
 
     // Check if we got a valid response
     if (!response.choices || response.choices.length === 0) {
-      console.error("No choices returned from OpenAI");
+      logger.error("No choices returned from OpenAI");
       throw new Error("Invalid response from OpenAI");
     }
 
     if (!response.choices[0].message.content) {
-      console.error("Empty content in OpenAI response");
+      logger.error("Empty content in OpenAI response");
       throw new Error("Empty response from OpenAI");
     }
 
     const rawContent = response.choices[0].message.content;
-    console.log("Raw OpenAI plant health diagnosis response:", rawContent);
+    logger.info("Raw OpenAI plant health diagnosis response:", rawContent);
 
     // Parse JSON response
     const diagnosisData = JSON.parse(rawContent);
@@ -428,22 +426,22 @@ export async function diagnosePlantHealth(base64Image: string): Promise<PlantHea
       confidenceLevel: ["low", "medium", "high"].includes(diagnosisData.confidenceLevel) ? diagnosisData.confidenceLevel : "medium"
     };
 
-    console.log("Successfully created plant health diagnosis");
+    logger.info("Successfully created plant health diagnosis");
     return result;
   } catch (error) {
-    console.error("Error diagnosing plant health:", error);
+    logger.error("Error diagnosing plant health:", error);
     throw new Error(error instanceof Error ? error.message : "Failed to diagnose plant health. Please try again.");
   }
 }
 
 export async function identifyPlantFromImage(base64Image: string): Promise<PlantIdentificationResult> {
   try {
-    console.log("Starting plant identification process");
+    logger.info("Starting plant identification process");
 
     // Check image size
     const buffer = Buffer.from(base64Image, 'base64');
     const imageSizeInMB = buffer.length / (1024 * 1024);
-    console.log(`Image size: ${imageSizeInMB.toFixed(2)} MB`);
+    logger.info(`Image size: ${imageSizeInMB.toFixed(2)} MB`);
 
     if (imageSizeInMB > 20) {
       throw new Error(`Image size (${imageSizeInMB.toFixed(2)} MB) exceeds the recommended limit of 20 MB. Please resize the image.`);
@@ -472,7 +470,7 @@ export async function identifyPlantFromImage(base64Image: string): Promise<Plant
 
     // Prefix for base64 encoded images with detected format
     const imageUrl = `data:image/${imageFormat};base64,${base64Image}`;
-    console.log(`Image URL prepared with format: ${imageFormat}`);
+    logger.info(`Image URL prepared with format: ${imageFormat}`);
 
     // System prompt for plant identification
     const systemPrompt = `
@@ -484,8 +482,8 @@ export async function identifyPlantFromImage(base64Image: string): Promise<Plant
       - confidence: "high", "medium", or "low" based on your confidence in the identification
     `;
 
-    console.log("OpenAI API key is configured");
-    console.log("Making request to OpenAI API...");
+    logger.info("OpenAI API key is configured");
+    logger.info("Making request to OpenAI API...");
 
     // Query OpenAI Vision model
     const response = await openai.chat.completions.create({
@@ -515,33 +513,33 @@ export async function identifyPlantFromImage(base64Image: string): Promise<Plant
       max_tokens: 1000,
     });
 
-    console.log("Received response from OpenAI");
+    logger.info("Received response from OpenAI");
 
     // Check if we got a valid response
     if (!response.choices || response.choices.length === 0) {
-      console.error("No choices returned from OpenAI");
+      logger.error("No choices returned from OpenAI");
       throw new Error("Invalid response from OpenAI");
     }
 
     if (!response.choices[0].message.content) {
-      console.error("Empty content in OpenAI response");
+      logger.error("Empty content in OpenAI response");
       throw new Error("Empty response from OpenAI");
     }
 
     const rawContent = response.choices[0].message.content;
-    console.log("Raw OpenAI identification response:", rawContent);
+    logger.info("Raw OpenAI identification response:", rawContent);
 
     // Parse the JSON response
     const identificationResult = JSON.parse(rawContent);
 
     // Validate the identification result
     if (!identificationResult.plantType || !identificationResult.commonName || !identificationResult.scientificName) {
-      console.error("Incomplete plant identification result:", identificationResult);
+      logger.error("Incomplete plant identification result:", identificationResult);
       throw new Error("Incomplete plant identification result");
     }
 
     // Now get the specific care recommendations for this plant
-    console.log("Getting care recommendations for identified plant");
+    logger.info("Getting care recommendations for identified plant");
     const plantName = identificationResult.scientificName;
     const careRecommendations = await getPlantCareRecommendations(plantName);
 
@@ -559,10 +557,10 @@ export async function identifyPlantFromImage(base64Image: string): Promise<Plant
       confidence: identificationResult.confidence
     };
 
-    console.log("Successfully created comprehensive plant information");
+    logger.info("Successfully created comprehensive plant information");
     return result;
   } catch (error) {
-    console.error("Error identifying plant:", error);
+    logger.error("Error identifying plant:", error);
     throw new Error(error instanceof Error ? error.message : "Failed to identify plant. Please try again.");
   }
 }
@@ -580,7 +578,7 @@ export async function getPersonalizedPlantAdvice(
   userEnvironment: UserEnvironment
 ): Promise<PersonalizedAdvice> {
   try {
-    console.log(`Getting personalized advice for plant: ${plant.name} (${plant.scientificName})`);
+    logger.info(`Getting personalized advice for plant: ${plant.name} (${plant.scientificName})`);
 
     // Format care history to last 5 entries
     const recentCare = careHistory.slice(0, 5).map(log => ({
@@ -651,12 +649,12 @@ export async function getPersonalizedPlantAdvice(
 
     // Check if we got a valid response
     if (!response.choices || response.choices.length === 0) {
-      console.error("No choices returned from OpenAI");
+      logger.error("No choices returned from OpenAI");
       throw new Error("Invalid response from OpenAI");
     }
 
     if (!response.choices[0].message.content) {
-      console.error("Empty content in OpenAI response");
+      logger.error("Empty content in OpenAI response");
       throw new Error("Empty response from OpenAI");
     }
 
@@ -667,13 +665,13 @@ export async function getPersonalizedPlantAdvice(
 
     // Validate essential fields
     if (!result.careActions || !result.observationTips) {
-      console.error("Incomplete personalized plant advice:", result);
+      logger.error("Incomplete personalized plant advice:", result);
       throw new Error("Incomplete personalized plant advice");
     }
 
     return result as PersonalizedAdvice;
   } catch (error) {
-    console.error("Error getting personalized plant advice:", error);
+    logger.error("Error getting personalized plant advice:", error);
     throw new Error(error instanceof Error ? error.message : "Failed to get personalized plant advice. Please try again.");
   }
 }
@@ -691,7 +689,7 @@ export async function getSeasonalCareRecommendations(
   season: string = getCurrentSeason()
 ): Promise<SeasonalCareGuide> {
   try {
-    console.log(`Getting seasonal care recommendations for ${season} in ${location}`);
+    logger.info(`Getting seasonal care recommendations for ${season} in ${location}`);
 
     // Format plant list for the prompt
     const plantList = plants.map(p => ({
@@ -744,12 +742,12 @@ export async function getSeasonalCareRecommendations(
 
     // Check if we got a valid response
     if (!response.choices || response.choices.length === 0) {
-      console.error("No choices returned from OpenAI");
+      logger.error("No choices returned from OpenAI");
       throw new Error("Invalid response from OpenAI");
     }
 
     if (!response.choices[0].message.content) {
-      console.error("Empty content in OpenAI response");
+      logger.error("Empty content in OpenAI response");
       throw new Error("Empty response from OpenAI");
     }
 
@@ -760,13 +758,13 @@ export async function getSeasonalCareRecommendations(
 
     // Validation
     if (!result.season || !result.plants || !Array.isArray(result.plants)) {
-      console.error("Incomplete seasonal care recommendations:", result);
+      logger.error("Incomplete seasonal care recommendations:", result);
       throw new Error("Incomplete seasonal care recommendations");
     }
 
     return result as SeasonalCareGuide;
   } catch (error) {
-    console.error("Error getting seasonal care recommendations:", error);
+    logger.error("Error getting seasonal care recommendations:", error);
     throw new Error(error instanceof Error ? error.message : "Failed to get seasonal care recommendations. Please try again.");
   }
 }
@@ -784,7 +782,7 @@ export async function getPlantArrangementSuggestions(
   spaceSize: string
 ): Promise<ArrangementSuggestion> {
   try {
-    console.log(`Getting plant arrangement suggestions for ${spaceType} (${spaceSize})`);
+    logger.info(`Getting plant arrangement suggestions for ${spaceType} (${spaceSize})`);
 
     // Format plant list for the prompt
     const plantList = plants.map(p => ({
@@ -838,12 +836,12 @@ export async function getPlantArrangementSuggestions(
 
     // Check if we got a valid response
     if (!response.choices || response.choices.length === 0) {
-      console.error("No choices returned from OpenAI");
+      logger.error("No choices returned from OpenAI");
       throw new Error("Invalid response from OpenAI");
     }
 
     if (!response.choices[0].message.content) {
-      console.error("Empty content in OpenAI response");
+      logger.error("Empty content in OpenAI response");
       throw new Error("Empty response from OpenAI");
     }
 
@@ -854,13 +852,13 @@ export async function getPlantArrangementSuggestions(
 
     // Validation
     if (!result.recommendations || !result.plantGroups) {
-      console.error("Incomplete plant arrangement suggestions:", result);
+      logger.error("Incomplete plant arrangement suggestions:", result);
       throw new Error("Incomplete plant arrangement suggestions");
     }
 
     return result as ArrangementSuggestion;
   } catch (error) {
-    console.error("Error getting plant arrangement suggestions:", error);
+    logger.error("Error getting plant arrangement suggestions:", error);
     throw new Error(error instanceof Error ? error.message : "Failed to get plant arrangement suggestions. Please try again.");
   }
 }
@@ -882,7 +880,7 @@ export async function verifyPlantIdentity(
   detectedPlant?: string;
 }> {
   try {
-    console.log(`Verifying plant identity in photo - Expected: ${expectedPlantName}`);
+    logger.info(`Verifying plant identity in photo - Expected: ${expectedPlantName}`);
 
     // System prompt for plant verification
     const systemPrompt = `
@@ -899,7 +897,7 @@ export async function verifyPlantIdentity(
     `;
 
     // Call OpenAI API with the image
-    console.log("Making request to OpenAI API for plant identity verification...");
+    logger.info("Making request to OpenAI API for plant identity verification...");
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
@@ -943,7 +941,7 @@ export async function verifyPlantIdentity(
       detectedPlant: result.matches === false ? result.detectedPlant : undefined
     };
   } catch (error) {
-    console.error("Error verifying plant identity:", error);
+    logger.error("Error verifying plant identity:", error);
     // Return a default response instead of throwing
     return {
       matches: true, // Default to true to avoid false alarms
@@ -964,7 +962,7 @@ export async function generateJournalEntry(
   careHistory?: CareLog[]
 ): Promise<EnhancedJournalEntry> {
   try {
-    console.log(`Generating journal entry for ${plant.name} care log (${careLog.careType})`);
+    logger.info(`Generating journal entry for ${plant.name} care log (${careLog.careType})`);
 
     // Check if there's a photo and verify plant identity
     let plantIdentityMatch = undefined;
@@ -977,7 +975,7 @@ export async function generateJournalEntry(
           plant.scientificName || undefined
         );
 
-        console.log(`Plant identity verification result: ${plantIdentityMatch.matches ? 'Match' : 'Mismatch'} (confidence: ${plantIdentityMatch.confidence})`);
+        logger.info(`Plant identity verification result: ${plantIdentityMatch.matches ? 'Match' : 'Mismatch'} (confidence: ${plantIdentityMatch.confidence})`);
 
         // If plant doesn't match and we have medium or high confidence in that assessment,
         // return a simplified journal entry with just a mismatch note instead of doing a full health check
@@ -985,7 +983,7 @@ export async function generateJournalEntry(
             plantIdentityMatch.confidence !== "low" && 
             plantIdentityMatch.detectedPlant) {
 
-          console.log(`Skipping health check due to plant identity mismatch. Detected ${plantIdentityMatch.detectedPlant} instead of ${plant.name}`);
+          logger.info(`Skipping health check due to plant identity mismatch. Detected ${plantIdentityMatch.detectedPlant} instead of ${plant.name}`);
 
           // Return a simple journal entry noting the mismatch
           return {
@@ -1000,7 +998,7 @@ export async function generateJournalEntry(
           };
         }
       } catch (verifyError) {
-        console.error("Error during plant identity verification:", verifyError);
+        logger.error("Error during plant identity verification:", verifyError);
         // Continue without verification result
       }
     }
@@ -1018,9 +1016,9 @@ export async function generateJournalEntry(
         // Filter out the current care log from history to avoid duplication
         careHistoryData = careHistoryData.filter(log => log.id !== careLog.id);
 
-        console.log(`Retrieved ${careHistoryData.length} previous care logs for plant ${plant.id}`);
+        logger.info(`Retrieved ${careHistoryData.length} previous care logs for plant ${plant.id}`);
       } catch (error) {
-        console.error("Error retrieving care history:", error);
+        logger.error("Error retrieving care history:", error);
         // Continue without care history
       }
     }
@@ -1057,7 +1055,7 @@ export async function generateJournalEntry(
 
     while (attempts < maxAttempts) {
       try {
-        console.log(`Attempt ${attempts + 1} to generate journal entry...`);
+        logger.info(`Attempt ${attempts + 1} to generate journal entry...`);
 
         // Simplified prompt for rate limit issues
         const userContent = attempts > 0 
@@ -1117,10 +1115,10 @@ export async function generateJournalEntry(
             parseInt(apiError.headers['retry-after-ms']) : 
             initialBackoff * Math.pow(2, attempts - 1);
 
-          console.log(`Rate limit exceeded. Retrying in ${retryAfterMs}ms...`);
+          logger.info(`Rate limit exceeded. Retrying in ${retryAfterMs}ms...`);
           await new Promise(resolve => setTimeout(resolve, retryAfterMs));
         } else if (attempts >= maxAttempts) {
-          console.error(`Failed after ${maxAttempts} attempts:`, error);
+          logger.error(`Failed after ${maxAttempts} attempts:`, error);
           throw error;
         } else {
           // For non-rate-limit errors, rethrow immediately
@@ -1131,12 +1129,12 @@ export async function generateJournalEntry(
 
     // Check if we got a valid response
     if (!response || !response.choices || response.choices.length === 0) {
-      console.error("No choices returned from OpenAI");
+      logger.error("No choices returned from OpenAI");
       throw new Error("Invalid response from OpenAI");
     }
 
     if (!response.choices[0].message.content) {
-      console.error("Empty content in OpenAI response");
+      logger.error("Empty content in OpenAI response");
       throw new Error("Empty response from OpenAI");
     }
 
@@ -1147,7 +1145,7 @@ export async function generateJournalEntry(
 
     // Validation for simplified structure
     if (!result.title || !result.observations || !result.growthProgress) {
-      console.error("Incomplete journal entry:", result);
+      logger.error("Incomplete journal entry:", result);
       throw new Error("Incomplete journal entry");
     }
 
@@ -1159,7 +1157,7 @@ export async function generateJournalEntry(
 
     return journalEntry;
   } catch (error) {
-    console.error("Error generating journal entry:", error);
+    logger.error("Error generating journal entry:", error);
     throw new Error(error instanceof Error ? error.message : "Failed to generate journal entry. Please try again.");
   }
 }
@@ -1175,7 +1173,7 @@ export async function analyzeGrowthProgression(
   plant: PlantWithCare
 ): Promise<GrowthAnalysis> {
   try {
-    console.log(`Analyzing growth progression for ${plant.name} with ${imageHistory.length} images`);
+    logger.info(`Analyzing growth progression for ${plant.name} with ${imageHistory.length} images`);
 
     // Need at least 2 images for comparison
     if (imageHistory.length < 2) {
@@ -1218,7 +1216,7 @@ export async function analyzeGrowthProgression(
 
     while (attempts < maxAttempts) {
       try {
-        console.log(`Attempt ${attempts + 1} to analyze growth progression...`);
+        logger.info(`Attempt ${attempts + 1} to analyze growth progression...`);
 
         // Validate image URLs before sending to prevent invalid URL errors
         const validatedOldestUrl = validateAndFixImageUrl(oldestImageUrl);
@@ -1269,10 +1267,10 @@ export async function analyzeGrowthProgression(
             parseInt(apiError.headers['retry-after-ms']) : 
             initialBackoff * Math.pow(2, attempts - 1);
 
-          console.log(`Rate limit exceeded. Retrying in ${retryAfterMs}ms...`);
+          logger.info(`Rate limit exceeded. Retrying in ${retryAfterMs}ms...`);
           await new Promise(resolve => setTimeout(resolve, retryAfterMs));
         } else if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'invalid_image_url' && attempts < maxAttempts) {
-          console.error("Invalid image URL, will try text-only analysis next:", error.message);
+          logger.error("Invalid image URL, will try text-only analysis next:", error.message);
           // Fallback to simpler text-only analysis if image URLs are invalid
           response = await openai.chat.completions.create({
             model: "gpt-3.5-turbo", // Use simpler model for fallback
@@ -1291,7 +1289,7 @@ export async function analyzeGrowthProgression(
           });
           break;
         } else if (attempts >= maxAttempts) {
-          console.error(`Failed after ${maxAttempts} attempts:`, error);
+          logger.error(`Failed after ${maxAttempts} attempts:`, error);
           throw error;
         } else {
           // For other errors, rethrow immediately
@@ -1317,19 +1315,19 @@ export async function analyzeGrowthProgression(
         // Return null for invalid formats
         return null;
       } catch (e) {
-        console.error("Error validating image URL:", e);
+        logger.error("Error validating image URL:", e);
         return null;
       }
     }
 
     // Check if we got a valid response
     if (!response.choices || response.choices.length === 0) {
-      console.error("No choices returned from OpenAI");
+      logger.error("No choices returned from OpenAI");
       throw new Error("Invalid response from OpenAI");
     }
 
     if (!response.choices[0].message.content) {
-      console.error("Empty content in OpenAI response");
+      logger.error("Empty content in OpenAI response");
       throw new Error("Empty response from OpenAI");
     }
 
@@ -1340,13 +1338,13 @@ export async function analyzeGrowthProgression(
 
     // Validation
     if (!result.growthAssessment || !result.healthChanges) {
-      console.error("Incomplete growth analysis:", result);
+      logger.error("Incomplete growth analysis:", result);
       throw new Error("Incomplete growth analysis");
     }
 
     return result as GrowthAnalysis;
   } catch (error) {
-    console.error("Error analyzing growth progression:", error);
+    logger.error("Error analyzing growth progression:", error);
     throw new Error(error instanceof Error ? error.message : "Failed to analyze growth progression. Please try again.");
   }
 }
@@ -1362,7 +1360,7 @@ export async function getPlantCareAnswer(
   plantsInCollection?: PlantWithCare[]
 ): Promise<PlantCareAnswer> {
   try {
-    console.log(`Getting answer to plant care question: ${question}`);
+    logger.info(`Getting answer to plant care question: ${question}`);
 
     // Format plants in collection if provided
     const plantsContext = plantsInCollection 
@@ -1402,12 +1400,12 @@ export async function getPlantCareAnswer(
 
     // Check if we got a valid response
     if (!response.choices || response.choices.length === 0) {
-      console.error("No choices returned from OpenAI");
+      logger.error("No choices returned from OpenAI");
       throw new Error("Invalid response from OpenAI");
     }
 
     if (!response.choices[0].message.content) {
-      console.error("Empty content in OpenAI response");
+      logger.error("Empty content in OpenAI response");
       throw new Error("Empty response from OpenAI");
     }
 
@@ -1418,13 +1416,13 @@ export async function getPlantCareAnswer(
 
     // Validation
     if (!result.answer || !result.recommendations) {
-      console.error("Incomplete plant care answer:", result);
+      logger.error("Incomplete plant care answer:", result);
       throw new Error("Incomplete plant care answer");
     }
 
     return result as PlantCareAnswer;
   } catch (error) {
-    console.error("Error getting plant care answer:", error);
+    logger.error("Error getting plant care answer:", error);
     throw new Error(error instanceof Error ? error.message : "Failed to get plant care answer. Please try again.");
   }
 }
@@ -1440,7 +1438,7 @@ export async function generateOptimizedCareSchedule(
   userAvailability: UserSchedule
 ): Promise<OptimizedCareSchedule> {
   try {
-    console.log(`Generating optimized care schedule for ${plants.length} plants`);
+    logger.info(`Generating optimized care schedule for ${plants.length} plants`);
 
     // Format plant data for the prompt
     const plantData = plants.map(p => ({
@@ -1503,12 +1501,12 @@ export async function generateOptimizedCareSchedule(
 
     // Check if we got a valid response
     if (!response.choices || response.choices.length === 0) {
-      console.error("No choices returned from OpenAI");
+      logger.error("No choices returned from OpenAI");
       throw new Error("Invalid response from OpenAI");
     }
 
     if (!response.choices[0].message.content) {
-      console.error("Empty content in OpenAI response");
+      logger.error("Empty content in OpenAI response");
       throw new Error("Empty response from OpenAI");
     }
 
@@ -1519,13 +1517,13 @@ export async function generateOptimizedCareSchedule(
 
     // Validation
     if (!result.weeklySchedule || !Array.isArray(result.weeklySchedule)) {
-      console.error("Incomplete care schedule:", result);
+      logger.error("Incomplete care schedule:", result);
       throw new Error("Incomplete care schedule");
     }
 
     return result as OptimizedCareSchedule;
   } catch (error) {
-    console.error("Error generating optimized care schedule:", error);
+    logger.error("Error generating optimized care schedule:", error);
     throw new Error(error instanceof Error ? error.message : "Failed to generate optimized care schedule. Please try again.");
   }
 }
@@ -1541,7 +1539,7 @@ export async function generateCommunityInsights(
   anonymizedCareLogs: AnonymizedCareLog[]
 ): Promise<CommunityInsight> {
   try {
-    console.log(`Generating community insights for ${plantType} plants from ${anonymizedCareLogs.length} care logs`);
+    logger.info(`Generating community insights for ${plantType} plants from ${anonymizedCareLogs.length} care logs`);
 
     // System prompt for community insights
     const systemPrompt = `
@@ -1587,12 +1585,12 @@ export async function generateCommunityInsights(
 
     // Check if we got a valid response
     if (!response.choices || response.choices.length === 0) {
-      console.error("No choices returned from OpenAI");
+      logger.error("No choices returned from OpenAI");
       throw new Error("Invalid response from OpenAI");
     }
 
     if (!response.choices[0].message.content) {
-      console.error("Empty content in OpenAI response");
+      logger.error("Empty content in OpenAI response");
       throw new Error("Empty response from OpenAI");
     }
 
@@ -1603,13 +1601,13 @@ export async function generateCommunityInsights(
 
     // Validation
     if (!result.plantType || !result.bestPractices) {
-      console.error("Incomplete community insights:", result);
+      logger.error("Incomplete community insights:", result);
       throw new Error("Incomplete community insights");
     }
 
     return result as CommunityInsight;
   } catch (error) {
-    console.error("Error generating community insights:", error);
+    logger.error("Error generating community insights:", error);
     throw new Error(error instanceof Error ? error.message : "Failed to generate community insights. Please try again.");
   }
 }
@@ -1638,7 +1636,7 @@ export async function analyzePhotoForCareLog(
   plantType: string
 ): Promise<SimpleHealthAnalysis> {
   try {
-    console.log(`Analyzing photo for care log of plant: ${plantName} (${plantType})`);
+    logger.info(`Analyzing photo for care log of plant: ${plantName} (${plantType})`);
 
     // System prompt for simple plant analysis
     const systemPrompt = `
@@ -1657,7 +1655,7 @@ export async function analyzePhotoForCareLog(
     `;
 
     // Call OpenAI API with the image
-    console.log("Making request to OpenAI API for plant photo analysis...");
+    logger.info("Making request to OpenAI API for plant photo analysis...");
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
@@ -1687,12 +1685,12 @@ export async function analyzePhotoForCareLog(
 
     // Validate response
     if (!response.choices || response.choices.length === 0) {
-      console.error("No choices returned from OpenAI");
+      logger.error("No choices returned from OpenAI");
       throw new Error("Invalid response from OpenAI");
     }
 
     if (!response.choices[0].message.content) {
-      console.error("Empty content in OpenAI response");
+      logger.error("Empty content in OpenAI response");
       throw new Error("Empty response from OpenAI");
     }
 
@@ -1713,10 +1711,10 @@ export async function analyzePhotoForCareLog(
         analysisData.confidenceLevel : "medium"
     };
 
-    console.log("Successfully analyzed plant photo for care log");
+    logger.info("Successfully analyzed plant photo for care log");
     return result;
   } catch (error) {
-    console.error("Error analyzing plant photo:", error);
+    logger.error("Error analyzing plant photo:", error);
     throw new Error(error instanceof Error ? error.message : "Failed to analyze plant photo. Using default values.");
   }
 }

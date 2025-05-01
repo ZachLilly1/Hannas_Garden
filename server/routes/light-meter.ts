@@ -1,6 +1,7 @@
 import { Express, Request, Response } from "express";
 import OpenAI from "openai";
 import { z } from "zod";
+import * as logger from "../services/logger";
 
 // Define schema for light analysis request
 const lightAnalysisSchema = z.object({
@@ -72,7 +73,7 @@ export function setupLightMeterRoutes(app: Express) {
 
       return res.status(200).json(analysisResult);
     } catch (error) {
-      console.error("Error analyzing light level with OpenAI:", error);
+      logger.error("Error analyzing light level with OpenAI:", error);
       return res.status(500).json({ 
         error: "Failed to analyze light levels",
         message: error instanceof Error ? error.message : "Unknown error"
@@ -165,7 +166,7 @@ async function analyzeWithOpenAI(
     const result = JSON.parse(content) as LightMeterAIResponse;
     return result;
   } catch (error) {
-    console.error("OpenAI API error:", error);
+    logger.error("OpenAI API error:", error);
     
     // Fallback response if OpenAI fails
     return {

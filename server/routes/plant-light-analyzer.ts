@@ -3,6 +3,7 @@ import { z } from "zod";
 import { analyzePlantImageLightLevel } from "../services/lightAnalyzer";
 import { storage } from "../storage";
 import { isAuthenticated } from "../auth";
+import * as logger from "../services/logger";
 
 // Schema for analyzing plant image
 const analyzeImageSchema = z.object({
@@ -43,7 +44,7 @@ export function setupPlantLightAnalyzerRoutes(app: Express) {
       // Return the analysis result
       return res.status(200).json({ sunlightLevel, confidence });
     } catch (error) {
-      console.error("Error analyzing plant light level:", error);
+      logger.error("Error analyzing plant light level:", error);
       return res.status(500).json({ 
         error: "Failed to analyze plant light level",
         message: error instanceof Error ? error.message : "Unknown error"

@@ -58,13 +58,13 @@ try {
     pgSessionStore.setMaxListeners(100); // Increase substantially to prevent warnings
   }
   
-  console.log('PostgreSQL session store initialized successfully');
+  logger.info('PostgreSQL session store initialized successfully');
 } catch (error) {
-  console.error('Error initializing PostgreSQL session store:', error);
+  logger.error('Error initializing PostgreSQL session store:', error);
   // Fallback to memory store if PostgreSQL store fails
   const MemoryStore = session.MemoryStore;
   pgSessionStore = new MemoryStore();
-  console.log('Fallback to memory session store');
+  logger.info('Fallback to memory session store');
 }
 
 // Hash password for secure storage

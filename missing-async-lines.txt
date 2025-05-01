@@ -1,0 +1,207 @@
+./server/services/lightAnalyzer.ts:23:    const response = await openai.chat.completions.create({
+./server/services/openai.ts:251:    const response = await openai.chat.completions.create({
+./server/services/openai.ts:372:    const response = await openai.chat.completions.create({
+./server/services/openai.ts:489:    const response = await openai.chat.completions.create({
+./server/services/openai.ts:544:    const careRecommendations = await getPlantCareRecommendations(plantName);
+./server/services/openai.ts:616:    const response = await openai.chat.completions.create({
+./server/services/openai.ts:727:    const response = await openai.chat.completions.create({
+./server/services/openai.ts:821:    const response = await openai.chat.completions.create({
+./server/services/openai.ts:901:    const response = await openai.chat.completions.create({
+./server/services/openai.ts:972:        plantIdentityMatch = await verifyPlantIdentity(
+./server/services/openai.ts:1013:        const { storage } = await import('../storage');
+./server/services/openai.ts:1014:        careHistoryData = await storage.getPlantCareHistory(plant.id, 10);
+./server/services/openai.ts:1089:        response = await openai.chat.completions.create({
+./server/services/openai.ts:1119:          await new Promise(resolve => setTimeout(resolve, retryAfterMs));
+./server/services/openai.ts:1230:        response = await openai.chat.completions.create({
+./server/services/openai.ts:1271:          await new Promise(resolve => setTimeout(resolve, retryAfterMs));
+./server/services/openai.ts:1275:          response = await openai.chat.completions.create({
+./server/services/openai.ts:1385:    const response = await openai.chat.completions.create({
+./server/services/openai.ts:1480:    const response = await openai.chat.completions.create({
+./server/services/openai.ts:1570:    const response = await openai.chat.completions.create({
+./server/services/openai.ts:1659:    const response = await openai.chat.completions.create({
+./server/routes/light-meter.ts:65:      const analysisResult = await analyzeWithOpenAI(
+./server/routes/light-meter.ts:97:    const response = await openai.chat.completions.create({
+./server/routes/plant-light-analyzer.ts:29:      const plant = await storage.getPlant(plantId);
+./server/routes/plant-light-analyzer.ts:35:      const { sunlightLevel, confidence } = await analyzePlantImageLightLevel(imageData);
+./server/routes/plant-light-analyzer.ts:40:        await storage.updatePlant(plantId, { sunlightLevel });
+./server/routes/direct-login.ts:14:      const user = await storage.getUserByUsername(username);
+./server/routes/direct-login.ts:21:      const passwordMatches = await comparePasswords(password, user.password);
+./server/vite.ts:29:  const vite = await createViteServer({
+./server/vite.ts:56:      let template = await fs.promises.readFile(clientTemplate, "utf-8");
+./server/vite.ts:61:      const page = await vite.transformIndexHtml(url, template);
+./server/migrations.ts:14:    await db.execute(sql`
+./server/migrations.ts:28:    await db.execute(sql`
+./server/migrations.ts:42:    await db.execute(sql`
+./server/migrations.ts:56:    await db.execute(sql`
+./server/migrations.ts:70:    await db.execute(sql`
+./server/migrations.ts:84:    await db.execute(sql`
+./server/migrations.ts:95:    await db.execute(sql`
+./server/migrations.ts:108:    await db.execute(sql`
+./server/migrations.ts:122:    await db.execute(sql`
+./server/migrations.ts:136:    await db.execute(sql`
+./server/migrations.ts:159:    await db.execute(sql`
+./server/auth.ts:73:  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+./server/auth.ts:114:    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+./server/auth.ts:221:        const user = await storage.getUserByUsername(username);
+./server/auth.ts:224:        if (!user || !(await comparePasswords(password, user.password))) {
+./server/auth.ts:231:        await storage.updateUserLastLogin(user.id);
+./server/auth.ts:237:            const newHashedPassword = await hashPassword(password);
+./server/auth.ts:238:            await storage.updateUserPassword(user.id, newHashedPassword);
+./server/auth.ts:261:      const user = await storage.getUser(id);
+./server/auth.ts:317:      const existingUser = await storage.getUserByUsername(req.body.username);
+./server/auth.ts:322:      const existingEmail = await storage.getUserByEmail(req.body.email);
+./server/auth.ts:353:      const hashedPassword = await hashPassword(req.body.password);
+./server/auth.ts:354:      const user = await storage.createUser({
+./server/auth.ts:474:      const updatedUser = await storage.updateUserProfile(userId, req.body);
+./server/auth.ts:495:      const user = await storage.getUser(userId);
+./server/auth.ts:501:      const isPasswordValid = await comparePasswords(currentPassword, user.password);
+./server/auth.ts:534:      const hashedPassword = await hashPassword(newPassword);
+./server/auth.ts:535:      await storage.updateUserPassword(userId, hashedPassword);
+./server/storage.ts:158:      const guides = await this.getPlantGuides();
+./server/storage.ts:162:          await this.createPlantGuide(guide);
+./server/storage.ts:172:    const [user] = await db.select().from(users).where(eq(users.id, id));
+./server/storage.ts:177:    const [user] = await db
+./server/storage.ts:185:    const [user] = await db
+./server/storage.ts:193:    const [user] = await db
+./server/storage.ts:207:      const existingUser = await this.getUserByEmail(email);
+./server/storage.ts:216:    const [updatedUser] = await db
+./server/storage.ts:226:    const [updatedUser] = await db
+./server/storage.ts:236:    const [updatedUser] = await db
+./server/storage.ts:247:    const userPlants = await db
+./server/storage.ts:255:      plantsWithCare.push(await this.addCareInfo(plant));
+./server/storage.ts:262:    const [plant] = await db
+./server/storage.ts:283:    const [plant] = await db
+./server/storage.ts:291:    const [updatedPlant] = await db
+./server/storage.ts:300:    const [deletedPlant] = await db
+./server/storage.ts:339:    const [careLog] = await db
+./server/storage.ts:348:      await db
+./server/storage.ts:355:      await db
+./server/storage.ts:365:    const [updatedCareLog] = await db
+./server/storage.ts:389:    let [guide] = await db
+./server/storage.ts:397:    [guide] = await db
+./server/storage.ts:410:      [guide] = await db
+./server/storage.ts:421:      [guide] = await db
+./server/storage.ts:434:      [guide] = await db
+./server/storage.ts:446:      [guide] = await db
+./server/storage.ts:456:      [guide] = await db
+./server/storage.ts:464:    [guide] = await db
+./server/storage.ts:472:    const [guide] = await db
+./server/storage.ts:484:    const userPlants = await this.getPlants(userId);
+./server/storage.ts:537:      guide = await this.getPlantGuideByType(plant.scientificName);
+./server/storage.ts:542:      guide = await this.getPlantGuideByType(plant.type);
+./server/storage.ts:597:    const [reminder] = await db
+./server/storage.ts:611:    const [updatedReminder] = await db
+./server/storage.ts:620:    const [deletedReminder] = await db
+./server/storage.ts:628:    const [updatedReminder] = await db
+./server/storage.ts:637:    const [updatedReminder] = await db
+./server/storage.ts:698:    const tips = await db
+./server/storage.ts:730:    const tips = await db
+./server/storage.ts:767:    const [tip] = await db
+./server/storage.ts:783:    const [tip] = await db
+./server/storage.ts:796:    const [tip] = await db
+./server/storage.ts:807:    const existingVotes = await db
+./server/storage.ts:821:    const [vote] = await db
+./server/storage.ts:832:      await db
+./server/storage.ts:847:    const [deletedVote] = await db
+./server/storage.ts:857:      await db
+./server/storage.ts:871:    const userVotes = await db
+./server/storage.ts:881:    const [tip] = await db
+./server/storage.ts:895:    const [tip] = await db
+./server/routes.ts:138:      const updatedUser = await storage.updateUserProfile(userId, updateData);
+./server/routes.ts:159:      const user = await storage.getUser(userId);
+./server/routes.ts:165:      const hashedPassword = await hashPassword(newPassword);
+./server/routes.ts:168:      const success = await storage.updateUserPassword(userId, hashedPassword);
+./server/routes.ts:186:    const plants = await storage.getPlants(userId);
+./server/routes.ts:235:        const plant = await storage.createPlant(plantData);
+./server/routes.ts:242:          await storage.createReminder({
+./server/routes.ts:260:          await storage.createReminder({
+./server/routes.ts:298:    const plant = await storage.getPlant(plantId);
+./server/routes.ts:325:        const { getPlantCareRecommendations } = await import('./services/openai');
+./server/routes.ts:326:        const careInfo = await getPlantCareRecommendations(validation.data.scientificName);
+./server/routes.ts:354:    const plant = await storage.createPlant(plantData);
+./server/routes.ts:361:      await storage.createReminder({
+./server/routes.ts:379:      await storage.createReminder({
+./server/routes.ts:407:    const originalPlant = await storage.getPlant(plantId);
+./server/routes.ts:412:    const updatedPlant = await storage.updatePlant(plantId, validation.data);
+./server/routes.ts:423:      const existingReminders = await storage.getRemindersByPlant(plantId);
+./server/routes.ts:432:          await storage.updateReminder(waterReminder.id, {
+./server/routes.ts:441:          await storage.createReminder({
+./server/routes.ts:456:        await storage.deleteReminder(waterReminder.id);
+./server/routes.ts:463:      const existingReminders = await storage.getRemindersByPlant(plantId);
+./server/routes.ts:472:          await storage.updateReminder(fertilizerReminder.id, {
+./server/routes.ts:481:          await storage.createReminder({
+./server/routes.ts:496:        await storage.deleteReminder(fertilizerReminder.id);
+./server/routes.ts:509:    const success = await storage.deletePlant(plantId);
+./server/routes.ts:525:    const plant = await storage.getPlant(plantId);
+./server/routes.ts:536:    const logs = await storage.getCareLogs(plantId);
+./server/routes.ts:587:            const plant = await storage.getPlant(careLogData.plantId);
+./server/routes.ts:593:            const { sunlightLevel, confidence } = await analyzePlantImageLightLevel(processedPhoto);
+./server/routes.ts:627:    const careLog = await storage.createCareLog(careLogData);
+./server/routes.ts:630:    const plant = await storage.getPlant(careLogData.plantId);
+./server/routes.ts:636:      const existingReminders = await storage.getRemindersByPlant(careLogData.plantId);
+./server/routes.ts:648:          await storage.updateReminder(waterReminder.id, {
+./server/routes.ts:657:          await storage.createReminder({
+./server/routes.ts:672:        await storage.updatePlant(plant.id, {
+./server/routes.ts:685:          await storage.updateReminder(fertilizerReminder.id, {
+./server/routes.ts:694:          await storage.createReminder({
+./server/routes.ts:709:        await storage.updatePlant(plant.id, {
+./server/routes.ts:724:          const { sunlightLevel, confidence } = await analyzePlantImageLightLevel(photoForLightAnalysis);
+./server/routes.ts:731:            await storage.updatePlant(plant.id, { sunlightLevel });
+./server/routes.ts:740:            const { generateJournalEntry } = await import("./services/openai");
+./server/routes.ts:743:            const plantWithCare = await storage.getPlantWithCare(plant.id);
+./server/routes.ts:749:            const careHistory = await storage.getPlantCareHistory(plant.id);
+./server/routes.ts:757:            const journalEntry = await generateJournalEntry(careLog, plantWithCare, pastCareHistory);
+./server/routes.ts:788:            await storage.updateCareLog(careLog.id, {
+./server/routes.ts:809:              await storage.updateCareLog(careLog.id, {
+./server/routes.ts:832:    const guides = await storage.getPlantGuides();
+./server/routes.ts:839:    const guide = await storage.getPlantGuideByType(plantType);
+./server/routes.ts:854:    const careNeeded = await storage.getPlantsNeedingCare(userId);
+./server/routes.ts:862:    const reminders = await storage.getReminders(userId);
+./server/routes.ts:874:    const reminders = await storage.getUpcomingReminders(userId, days);
+./server/routes.ts:880:    const reminders = await storage.getOverdueReminders(userId);
+./server/routes.ts:890:    const reminders = await storage.getRemindersByPlant(plantId);
+./server/routes.ts:896:    const { insertReminderSchema } = await import("@shared/schema");
+./server/routes.ts:907:    const reminder = await storage.createReminder(reminderData);
+./server/routes.ts:918:    const { insertReminderSchema } = await import("@shared/schema");
+./server/routes.ts:924:    const updatedReminder = await storage.updateReminder(reminderId, validation.data);
+./server/routes.ts:938:    const success = await storage.deleteReminder(reminderId);
+./server/routes.ts:952:    const updatedReminder = await storage.markReminderComplete(reminderId);
+./server/routes.ts:966:    const updatedReminder = await storage.markReminderDismissed(reminderId);
+./server/routes.ts:1024:      const result = await identifyPlantFromImage(imageBase64);
+./server/routes.ts:1087:      const result = await diagnosePlantHealth(imageBase64);
+./server/routes.ts:1109:    const plant = await storage.getPlant(plantId);
+./server/routes.ts:1167:      const careLog = await storage.createCareLog({
+./server/routes.ts:1199:      const plant = await storage.getPlant(plantId);
+./server/routes.ts:1208:      const careLogs = await storage.getCareLogs(plantId);
+./server/routes.ts:1225:      const advice = await getPersonalizedPlantAdvice(plant, careLogs, userEnvironment);
+./server/routes.ts:1243:      const plants = await storage.getPlants(userId);
+./server/routes.ts:1258:      const recommendations = await getSeasonalCareRecommendations(
+./server/routes.ts:1280:      const plants = await storage.getPlants(userId);
+./server/routes.ts:1309:      const suggestions = await getPlantArrangementSuggestions(
+./server/routes.ts:1342:      const plant = await storage.getPlant(plantId);
+./server/routes.ts:1351:      const careLogs = await storage.getCareLogs(plantId);
+./server/routes.ts:1358:      const careHistory = await storage.getPlantCareHistory(plantId);
+./server/routes.ts:1366:      const journalEntry = await generateJournalEntry(careLog, plant, pastCareHistory);
+./server/routes.ts:1387:      const plant = await storage.getPlant(plantId);
+./server/routes.ts:1404:      const analysis = await analyzeGrowthProgression(validation.data.imageHistory, plant);
+./server/routes.ts:1433:        plantsContext = await storage.getPlants(userId);
+./server/routes.ts:1437:      const answer = await getPlantCareAnswer(validation.data.question, plantsContext);
+./server/routes.ts:1455:      const plants = await storage.getPlants(userId);
+./server/routes.ts:1476:      const schedule = await generateOptimizedCareSchedule(plants, validation.data);
+./server/routes.ts:1508:      const insights = await generateCommunityInsights(
+./server/routes.ts:1557:        userVotedTips = await storage.getUserVotedTips(req.user!.id);
+./server/routes.ts:1562:      const tips = await storage.getCommunityTips(filters, limit);
+./server/routes.ts:1588:      const tip = await storage.getCommunityTip(tipId);
+./server/routes.ts:1596:        const userVotedTips = await storage.getUserVotedTips(req.user!.id);
+./server/routes.ts:1625:      const tip = await storage.createCommunityTip(tipData);
+./server/routes.ts:1645:      const existingTip = await storage.getCommunityTip(tipId);
+./server/routes.ts:1659:      const updatedTip = await storage.updateCommunityTip(tipId, validation.data);
+./server/routes.ts:1683:      const existingTip = await storage.getCommunityTip(tipId);
+./server/routes.ts:1694:      const success = await storage.deleteCommunityTip(tipId);
+./server/routes.ts:1717:      const success = await storage.addTipVote(tipId, req.user!.id);
+./server/routes.ts:1742:      const success = await storage.removeTipVote(tipId, req.user!.id);
+./server/routes.ts:1780:      const tip = await storage.createCommunityTip(tipData);
+./server/routes.ts:1807:      const success = await storage.featureCommunityTip(tipId, featured);
+./server/routes.ts:1842:      const success = await storage.updateTipStatus(tipId, status);
+./server/index.ts:60:    await applyMigrations();
+./server/index.ts:76:  const server = await registerRoutes(app);

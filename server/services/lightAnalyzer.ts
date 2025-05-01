@@ -83,7 +83,7 @@ export async function analyzePlantImageLightLevel(
 
     return result;
   } catch (error) {
-    console.error("OpenAI API error during plant light analysis:", error);
+    logger.error("OpenAI API error during plant light analysis:", error);
     
     // Return a fallback with low confidence if the API call fails
     return {

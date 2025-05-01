@@ -1,10 +1,11 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { setupVite, serveStatic } from "./vite";
 import path from "path";
 import fs from "fs";
 import { applyMigrations } from "./migrations";
 import { setupSecurityMiddleware } from "./middleware/security";
+import * as logger from "./services/logger";
 
 const app = express();
 
@@ -47,7 +48,7 @@ app.use((req, res, next) => {
         logLine = logLine.slice(0, 79) + "…";
       }
 
-      log(logLine);
+      logger.info(logLine);
     }
   });
 
@@ -58,18 +59,18 @@ app.use((req, res, next) => {
   // Apply database migrations
   try {
     await applyMigrations();
-    log('Database migrations applied successfully');
+    logger.info('Database migrations applied successfully');
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    log(`Error applying migrations: ${errorMessage}`, 'error');
+    logger.error(`Error applying migrations: ${errorMessage}`);
     
     // Try to provide more specific error details
     if (errorMessage.includes('connect')) {
-      log('Database connection error. Please check DATABASE_URL environment variable.', 'error');
+      logger.error('Database connection error. Please check DATABASE_URL environment variable.');
     } else if (errorMessage.includes('permission denied')) {
-      log('Database permission error. Please check database user permissions.', 'error');
+      logger.error('Database permission error. Please check database user permissions.');
     } else if (errorMessage.includes('column') && errorMessage.includes('does not exist')) {
-      log('Schema mismatch error. The database schema needs to be updated.', 'error');
+      logger.error('Schema mismatch error. The database schema needs to be updated.');
     }
   }
 
@@ -79,7 +80,7 @@ app.use(async (err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
     
-    console.error(err); // Using console.error instead of logger
+    logger.error(err); // Using logger.error instead of logger
     return res.status(status).json({ message });
     // no re-throw – prevents duplicate logs / crash
 });
@@ -101,6 +102,6 @@ app.use(async (err: any, _req: Request, res: Response, _next: NextFunction) => {
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
-    log(`serving on port ${port}`);
+    logger.info(`serving on port ${port}`);
   });
 })();

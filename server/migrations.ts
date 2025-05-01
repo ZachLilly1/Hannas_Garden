@@ -2,13 +2,14 @@ import { Pool } from '@neondatabase/serverless';
 import { db } from './db';
 import { users } from '../shared/schema';
 import { sql } from 'drizzle-orm';
+import * as logger from './services/logger';
 
 /**
  * This script adds the missing columns to support our new features
  */
 export async function applyMigrations() {
   try {
-    console.log('Starting database migrations...');
+    logger.info('Starting database migrations...');
     
     // Add onboarding_completed column if it doesn't exist
     await db.execute(sql`
@@ -22,7 +23,7 @@ export async function applyMigrations() {
         END IF;
       END $$;
     `);
-    console.log('Added onboarding_completed column (if needed)');
+    logger.info('Added onboarding_completed column (if needed)');
 
     // Add prefers_dark_mode column if it doesn't exist
     await db.execute(sql`
@@ -36,7 +37,7 @@ export async function applyMigrations() {
         END IF;
       END $$;
     `);
-    console.log('Added prefers_dark_mode column (if needed)');
+    logger.info('Added prefers_dark_mode column (if needed)');
 
     // Add view_preference column if it doesn't exist
     await db.execute(sql`
@@ -50,7 +51,7 @@ export async function applyMigrations() {
         END IF;
       END $$;
     `);
-    console.log('Added view_preference column (if needed)');
+    logger.info('Added view_preference column (if needed)');
 
     // Add weather_location column if it doesn't exist
     await db.execute(sql`
@@ -64,7 +65,7 @@ export async function applyMigrations() {
         END IF;
       END $$;
     `);
-    console.log('Added weather_location column (if needed)');
+    logger.info('Added weather_location column (if needed)');
 
     // Add bio column if it doesn't exist
     await db.execute(sql`
@@ -78,7 +79,7 @@ export async function applyMigrations() {
         END IF;
       END $$;
     `);
-    console.log('Added bio column (if needed)');
+    logger.info('Added bio column (if needed)');
 
     // Create the session table if it doesn't exist
     await db.execute(sql`
@@ -89,7 +90,7 @@ export async function applyMigrations() {
         CONSTRAINT "user_sessions_pkey" PRIMARY KEY ("sid")
       );
     `);
-    console.log('Created session table (if needed)');
+    logger.info('Created session table (if needed)');
 
     // Create index on session table if it doesn't exist
     await db.execute(sql`
@@ -102,7 +103,7 @@ export async function applyMigrations() {
         END IF;
       END $$;
     `);
-    console.log('Created session table index (if needed)');
+    logger.info('Created session table index (if needed)');
     
     // Add metadata column to care_logs table if it doesn't exist
     await db.execute(sql`
@@ -116,7 +117,7 @@ export async function applyMigrations() {
         END IF;
       END $$;
     `);
-    console.log('Added metadata column to care_logs table (if needed)');
+    logger.info('Added metadata column to care_logs table (if needed)');
 
     // Add scientific_name column to plants table if it doesn't exist
     await db.execute(sql`
@@ -130,7 +131,7 @@ export async function applyMigrations() {
         END IF;
       END $$;
     `);
-    console.log('Added scientific_name column to plants table (if needed)');
+    logger.info('Added scientific_name column to plants table (if needed)');
 
     // Make plant type optional if it's currently required
     await db.execute(sql`
@@ -153,7 +154,7 @@ export async function applyMigrations() {
         END IF;
       END $$;
     `);
-    console.log('Made plant type optional (if needed)');
+    logger.info('Made plant type optional (if needed)');
 
     // Add common_name and category columns to plant_guides table and convert from plant_type to scientific_name
     await db.execute(sql`
@@ -198,11 +199,11 @@ export async function applyMigrations() {
         END IF;
       END $$;
     `);
-    console.log('Updated plant_guides table structure (if needed)');
+    logger.info('Updated plant_guides table structure (if needed)');
 
-    console.log('Database migrations completed successfully!');
+    logger.info('Database migrations completed successfully!');
   } catch (error) {
-    console.error('Error applying migrations:', error);
+    logger.error('Error applying migrations:', error);
     throw error;
   }
 }
