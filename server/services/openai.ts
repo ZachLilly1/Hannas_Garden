@@ -1,3 +1,5 @@
+
+
 import OpenAI from "openai";
 import { type CareLog, type PlantWithCare } from "@shared/schema";
 
