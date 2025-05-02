@@ -8,19 +8,29 @@ import { setupSecurityMiddleware } from "./middleware/security";
 import * as logger from "./services/logger";
 // Session is initialized in auth.ts, not here
 import cors from "cors";
+import { closeDbConnection } from "./db";
 
+// Create Express application
 const app = express();
+
+// Production environment flag
+const isProduction = process.env.NODE_ENV === 'production';
 
 // Apply comprehensive security middleware (including Helmet)
 setupSecurityMiddleware(app);
 
-// Allow requests from any origin in development
-// In production, this should be restricted to your domain
+// Configure CORS with production-optimized settings
 app.use(cors({
-  origin: true, // Allow any origin temporarily for debugging
+  // In production, restrict to specific domains; in development, allow any origin
+  origin: isProduction 
+    ? process.env.ALLOWED_ORIGINS?.split(',') || ['https://your-production-domain.com'] 
+    : true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+  // Set sensible security headers for CORS
+  exposedHeaders: isProduction ? ['Date', 'Content-Length'] : undefined,
+  maxAge: isProduction ? 86400 : undefined, // 24 hours in production, default in dev
 }));
 
 // Increase JSON payload size limit to 50MB for handling image data
@@ -36,30 +46,91 @@ if (!fs.existsSync(uploadsDir)) {
 // Serve uploads directory
 app.use('/uploads', express.static(uploadsDir));
 
+// Production-optimized request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
+  const method = req.method;
+  const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+  
+  // Capture response details for API logging
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
+  
+  // Only monitor JSON responses in development mode or for error responses in production
+  if (!isProduction || req.path.includes('/api/')) {
+    const originalResJson = res.json;
+    res.json = function (bodyJson, ...args) {
+      // In production, only capture error responses or basic status info (not full payload)
+      if (isProduction) {
+        // For security, don't log full response bodies in production except for errors
+        if (res.statusCode >= 400) {
+          // For errors, only capture essential information
+          if (typeof bodyJson === 'object' && bodyJson !== null) {
+            capturedJsonResponse = {
+              message: bodyJson.message || 'Unknown error',
+              code: bodyJson.code || res.statusCode
+            };
+          } else {
+            capturedJsonResponse = { error: String(bodyJson) };
+          }
+        } else {
+          // For successful responses, just note that it was successful
+          capturedJsonResponse = { status: 'success' };
+        }
+      } else {
+        // In development, capture the full response for debugging
+        capturedJsonResponse = bodyJson;
+      }
+      return originalResJson.apply(res, [bodyJson, ...args]);
+    };
+  }
 
   res.on("finish", () => {
     const duration = Date.now() - start;
+    
+    // Always log API requests
     if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+      // Basic log info for all environments
+      let logInfo = {
+        method,
+        path,
+        status: res.statusCode,
+        duration: `${duration}ms`,
+        ip: isProduction ? ip.split(',')[0] : ip // Just log first IP in production (usually the real one)
+      };
+      
+      // Add response data for debugging but be careful in production
       if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        if (isProduction) {
+          // In production, only include minimal response info
+          if (res.statusCode >= 400) {
+            logInfo['error'] = capturedJsonResponse;
+          }
+        } else {
+          // In development, include full response
+          logInfo['response'] = capturedJsonResponse;
+        }
       }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
+      
+      // Format based on environment
+      if (isProduction) {
+        // Production: structured logging for easier parsing
+        logger.info(JSON.stringify(logInfo));
+      } else {
+        // Development: human-readable format
+        let logLine = `${method} ${path} ${res.statusCode} in ${duration}ms`;
+        if (capturedJsonResponse) {
+          logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        }
+        if (logLine.length > 120) {
+          logLine = logLine.slice(0, 119) + "…";
+        }
+        logger.info(logLine);
       }
-
-      logger.info(logLine);
+    } 
+    // In production, also log non-API requests but with minimal info
+    else if (isProduction && (res.statusCode >= 400 || method !== 'GET')) {
+      logger.info(`${method} ${path} ${res.statusCode} in ${duration}ms from ${ip.split(',')[0]}`);
     }
   });
 
@@ -113,6 +184,64 @@ app.use(async (err: any, _req: Request, res: Response, _next: NextFunction) => {
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
-    logger.info(`serving on port ${port}`);
+    logger.info(`Server running on port ${port} (${isProduction ? 'production' : 'development'} mode)`);
   });
+  
+  // Setup graceful shutdown handlers for production
+  if (isProduction) {
+    // Create a function to handle graceful shutdown
+    const gracefulShutdown = async (signal: string) => {
+      logger.info(`${signal} received. Starting graceful shutdown...`);
+      
+      // Set a timeout to force exit if graceful shutdown takes too long
+      const forceExitTimeout = setTimeout(() => {
+        logger.error('Forcefully shutting down after timeout');
+        process.exit(1);
+      }, 30000); // 30 seconds timeout
+      
+      try {
+        // Close the HTTP server first (stops accepting new connections)
+        logger.info('Closing HTTP server...');
+        await new Promise<void>((resolve, reject) => {
+          server.close((err) => {
+            if (err) {
+              logger.error('Error closing HTTP server:', err);
+              reject(err);
+            } else {
+              logger.info('HTTP server closed');
+              resolve();
+            }
+          });
+        });
+        
+        // Clean up database connections
+        await closeDbConnection();
+        
+        clearTimeout(forceExitTimeout);
+        logger.info('Graceful shutdown completed');
+        process.exit(0);
+      } catch (error) {
+        logger.error('Error during graceful shutdown:', error);
+        clearTimeout(forceExitTimeout);
+        process.exit(1);
+      }
+    };
+    
+    // Register shutdown handlers
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+    
+    // Handle uncaught exceptions and unhandled promise rejections
+    process.on('uncaughtException', (error) => {
+      logger.error('Uncaught exception:', error);
+      gracefulShutdown('UNCAUGHT_EXCEPTION');
+    });
+    
+    process.on('unhandledRejection', (reason, promise) => {
+      logger.error('Unhandled promise rejection:', reason);
+      gracefulShutdown('UNHANDLED_REJECTION');
+    });
+    
+    logger.info('Graceful shutdown handlers registered');
+  }
 })();
