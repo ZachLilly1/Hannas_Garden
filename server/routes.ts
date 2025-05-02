@@ -923,11 +923,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // If we reach here, the base64 string is valid
           logger.info(`Successfully validated base64 string (${Math.floor(testBuffer.length / 1024)} KB)`);
         } catch (decodeError) {
-          logger.error("Error decoding base64 string:", decodeError);
+          logger.error("Error decoding base64 string:", handleError(decodeError));
           throw new Error("Invalid base64 image data");
         }
       } catch (imageProcessingError) {
-        logger.error("Error processing image data:", imageProcessingError);
+        logger.error("Error processing image data:", handleError(imageProcessingError));
         return res.status(400).json({
           message: "Invalid image data",
           error: imageProcessingError instanceof Error ? imageProcessingError.message : String(imageProcessingError)
@@ -940,7 +940,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Return identification results
       res.json(result);
     } catch (error) {
-      logger.error("Error identifying plant:", error);
+      logger.error("Error identifying plant:", handleError(error));
       res.status(500).json({
         message: "Failed to identify plant",
         error: error instanceof Error ? error.message : String(error),
@@ -986,11 +986,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // If we reach here, the base64 string is valid
           logger.info(`Successfully validated base64 string for diagnosis (${Math.floor(testBuffer.length / 1024)} KB)`);
         } catch (decodeError) {
-          logger.error("Error decoding base64 string for diagnosis:", decodeError);
+          logger.error("Error decoding base64 string for diagnosis:", handleError(decodeError));
           throw new Error("Invalid base64 image data");
         }
       } catch (imageProcessingError) {
-        logger.error("Error processing image data for diagnosis:", imageProcessingError);
+        logger.error("Error processing image data for diagnosis:", handleError(imageProcessingError));
         return res.status(400).json({
           message: "Invalid image data",
           error: imageProcessingError instanceof Error ? imageProcessingError.message : String(imageProcessingError)
@@ -1003,7 +1003,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Return diagnosis results
       res.json(result);
     } catch (error) {
-      logger.error("Error diagnosing plant health:", error);
+      logger.error("Error diagnosing plant health:", handleError(error));
       res.status(500).json({
         message: "Failed to diagnose plant health",
         error: error instanceof Error ? error.message : String(error),
@@ -1091,7 +1091,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         healthDiagnosis
       });
     } catch (error) {
-      logger.error("Error creating sample health diagnosis:", error);
+      logger.error("Error creating sample health diagnosis:", handleError(error));
       res.status(500).json({
         message: "Failed to create sample health diagnosis",
         error: error instanceof Error ? error.message : String(error)
