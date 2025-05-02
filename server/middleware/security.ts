@@ -20,18 +20,22 @@ export function setupSecurityMiddleware(app: Express): void {
       // Enable all helmet defaults
       // This includes XSS Protection, noSniff, hidePoweredBy, etc.
       
-      // Content Security Policy
+      // Content Security Policy - production optimized
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+          // Removed unsafe-eval for production but allow unsafe-inline for certain UI frameworks
+          scriptSrc: process.env.NODE_ENV === 'production' 
+            ? ["'self'", "'unsafe-inline'"] 
+            : ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
           styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
           fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
           imgSrc: ["'self'", "data:", "blob:"],
           connectSrc: ["'self'", "https://api.openai.com"],
           frameSrc: ["'self'"],
           objectSrc: ["'none'"],
-          upgradeInsecureRequests: [],
+          // Force HTTPS in production
+          upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null,
         },
       },
       

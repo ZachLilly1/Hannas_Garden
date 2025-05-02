@@ -1,15 +1,19 @@
-// NEW CODE — top of file
-if (!process.env.OPENAI_API_KEY) {
-}
-
 import OpenAI from "openai";
 import { type CareLog, type PlantWithCare } from "@shared/schema";
+import * as logger from "./logger";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const MODEL = "gpt-4o";
 
+// Check for OpenAI API key
+if (!process.env.OPENAI_API_KEY) {
+  logger.error("OPENAI_API_KEY environment variable is not set");
+  throw new Error("OpenAI API key is required but not provided. Please set the OPENAI_API_KEY environment variable.");
+}
+
 // Initialize OpenAI client
 const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
 });
 
 // ===== ORIGINAL TYPES =====

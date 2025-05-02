@@ -21,15 +21,6 @@ const csrfProtection = csrf({
   // We'll use a custom handler in our routes for paths that need to bypass CSRF
 });
 
-// Add a global property to track the last validated username
-declare global {
-  namespace NodeJS {
-    interface Global {
-      lastValidatedUsername?: string;
-    }
-  }
-}
-
 // Define SessionStore type
 type SessionStore = session.Store;
 type MemoryStore = session.MemoryStore;
@@ -81,27 +72,16 @@ export async function comparePasswords(supplied: string, stored: string): Promis
   try {
     // Handle bcrypt passwords (starting with $2b$)
     if (stored.startsWith('$2b$')) {
-      // Since we can't properly validate bcrypt without the library,
-      // we'll convert all bcrypt passwords to scrypt on next login
-      logger.info("Bcrypt password detected - will be upgraded to scrypt on next successful login");
+      // In a production environment, we should properly hash and validate bcrypt passwords,
+      // but without the library, we'll mark them for upgrade
+      logger.warn("Legacy bcrypt password detected - cannot properly validate");
       
-      // For demo purposes, we need to validate against known test accounts
-      // In production, we would use proper bcrypt validation
-      const knownUsers = [
-        { username: 'Zach', password: 'password123' },
-        { username: 'Admin', password: 'admin123' }
-      ];
+      // In production, we should not have hardcoded credentials or special cases
+      // This is a security risk and should be addressed with proper password migration
+      logger.error("Legacy password format cannot be validated. Password reset required.");
       
-      // Check if username was just validated against one of our known users
-      // This is safer than a universal password check
-      const lastUser = (global as any).lastValidatedUsername;
-      if (lastUser) {
-        const knownUser = knownUsers.find(u => u.username.toLowerCase() === lastUser.toLowerCase());
-        if (knownUser && supplied === knownUser.password) {
-          return true;
-        }
-      }
-      
+      // Always return false for bcrypt passwords in production
+      // They should be reset and rehashed using our current algorithm
       return false;
     }
     
@@ -137,7 +117,7 @@ export function setupAuth(app: Express) {
     logger.warn("SESSION_SECRET not set, using generated random value instead");
   }
 
-  // Session configuration optimized for replit and development environments
+  // Production-optimized session configuration
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET,
     // False prevents saving unmodified sessions
@@ -147,13 +127,13 @@ export function setupAuth(app: Express) {
     store: pgSessionStore,
     name: 'garden.sid',
     cookie: {
-      // IMPORTANT: Setting secure:false allows cookies over HTTP in development
-      secure: false,
+      // Use secure cookies in production, but allow HTTP in development
+      secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
       // 7 days expiration for sessions
       maxAge: 1000 * 60 * 60 * 24 * 7,
-      // "lax" is the most compatible setting for non-HTTPS environments
-      sameSite: "lax",
+      // Use strict in production, lax in development
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
       path: "/"
     },
     // Reset expiration on each response
@@ -191,27 +171,26 @@ export function setupAuth(app: Express) {
     next(err);
   });
   
-  // Enhanced logging for better session debugging
-  app.use((req, res, next) => {
-    // Log basic session info only in development and test environments
-    logger.debug(`Session ID: ${req.session.id}, Auth: ${req.isAuthenticated ? req.isAuthenticated() : 'undefined'}`);
-    
-    // Add debug endpoint to check session state in non-production environments
-    if (req.path === '/api/debug/session' && process.env.NODE_ENV !== 'production') {
-      return res.json({
-        sessionId: req.session.id,
-        isAuthenticated: req.isAuthenticated(),
-        sessionData: req.session,
-        user: req.user ? { id: req.user.id, username: req.user.username } : null,
-        cookies: req.headers.cookie
-      });
-    } else if (req.path === '/api/debug/session') {
-      // In production, don't expose session details
-      return res.status(404).json({ message: "Endpoint not available in production" });
-    }
-    
-    next();
-  });
+  // Minimal session debugging in non-production environments
+  if (process.env.NODE_ENV !== 'production') {
+    app.use((req, res, next) => {
+      // Only log session debug info for authentication-related routes
+      if (req.path.startsWith('/api/auth')) {
+        logger.debug(`Auth route - Session ID: ${req.session.id}`);
+      }
+      
+      // Debug endpoint only available in development
+      if (req.path === '/api/debug/session') {
+        return res.json({
+          sessionId: req.session.id,
+          isAuthenticated: req.isAuthenticated(),
+          user: req.user ? { id: req.user.id, username: req.user.username } : null
+        });
+      }
+      
+      next();
+    });
+  }
   
   app.use(passport.initialize());
   app.use(passport.session());
@@ -222,16 +201,11 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        // Store username for password comparison
-        (global as any).lastValidatedUsername = username;
-        
         // Find user by username
         const user = await storage.getUserByUsername(username);
         
         // Check if user exists and password matches
         if (!user || !(await comparePasswords(password, user.password))) {
-          // Clear the stored username on failure
-          (global as any).lastValidatedUsername = undefined;
           return done(null, false, { message: "Invalid username or password" });
         }
         
@@ -252,7 +226,6 @@ export function setupAuth(app: Express) {
         
         return done(null, user);
       } catch (error) {
-        (global as any).lastValidatedUsername = undefined;
         return done(error);
       }
     })
