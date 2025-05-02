@@ -72,13 +72,18 @@ export function warn(message: string, ...meta: any[]): void {
 /**
  * Error-level logging (all environments)
  * @param message Message to log
- * @param error Error object if available
+ * @param error Error object if available (any type, will be converted if needed)
  * @param meta Additional data to log
  */
-export function error(message: string, error?: Error, ...meta: any[]): void {
+export function error(message: string, error?: unknown, ...meta: any[]): void {
   if (shouldLog('error')) {
     if (error) {
-      console.error(`ERROR: ${message}`, error, ...meta);
+      // Convert to Error instance if it's not already
+      const errorObject = error instanceof Error 
+        ? error 
+        : new Error(typeof error === 'string' ? error : String(error));
+      
+      console.error(`ERROR: ${message}`, errorObject, ...meta);
     } else {
       console.error(`ERROR: ${message}`, ...meta);
     }

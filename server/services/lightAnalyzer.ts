@@ -1,10 +1,23 @@
 import OpenAI from "openai";
 import { SUNLIGHT_LEVELS } from "@shared/schema";
+import * as logger from "./logger";
 
 // Define the type for light level responses
 type SunlightLevel = typeof SUNLIGHT_LEVELS[number];
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Initialize OpenAI client with proper error handling
+let openai: OpenAI | null = null;
+try {
+  if (!process.env.OPENAI_API_KEY) {
+    logger.warn("OPENAI_API_KEY is not set - AI light analysis features will be limited");
+  } else {
+    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    logger.info("OpenAI client initialized for light analyzer service");
+  }
+} catch (error) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  logger.error("Failed to initialize OpenAI client:", new Error(errorMessage));
+}
 
 // Analyzes a plant image to determine the sunlight level
 export async function analyzePlantImageLightLevel(
@@ -14,6 +27,15 @@ export async function analyzePlantImageLightLevel(
   confidence: "high" | "medium" | "low";
 }> {
   try {
+    // Check if OpenAI client is initialized
+    if (!openai) {
+      logger.warn("OpenAI client not available for light analysis - using fallback");
+      return {
+        sunlightLevel: "medium", // Default to medium as the safest option
+        confidence: "low"
+      };
+    }
+    
     // Make sure we have a clean base64 string without the data URL prefix
     let base64Image = imageBase64;
     if (base64Image.includes(",")) {
@@ -83,7 +105,9 @@ export async function analyzePlantImageLightLevel(
 
     return result;
   } catch (error) {
-    logger.error("OpenAI API error during plant light analysis:", error);
+    // Properly type the error for logging
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("OpenAI API error during plant light analysis:", error instanceof Error ? error : new Error(errorMessage));
     
     // Return a fallback with low confidence if the API call fails
     return {

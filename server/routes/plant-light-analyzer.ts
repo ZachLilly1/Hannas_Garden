@@ -5,10 +5,15 @@ import { storage } from "../storage";
 import { isAuthenticated } from "../auth";
 import * as logger from "../services/logger";
 
-// Schema for analyzing plant image
+// Enhanced schema for analyzing plant image with better validation
 const analyzeImageSchema = z.object({
-  plantId: z.number(),
+  plantId: z.number().int().positive("Plant ID must be a positive integer"),
   imageData: z.string()
+    .min(10, "Image data is too short or missing")
+    .refine(
+      (data) => data.startsWith('data:image/') || /^[A-Za-z0-9+/=]+$/.test(data),
+      "Invalid image data format. Must be a valid base64 string or data URL"
+    )
 });
 
 export function setupPlantLightAnalyzerRoutes(app: Express) {
@@ -44,10 +49,23 @@ export function setupPlantLightAnalyzerRoutes(app: Express) {
       // Return the analysis result
       return res.status(200).json({ sunlightLevel, confidence });
     } catch (error) {
+      // Consistent error handling pattern
+      const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error("Error analyzing plant light level:", error);
+      
+      // Check for specific error types to provide better error messages
+      if (errorMessage.includes('OpenAI')) {
+        return res.status(503).json({
+          error: "Plant light analysis service temporarily unavailable",
+          message: "The AI analysis service is currently unavailable. Please try again later.",
+          code: "SERVICE_UNAVAILABLE"
+        });
+      }
+      
       return res.status(500).json({ 
         error: "Failed to analyze plant light level",
-        message: error instanceof Error ? error.message : "Unknown error"
+        message: errorMessage,
+        code: "ANALYSIS_FAILED"
       });
     }
   });
