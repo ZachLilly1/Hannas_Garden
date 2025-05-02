@@ -180,119 +180,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Plant routes
-  apiRouter.get("/api/plants", async (req, res) => {
-    // Temporary bypass authentication for debugging
-    // Instead of using req.user, we'll directly query user ID 1 (Zach)
-    const userId = req.isAuthenticated() ? req.user!.id : 1;
+  // Plant routes - secured for production
+  apiRouter.get("/api/plants", isAuthenticated, async (req, res) => {
+    const userId = req.user!.id;
     logger.info("Getting plants for user ID:", userId);
     const plants = await storage.getPlants(userId);
     logger.info(`Found ${plants.length} plants for user ID ${userId}`);
     res.json(plants);
   });
   
-  // Debug endpoint for adding plants without requiring authentication
-  apiRouter.post("/api/debug/plants", async (req, res) => {
-    try {
-      // Log the request but truncate image data for cleaner logs
-      const { image, ...logData } = req.body;
-      logger.info("Debug plant creation request:", {
-        ...logData,
-        image: image ? `[Base64 image truncated, length: ${image.length}]` : null
-      });
-      
-      // Validate request data
-      try {
-        // Special handling for the image data - we need to make sure it's a valid base64 string
-        // Sometimes the image can be malformed if not properly encoded
-        if (req.body.image) {
-          try {
-            // Quick sanity check - ensure it looks like a base64 string
-            // It should start with data:image/ for most cases
-            if (typeof req.body.image === 'string' && !req.body.image.startsWith('data:image/')) {
-              console.warn("Image data doesn't appear to be properly formatted base64");
-              // Try to fix it if it's a plain base64 string without the prefix
-              if (!req.body.image.includes(',')) {
-                req.body.image = `data:image/jpeg;base64,${req.body.image}`;
-              }
-            }
-          } catch (imageError) {
-            logger.error("Error processing image data:", imageError);
-          }
-        }
-        
-        const validation = validateRequest(insertPlantSchema, req, res);
-        if (!validation.success) return;
-        
-        // Set user ID to 1 (Zach) for debugging
-        const userId = 1;
-        
-        // Merge user ID with plant data
-        const plantData = { ...validation.data, userId };
-        logger.info("Creating plant with data:", {
-          ...plantData,
-          image: plantData.image ? `[Base64 image truncated, length: ${plantData.image.length}]` : null
-        });
-        
-        // Create the plant directly
-        const plant = await storage.createPlant(plantData);
-        
-        // Create automatic reminders for watering and fertilizing
-        if (plant.waterFrequency > 0) {
-          const wateringDueDate = new Date();
-          wateringDueDate.setDate(wateringDueDate.getDate() + plant.waterFrequency);
-          
-          await storage.createReminder({
-            plantId: plant.id,
-            userId,
-            title: `Water your ${plant.name}`,
-            message: `It's time to water your ${plant.name}`,
-            dueDate: wateringDueDate.toISOString(),
-            careType: 'water',
-            status: 'pending',
-            recurring: true,
-            recurringInterval: plant.waterFrequency,
-            notified: false
-          });
-        }
-        
-        if (plant.fertilizerFrequency > 0) {
-          const fertilizingDueDate = new Date();
-          fertilizingDueDate.setDate(fertilizingDueDate.getDate() + plant.fertilizerFrequency);
-          
-          await storage.createReminder({
-            plantId: plant.id,
-            userId,
-            title: `Fertilize your ${plant.name}`,
-            message: `It's time to fertilize your ${plant.name}`,
-            dueDate: fertilizingDueDate.toISOString(),
-            careType: 'fertilize',
-            status: 'pending',
-            recurring: true,
-            recurringInterval: plant.fertilizerFrequency,
-            notified: false
-          });
-        }
-        
-        res.status(201).json(plant);
-      } catch (validationError) {
-        logger.error("Error validating plant data:", validationError);
-        res.status(400).json({ 
-          message: "Error validating plant data", 
-          error: validationError instanceof Error ? validationError.message : String(validationError)
-        });
-      }
-    } catch (error: any) {
-      logger.error("Error in debug plant creation:", error);
-      res.status(500).json({ 
-        message: "Failed to add plant", 
-        error: error.message,
-        stack: error.stack 
-      });
-    }
-  });
+  // Debug endpoints removed for production security
 
-  apiRouter.get("/api/plants/:id", async (req, res) => {
+  apiRouter.get("/api/plants/:id", isAuthenticated, async (req, res) => {
     const plantId = parseInt(req.params.id);
     if (isNaN(plantId)) {
       return res.status(400).json({ message: "Invalid plant ID" });
@@ -303,9 +202,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Plant not found" });
     }
     
-    // Temporarily bypass authentication check for debugging
-    // Allow access to plants belonging to user ID 1 (Zach) regardless of authentication
-    if (plant.userId !== 1 && req.isAuthenticated() && plant.userId !== req.user!.id) {
+    // Ensure users can only access their own plants
+    if (plant.userId !== req.user!.id) {
       return res.status(403).json({ message: "You don't have permission to access this plant" });
     }
     
@@ -517,8 +415,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(204).send();
   });
 
-  // Care log routes
-  apiRouter.get("/api/plants/:id/care-logs", async (req, res) => {
+  // Care log routes - authenticated for production
+  apiRouter.get("/api/plants/:id/care-logs", isAuthenticated, async (req, res) => {
     const plantId = parseInt(req.params.id);
     if (isNaN(plantId)) {
       return res.status(400).json({ message: "Invalid plant ID" });
@@ -530,9 +428,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Plant not found" });
     }
     
-    // Temporarily bypass authentication check for debugging
-    // Allow access to plants belonging to user ID 1 (Zach) regardless of authentication
-    if (plant.userId !== 1 && req.isAuthenticated() && plant.userId !== req.user!.id) {
+    // Ensure users can only access their own plants' care logs
+    if (plant.userId !== req.user!.id) {
       return res.status(403).json({ message: "You don't have permission to access this plant" });
     }
     

@@ -91,12 +91,22 @@ app.use((req, res, next) => {
     // Always log API requests
     if (path.startsWith("/api")) {
       // Basic log info for all environments
-      let logInfo = {
+      type LogInfo = {
+        method: string;
+        path: string;
+        status: number;
+        duration: string;
+        ip: string;
+        error?: Record<string, any>;
+        response?: Record<string, any>;
+      };
+      
+      let logInfo: LogInfo = {
         method,
         path,
         status: res.statusCode,
         duration: `${duration}ms`,
-        ip: isProduction ? ip.split(',')[0] : ip // Just log first IP in production (usually the real one)
+        ip: isProduction ? (typeof ip === 'string' ? ip.split(',')[0] : String(ip)) : String(ip)
       };
       
       // Add response data for debugging but be careful in production
@@ -104,11 +114,11 @@ app.use((req, res, next) => {
         if (isProduction) {
           // In production, only include minimal response info
           if (res.statusCode >= 400) {
-            logInfo['error'] = capturedJsonResponse;
+            logInfo.error = capturedJsonResponse;
           }
         } else {
           // In development, include full response
-          logInfo['response'] = capturedJsonResponse;
+          logInfo.response = capturedJsonResponse;
         }
       }
       
@@ -130,7 +140,8 @@ app.use((req, res, next) => {
     } 
     // In production, also log non-API requests but with minimal info
     else if (isProduction && (res.statusCode >= 400 || method !== 'GET')) {
-      logger.info(`${method} ${path} ${res.statusCode} in ${duration}ms from ${ip.split(',')[0]}`);
+      const safeIp = typeof ip === 'string' ? ip.split(',')[0] : String(ip);
+      logger.info(`${method} ${path} ${res.statusCode} in ${duration}ms from ${safeIp}`);
     }
   });
 
