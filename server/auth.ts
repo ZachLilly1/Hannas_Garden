@@ -124,7 +124,7 @@ export function isAuthenticated(req: Request, res: Response, next: NextFunction)
   if (req.isAuthenticated()) {
     return next();
   }
-  res.status(401).json({ message: "Authentication required" });
+  return res.status(401).json({ message: "Authentication required" });
 }
 
 // Setup authentication for the application
@@ -362,7 +362,7 @@ function setupAuthRoutes(app: Express) {
         
         // Return user info without password
         const { password, ...userInfo } = user;
-        res.status(201).json(userInfo);
+        return res.status(201).json(userInfo);
       });
     } catch (error) {
       logger.error("Registration error", error as Error);
@@ -424,7 +424,7 @@ function setupAuthRoutes(app: Express) {
           
           // Return user info without password
           const { password, ...userInfo } = user;
-          res.status(200).json(userInfo);
+          return res.status(200).json(userInfo);
         });
       })(req, res, next);
     } catch (error) {
@@ -446,7 +446,7 @@ function setupAuthRoutes(app: Express) {
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax'
         });
-        res.status(200).json({ message: "Logged out successfully" });
+        return res.status(200).json({ message: "Logged out successfully" });
       });
     });
   });
