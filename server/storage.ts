@@ -10,6 +10,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, sql } from "drizzle-orm";
+import * as logger from "./services/logger";
 
 // Interface for storage operations
 export interface IStorage {
