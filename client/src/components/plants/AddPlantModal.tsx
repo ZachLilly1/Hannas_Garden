@@ -24,6 +24,7 @@ import { type PlantWithCare } from "@shared/schema";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { compressImage, formatFileSize } from "@/lib/utils";
 
 interface AddPlantModalProps {
   isOpen: boolean;
@@ -95,25 +96,83 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
     },
   });
 
+  // State for tracking compression progress
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [compressionStats, setCompressionStats] = useState<{original: number, compressed: number} | null>(null);
+  
   // Handle image file selection
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      setImageFile(file);
-      
-      // Reset identification result when new image is selected
-      setIdentificationResult(null);
-      
-      // Create a preview URL
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          setSelectedImage(e.target.result as string);
-          // Store the image in form data
-          form.setValue("image", e.target.result as string);
+      try {
+        const file = event.target.files[0];
+        setImageFile(file);
+        
+        // Check file size - warn if over 4MB
+        if (file.size > 4 * 1024 * 1024) {
+          toast({
+            title: "Large image detected",
+            description: "Image will be compressed to optimize upload performance.",
+          });
         }
-      };
-      reader.readAsDataURL(file);
+        
+        // Reset identification result when new image is selected
+        setIdentificationResult(null);
+        
+        // Create a preview URL
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          if (e.target?.result) {
+            const originalImage = e.target.result as string;
+            setSelectedImage(originalImage); // Show the original image immediately as preview
+            
+            // Start compression if file is large
+            if (file.size > 1 * 1024 * 1024) { // > 1MB
+              setIsCompressing(true);
+              try {
+                // Compress the image
+                const compressedImage = await compressImage(originalImage);
+                
+                // Update compression stats
+                const originalSize = originalImage.length;
+                const compressedSize = compressedImage.length;
+                setCompressionStats({
+                  original: originalSize,
+                  compressed: compressedSize
+                });
+                
+                // Store the compressed image in form data
+                form.setValue("image", compressedImage);
+                setSelectedImage(compressedImage);
+                
+                // Show success message if compression was significant
+                if (compressedSize < originalSize * 0.8) { // At least 20% reduction
+                  toast({
+                    title: "Image optimized",
+                    description: `Reduced from ${formatFileSize(originalSize)} to ${formatFileSize(compressedSize)}`,
+                  });
+                }
+              } catch (error) {
+                console.error("Compression failed:", error);
+                // Fall back to original image if compression fails
+                form.setValue("image", originalImage);
+              } finally {
+                setIsCompressing(false);
+              }
+            } else {
+              // For small images, use original without compression
+              form.setValue("image", originalImage);
+            }
+          }
+        };
+        reader.readAsDataURL(file);
+      } catch (error) {
+        console.error("Error processing image:", error);
+        toast({
+          title: "Image processing failed",
+          description: "Please try another image or a different format.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -206,23 +265,36 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
       });
     } catch (error) {
       console.error("Error identifying plant:", error);
-      let errorMessage = "Unable to identify the plant.";
+      let errorMessage = "We couldn't identify your plant at this time.";
+      let actionSuggestion = "You can still add your plant manually.";
       
       if (error instanceof Error) {
         if (error.message.includes("entity too large")) {
-          errorMessage = "The image is too large. Please try with a smaller image or resize it.";
+          errorMessage = "Your image is too large for our identification service.";
+          actionSuggestion = "Try using the optimization feature or selecting a smaller image.";
         } else if (error.message.includes("NetworkError") || error.message.includes("Failed to fetch")) {
-          errorMessage = "Network connection issue. Please check your internet connection.";
+          errorMessage = "We couldn't connect to our identification service.";
+          actionSuggestion = "Please check your internet connection and try again.";
         } else if (error.message.includes("timeout")) {
-          errorMessage = "The request timed out. Please try with a smaller image or try again later.";
-        } else {
-          errorMessage = `${errorMessage} ${error.message}`;
+          errorMessage = "The identification process took too long.";
+          actionSuggestion = "Try with a smaller image or at a less busy time.";
+        } else if (error.message.includes("429") || error.message.includes("rate limit")) {
+          errorMessage = "Our identification service is currently very busy.";
+          actionSuggestion = "Please wait a few minutes and try again.";
+        } else if (error.message.includes("500") || error.message.includes("503")) {
+          errorMessage = "Our identification service is temporarily unavailable.";
+          actionSuggestion = "Please try again later.";
         }
       }
       
       toast({
-        title: "Identification failed",
-        description: errorMessage + " You can still fill in the details manually.",
+        title: "Plant Identification",
+        description: (
+          <div className="space-y-1">
+            <p>{errorMessage}</p>
+            <p className="text-sm opacity-90">{actionSuggestion}</p>
+          </div>
+        ),
         variant: "destructive"
       });
     } finally {
@@ -266,9 +338,32 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
       setIdentificationResult(null);
       onClose();
     } catch (error) {
+      console.error(`Error ${plantToEdit ? 'updating' : 'adding'} plant:`, error);
+      
+      let errorMessage = `We couldn't ${plantToEdit ? 'save your changes' : 'add your plant'} at this time.`;
+      let actionSuggestion = "Please try again in a moment.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes("NetworkError") || error.message.includes("Failed to fetch")) {
+          errorMessage = "We couldn't connect to our server.";
+          actionSuggestion = "Please check your internet connection and try again.";
+        } else if (error.message.includes("timeout")) {
+          errorMessage = "The request took too long to complete.";
+          actionSuggestion = "Please try again when your connection is better.";
+        } else if (error.message.includes("401") || error.message.includes("auth")) {
+          errorMessage = "Your session may have expired.";
+          actionSuggestion = "Please refresh the page and try again.";
+        }
+      }
+      
       toast({
-        title: "Error",
-        description: `Failed to ${plantToEdit ? 'update' : 'add'} plant. Please try again.`,
+        title: plantToEdit ? "Update Failed" : "Adding Plant Failed",
+        description: (
+          <div className="space-y-1">
+            <p>{errorMessage}</p>
+            <p className="text-sm opacity-90">{actionSuggestion}</p>
+          </div>
+        ),
         variant: "destructive"
       });
     }
@@ -365,8 +460,23 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
                         alt="Selected plant" 
                         className="w-full h-full object-cover"
                       />
+                      
+                      {/* Compression indicator overlay */}
+                      {isCompressing && (
+                        <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center">
+                          <div className="text-center">
+                            <svg className="animate-spin h-8 w-8 text-primary mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <p className="text-sm text-white">Optimizing image...</p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Hover controls for changing photo */}
                       <div 
-                        className="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                        className={`absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center ${isCompressing ? 'hidden' : 'opacity-0 hover:opacity-100 transition-opacity'}`}>
                         <p className="text-sm text-white mb-4">Change photo</p>
                         <div className="flex gap-3">
                           <button 
@@ -378,6 +488,7 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
                               }
                             }}
                             className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-md text-sm flex items-center gap-1"
+                            disabled={isCompressing}
                           >
                             <svg 
                               xmlns="http://www.w3.org/2000/svg" 
@@ -404,12 +515,21 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
                               }
                             }}
                             className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-md text-sm flex items-center gap-1"
+                            disabled={isCompressing}
                           >
                             <CameraIcon className="h-4 w-4" />
                             Camera
                           </button>
                         </div>
                       </div>
+                      
+                      {/* Show compression stats if available */}
+                      {compressionStats && compressionStats.compressed < compressionStats.original * 0.9 && (
+                        <div className="absolute bottom-0 left-0 right-0 bg-green-700 bg-opacity-90 text-white text-xs px-2 py-1 flex justify-between">
+                          <span>Optimized</span>
+                          <span>{Math.round((1 - compressionStats.compressed/compressionStats.original) * 100)}% smaller</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (

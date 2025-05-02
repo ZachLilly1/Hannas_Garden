@@ -85,6 +85,83 @@ export function getSunlightLabel(level: string): string {
   }
 }
 
+/**
+ * Compresses an image to reduce file size and improve upload performance.
+ * 
+ * @param imageDataUrl - The image data URL to compress
+ * @param maxWidth - Maximum width (default 1200px)
+ * @param quality - JPEG quality (0-1, default 0.7)
+ * @returns Promise resolving to a compressed image data URL
+ */
+export function compressImage(
+  imageDataUrl: string,
+  maxWidth = 1200,
+  quality = 0.7
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    // Create an image to load the data URL
+    const img = new Image();
+    img.onload = () => {
+      // Create canvas for resizing
+      const canvas = document.createElement('canvas');
+      
+      // Calculate new dimensions while maintaining aspect ratio
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > maxWidth) {
+        const scaleFactor = maxWidth / width;
+        width = maxWidth;
+        height = Math.round(height * scaleFactor);
+      }
+      
+      // Set canvas dimensions and draw image
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        reject(new Error('Could not get canvas context'));
+        return;
+      }
+      
+      // Draw image with white background (to handle transparency)
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Convert to data URL with specified quality
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+      
+      // Check if compression actually helped
+      if (compressedDataUrl.length > imageDataUrl.length && !imageDataUrl.startsWith('data:image/png')) {
+        // If original is smaller and it's not a PNG (which we're converting to JPEG), return original
+        resolve(imageDataUrl);
+      } else {
+        resolve(compressedDataUrl);
+      }
+    };
+    
+    img.onerror = () => {
+      reject(new Error('Failed to load image for compression'));
+    };
+    
+    img.src = imageDataUrl;
+  });
+}
+
+/**
+ * Displays a human-readable file size
+ * 
+ * @param bytes - Size in bytes
+ * @returns Formatted string (e.g. "2.5 MB")
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
 export function getDefaultPlantImage(nameOrType: string | null): string {
   if (!nameOrType) {
     return "https://images.pexels.com/photos/1084199/pexels-photo-1084199.jpeg"; // Default image
