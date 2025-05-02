@@ -98,20 +98,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [userError]);
 
-  // Login mutation
+  // Login mutation - improved with better cookie handling
   const loginMutation = useMutation({
     mutationFn: async (data: LoginData) => {
-      // Use direct-login endpoint which is working correctly
-      const res = await apiRequest('POST', '/api/auth/direct-login', data);
+      // Use direct fetch with explicit credential inclusion to ensure cookies are saved
+      const res = await fetch('/api/auth/direct-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'include',
+      });
+      
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Login failed');
+        let errorMsg = 'Login failed';
+        try {
+          const errorData = await res.json();
+          errorMsg = errorData.message || errorMsg;
+        } catch (_) {
+          // Ignore JSON parse errors
+        }
+        throw new Error(errorMsg);
       }
-      return await res.json();
+      
+      const userData = await res.json();
+      return userData;
     },
     onSuccess: (data: User) => {
       setError(null);
+      // Update the cached user data
       queryClient.setQueryData(['/api/auth/user'], data);
+      
+      // Force a refetch to ensure we have fresh session data
+      setTimeout(() => refetch(), 500);
+      
       toast({
         title: "Login successful",
         description: `Welcome back, ${data.displayName || data.username}!`,
@@ -127,10 +146,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Register mutation
+  // Register mutation - improved with direct fetch for better cookie handling
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterData) => {
-      const res = await apiRequest('POST', '/api/auth/register', {
+      // Use direct fetch for registration, similar to login
+      const payload = {
         username: data.username,
         email: data.email,
         password: data.password,
@@ -138,16 +158,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         preferredUnits: 'metric',
         notificationsEnabled: true,
         timezone: 'UTC',
+      };
+      
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        credentials: 'include',
       });
+      
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Registration failed');
+        let errorMsg = 'Registration failed';
+        try {
+          const errorData = await res.json();
+          errorMsg = errorData.message || errorMsg;
+        } catch (_) {
+          // Ignore JSON parse errors
+        }
+        throw new Error(errorMsg);
       }
-      return await res.json();
+      
+      const userData = await res.json();
+      return userData;
     },
     onSuccess: (data: User) => {
       setError(null);
+      // Update the cached user data
       queryClient.setQueryData(['/api/auth/user'], data);
+      
+      // Force a refetch to ensure we have fresh session data
+      setTimeout(() => refetch(), 500);
+      
       toast({
         title: "Registration successful",
         description: `Welcome to Hanna's Garden, ${data.displayName || data.username}!`,
@@ -163,31 +204,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Logout mutation
+  // Logout mutation - improved with direct fetch for better cookie handling
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('POST', '/api/auth/logout');
+      // Use direct fetch for logging out
+      const res = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Logout failed');
+        let errorMsg = 'Logout failed';
+        try {
+          const errorData = await res.json();
+          errorMsg = errorData.message || errorMsg;
+        } catch (_) {
+          // Ignore JSON parse errors
+        }
+        throw new Error(errorMsg);
       }
+      
       return res;
     },
     onSuccess: () => {
       // Clear the CSRF token to prevent using old tokens
       clearCsrfToken();
       
-      // Clear user data from cache
+      // Clear user data from cache immediately
       queryClient.setQueryData(['/api/auth/user'], null);
       
-      // Clear out only user-specific queries
-      queryClient.invalidateQueries({ 
+      // Clear out all API queries
+      queryClient.invalidateQueries({
         predicate: (query) => {
           const queryKey = query.queryKey[0];
-          // Only invalidate api queries, not ui state queries
           return typeof queryKey === 'string' && queryKey.startsWith('/api/');
         }
       });
+      
+      // Force a window reload to reset all state
+      // This is the most reliable way to ensure clean logout
+      setTimeout(() => {
+        window.location.href = '/auth';
+      }, 500);
       
       toast({
         title: "Logged out",
@@ -204,18 +262,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Update profile mutation
+  // Update profile mutation - improved with direct fetch for better cookie handling
   const updateProfileMutation = useMutation({
     mutationFn: async (data: UpdateProfileData) => {
-      const res = await apiRequest('PUT', '/api/auth/profile', data);
+      // Use direct fetch for profile updates
+      const res = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'include',
+      });
+      
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Profile update failed');
+        let errorMsg = 'Profile update failed';
+        try {
+          const errorData = await res.json();
+          errorMsg = errorData.message || errorMsg;
+        } catch (_) {
+          // Ignore JSON parse errors
+        }
+        throw new Error(errorMsg);
       }
-      return await res.json();
+      
+      const userData = await res.json();
+      return userData;
     },
     onSuccess: (data: User) => {
+      // Update cached user data
       queryClient.setQueryData(['/api/auth/user'], data);
+      
+      // Force a refetch to ensure we have fresh session data
+      setTimeout(() => refetch(), 500);
+      
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully",
