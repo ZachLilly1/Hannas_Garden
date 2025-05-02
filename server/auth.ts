@@ -138,16 +138,16 @@ export function setupAuth(app: Express) {
   // Session configuration with improved security and persistence
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET,
-    resave: true, // Ensures session saved even if unchanged
-    saveUninitialized: true, // Ensures session creation
+    resave: false, // Only save when changed
+    saveUninitialized: false, // Only save when there's data
     store: pgSessionStore,
     name: 'garden.sid', // Custom cookie name for better identification
     cookie: {
       // Adapt secure flag based on environment
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true, // Prevents JavaScript access to cookies
-      maxAge: 1000 * 60 * 60 * 24 * 7, // Reduced to 7 days for security
-      sameSite: "lax", // Protects against some CSRF attacks
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      sameSite: "lax", // Allows cross-site navigation while protecting against CSRF
       path: "/"
     }
   };
