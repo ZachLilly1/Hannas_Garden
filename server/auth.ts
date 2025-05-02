@@ -53,7 +53,7 @@ try {
   
   logger.info('PostgreSQL session store initialized successfully');
 } catch (error) {
-  logger.error('Error initializing PostgreSQL session store:', error);
+  logger.error('Error initializing PostgreSQL session store:', error instanceof Error ? error : new Error(String(error)));
   // Fallback to memory store if PostgreSQL store fails
   const MemoryStore = session.MemoryStore;
   pgSessionStore = new MemoryStore();

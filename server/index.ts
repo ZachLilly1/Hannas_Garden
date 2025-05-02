@@ -232,7 +232,7 @@ app.use(async (err: any, _req: Request, res: Response, _next: NextFunction) => {
         logger.info('Graceful shutdown completed');
         process.exit(0);
       } catch (error) {
-        logger.error('Error during graceful shutdown:', error);
+        logger.error('Error during graceful shutdown:', error instanceof Error ? error : new Error(String(error)));
         clearTimeout(forceExitTimeout);
         process.exit(1);
       }
@@ -244,12 +244,13 @@ app.use(async (err: any, _req: Request, res: Response, _next: NextFunction) => {
     
     // Handle uncaught exceptions and unhandled promise rejections
     process.on('uncaughtException', (error) => {
-      logger.error('Uncaught exception:', error);
+      logger.error('Uncaught exception:', error instanceof Error ? error : new Error(String(error)));
       gracefulShutdown('UNCAUGHT_EXCEPTION');
     });
     
     process.on('unhandledRejection', (reason, promise) => {
-      logger.error('Unhandled promise rejection:', reason);
+      logger.error('Unhandled promise rejection:', 
+        reason instanceof Error ? reason : new Error(String(reason)));
       gracefulShutdown('UNHANDLED_REJECTION');
     });
     
