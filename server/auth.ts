@@ -137,20 +137,22 @@ export function setupAuth(app: Express) {
     logger.warn("SESSION_SECRET not set, using generated random value instead");
   }
 
-  // Session configuration optimized for cross-domain compatibility with replit apps
+  // Session configuration optimized for replit and development environments
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET,
-    resave: true,
-    saveUninitialized: true,
+    // False prevents saving unmodified sessions
+    resave: false,
+    // False prevents saving empty sessions
+    saveUninitialized: false, 
     store: pgSessionStore,
     name: 'garden.sid',
     cookie: {
-      // IMPORTANT: Setting secure:false allows cookies over HTTP
+      // IMPORTANT: Setting secure:false allows cookies over HTTP in development
       secure: false,
       httpOnly: true,
-      // 30 days expiration for longer sessions
-      maxAge: 1000 * 60 * 60 * 24 * 30,
-      // "lax" works better than "none" without HTTPS
+      // 7 days expiration for sessions
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+      // "lax" is the most compatible setting for non-HTTPS environments
       sameSite: "lax",
       path: "/"
     },
@@ -456,17 +458,32 @@ function setupAuthRoutes(app: Express) {
       return res.status(200).json({ message: "Already logged out" });
     }
     
+    // Get session id for logging
+    const sessionId = req.session.id;
+    logger.debug(`Logging out user. Session ID before logout: ${sessionId}`);
+    
     req.logout((err) => {
-      if (err) return next(err);
-      req.session.destroy((err) => {
-        if (err) return next(err);
-        // Ensure cookie settings match our session settings exactly
+      if (err) {
+        logger.error('Error during logout:', err);
+        return next(err);
+      }
+      
+      // Destroy session with regenerate to ensure complete cleanup
+      req.session.regenerate((regenerateErr) => {
+        if (regenerateErr) {
+          logger.error('Error regenerating session during logout:', regenerateErr);
+          return next(regenerateErr);
+        }
+        
+        // Explicitly clear the cookie with exact same settings as session cookie
         res.clearCookie('garden.sid', { 
           path: '/',
           httpOnly: true,
           secure: false, // Must match session.cookie.secure
-          sameSite: 'lax'  // Must match session.cookie.sameSite
+          sameSite: 'lax',  // Must match session.cookie.sameSite
         });
+        
+        logger.debug(`User logged out successfully. Old session: ${sessionId}`);
         return res.status(200).json({ message: "Logged out successfully" });
       });
     });

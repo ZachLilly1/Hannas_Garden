@@ -25,28 +25,44 @@ export function setupDirectLoginRoute(app: Express) {
         return res.status(401).json({ message: "Invalid username or password" });
       }
       
-      // Simple login process - no regeneration or complex error handling
       logger.info("Password matches, logging in user:", username);
       
-      // Log the user in manually
-      req.login(user, (err) => {
-        if (err) {
-          logger.error("Error during login:", err);
-          return res.status(500).json({ message: "Error during login" });
+      // First regenerate session to prevent session fixation
+      req.session.regenerate((regenerateErr) => {
+        if (regenerateErr) {
+          logger.error("Error regenerating session before login:", regenerateErr);
+          return res.status(500).json({ message: "Error establishing secure session" });
         }
         
-        // Add essential CORS header
-        res.header('Access-Control-Allow-Credentials', 'true');
-        
-        // Save session and return
-        req.session.save((saveErr) => {
-          if (saveErr) {
-            logger.error("Error saving session:", saveErr);
+        // Now login the user with the fresh session
+        req.login(user, (loginErr) => {
+          if (loginErr) {
+            logger.error("Error during login:", loginErr);
+            return res.status(500).json({ message: "Error during login" });
           }
           
-          // Return user info without password
-          const { password, ...userInfo } = user;
-          return res.status(200).json(userInfo);
+          // Add CORS headers
+          res.header('Access-Control-Allow-Credentials', 'true');
+          res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+          
+          // Update last login time 
+          storage.updateUserLastLogin(user.id)
+            .catch(err => logger.error("Failed to update last login time:", err));
+          
+          // Force session save to ensure data is persisted
+          req.session.save((saveErr) => {
+            if (saveErr) {
+              logger.error("Error saving session:", saveErr);
+              // Continue despite error - session might still work
+            }
+            
+            logger.debug(`Login successful, session established: ${req.session.id}`);
+            logger.debug(`Session data after login: ${JSON.stringify(req.session)}`);
+            
+            // Return user info without password
+            const { password, ...userInfo } = user;
+            return res.status(200).json(userInfo);
+          });
         });
       });
     } catch (error) {
