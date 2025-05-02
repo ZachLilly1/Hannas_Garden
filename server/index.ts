@@ -6,7 +6,7 @@ import fs from "fs";
 import { applyMigrations } from "./migrations";
 import { setupSecurityMiddleware } from "./middleware/security";
 import * as logger from "./services/logger";
-import session from "express-session";
+// Session is initialized in auth.ts, not here
 import cors from "cors";
 
 const app = express();
