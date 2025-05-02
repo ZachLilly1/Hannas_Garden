@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 // Define form schema with validation
 const formSchema = z.object({
@@ -23,10 +26,10 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onSuccess, onRegisterClick }: LoginFormProps) {
-  const { login } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [loginError, setLoginError] = useState<string | null>(null);
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -35,30 +38,83 @@ export function LoginForm({ onSuccess, onRegisterClick }: LoginFormProps) {
     },
   });
 
+  // Robust login function that tries multiple authentication methods
   async function onSubmit(data: FormValues) {
     setIsSubmitting(true);
+    setLoginError(null);
+    
+    console.log("Attempting login with username:", data.username);
+    let loginSuccessful = false;
+    let userData = null;
+    let error = null;
+    
+    // Try multiple methods in sequence
     try {
-      console.log("Attempting login with username:", data.username);
-      const result = await login(data);
-      console.log("Login successful for user:", result.username);
+      // Method 1: Try direct login first since we know it works
+      console.log("Trying direct login...");
+      const directLoginResponse = await fetch("/api/auth/direct-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include"
+      });
       
-      // Force a page reload to ensure session is properly established
+      if (directLoginResponse.ok) {
+        userData = await directLoginResponse.json();
+        console.log("Direct login successful!");
+        loginSuccessful = true;
+      } else {
+        console.log("Direct login failed, trying standard login...");
+        
+        // Method 2: Try standard login as fallback
+        try {
+          const standardLoginResponse = await apiRequest("POST", "/api/auth/login", data);
+          if (standardLoginResponse.ok) {
+            userData = await standardLoginResponse.json();
+            console.log("Standard login successful!");
+            loginSuccessful = true;
+          } else {
+            const errorData = await standardLoginResponse.json();
+            error = new Error(errorData.message || "Authentication failed");
+          }
+        } catch (e) {
+          console.error("Standard login error:", e);
+          error = e;
+        }
+      }
+    } catch (e) {
+      console.error("All login methods failed:", e);
+      error = e;
+    }
+    
+    // Handle the login result
+    if (loginSuccessful && userData) {
+      console.log("Login successful for user:", userData.username);
+      toast({
+        title: "Login successful",
+        description: `Welcome back, ${userData.displayName || userData.username}!`
+      });
+      
+      // Update the auth context via window reload
       if (onSuccess) {
+        // Small delay to ensure session is established
         setTimeout(() => {
-          console.log("Executing success callback");
-          onSuccess();
+          // Force a hard reload to ensure state is refreshed
+          window.location.href = "/";
         }, 500);
       }
-    } catch (error) {
-      console.error("Login error:", error);
+    } else {
+      const errorMessage = error instanceof Error ? error.message : "Authentication failed. Please try again.";
+      console.error("Login error:", errorMessage);
+      setLoginError(errorMessage);
       toast({
         title: "Login failed",
-        description: error instanceof Error ? error.message : "Please try again",
-        variant: "destructive",
+        description: errorMessage,
+        variant: "destructive"
       });
-    } finally {
-      setIsSubmitting(false);
     }
+    
+    setIsSubmitting(false);
   }
 
   return (
@@ -69,6 +125,14 @@ export function LoginForm({ onSuccess, onRegisterClick }: LoginFormProps) {
           Sign in to manage your garden
         </p>
       </div>
+
+      {loginError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Login Error</AlertTitle>
+          <AlertDescription>{loginError}</AlertDescription>
+        </Alert>
+      )}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

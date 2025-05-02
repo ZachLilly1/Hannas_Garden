@@ -45,17 +45,6 @@ export default function AuthPage() {
               onSuccess={handleAuthSuccess}
               onRegisterClick={toggleMode}
             />
-            <div className="mt-6 text-center">
-              <p className="text-xs text-muted-foreground">
-                Having trouble logging in?{" "}
-                <a 
-                  href="/tools/direct-login" 
-                  className="underline text-primary hover:text-primary/80"
-                >
-                  Try direct login
-                </a>
-              </p>
-            </div>
           </div>
         ) : (
           <RegisterForm 
