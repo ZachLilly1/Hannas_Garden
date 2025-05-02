@@ -73,10 +73,11 @@ export function setupLightMeterRoutes(app: Express) {
 
       return res.status(200).json(analysisResult);
     } catch (error) {
-      logger.error("Error analyzing light level with OpenAI:", error);
+      const errorObject = error instanceof Error ? error : new Error(String(error));
+      logger.error("Error analyzing light level with OpenAI:", errorObject);
       return res.status(500).json({ 
         error: "Failed to analyze light levels",
-        message: error instanceof Error ? error.message : "Unknown error"
+        message: errorObject.message
       });
     }
   });
@@ -166,7 +167,7 @@ async function analyzeWithOpenAI(
     const result = JSON.parse(content) as LightMeterAIResponse;
     return result;
   } catch (error) {
-    logger.error("OpenAI API error:", error);
+    logger.error("OpenAI API error:", error instanceof Error ? error : new Error(String(error)));
     
     // Fallback response if OpenAI fails
     return {

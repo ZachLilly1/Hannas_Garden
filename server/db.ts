@@ -57,6 +57,7 @@ export async function closeDbConnection() {
     await pool.end();
     logger.info('Database connection pool closed successfully');
   } catch (error) {
-    logger.error('Error closing database connection pool:', error);
+    logger.error('Error closing database connection pool:', 
+      error instanceof Error ? error : new Error(String(error)));
   }
 }
