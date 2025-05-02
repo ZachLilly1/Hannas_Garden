@@ -59,20 +59,25 @@ export function setupDirectLoginRoute(app: Express) {
             logger.info(`Session regenerated from ${oldSessionId} to ${req.session.id}`);
             
             // Add additional session data to help with persistence
-            req.session.loginTime = new Date().toISOString();
-            req.session.userIdentifier = username;
+            // Use type assertion to handle custom session properties
+            (req.session as any).loginTime = new Date().toISOString();
+            (req.session as any).userIdentifier = username;
             
-            // Force session save with extended error handling
+            // Force session save with extended error handling and improved error recovery
             req.session.save((saveErr) => {
               if (saveErr) {
                 logger.error("Error saving session:", saveErr);
                 logger.error("Session save error details:", saveErr.message);
-                // Continue despite error
+                // Continue despite error, but log it clearly
+                logger.warn("Proceeding with login despite session save error");
               }
+              
+              // Add additional headers to help with CORS
+              res.header('Access-Control-Allow-Credentials', 'true');
               
               // Return user info without password
               const { password, ...userInfo } = user;
-              res.status(200).json({
+              return res.status(200).json({
                 ...userInfo,
                 _loginMethod: "direct",
                 _sessionId: req.session.id

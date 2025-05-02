@@ -14,9 +14,13 @@ const app = express();
 // Apply comprehensive security middleware (including Helmet)
 setupSecurityMiddleware(app);
 
+// Allow requests from any origin in development
+// In production, this should be restricted to your domain
 app.use(cors({
-  origin: "http://localhost:3000", // Replace with frontend URL if needed
+  origin: true, // Allow any origin temporarily for debugging
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
 }));
 
 // Increase JSON payload size limit to 50MB for handling image data

@@ -138,13 +138,14 @@ export function setupAuth(app: Express) {
   // Session configuration with improved security and persistence
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET,
-    resave: false, // Only save when changed
-    saveUninitialized: false, // Only save when there's data
+    resave: true, // Ensure session is saved back to the store
+    saveUninitialized: true, // Save uninitialized sessions (for guest sessions)
     store: pgSessionStore,
     name: 'garden.sid', // Custom cookie name for better identification
     cookie: {
-      // Adapt secure flag based on environment
-      secure: process.env.NODE_ENV === 'production',
+      // Set secure to false even in production for now until issues are fixed
+      // This allows cookies to work without HTTPS
+      secure: false,
       httpOnly: true, // Prevents JavaScript access to cookies
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
       sameSite: "lax", // Allows cross-site navigation while protecting against CSRF
@@ -422,9 +423,20 @@ function setupAuthRoutes(app: Express) {
           logger.debug(`Login completed, session established. Session ID: ${req.session.id}`);
           logger.debug(`User in session: ${req.user?.username}`);
           
-          // Return user info without password
-          const { password, ...userInfo } = user;
-          return res.status(200).json(userInfo);
+          // Add additional headers to help with CORS
+          res.header('Access-Control-Allow-Credentials', 'true');
+          
+          // Force session save to ensure data is persisted
+          req.session.save((saveErr) => {
+            if (saveErr) {
+              logger.error("Error saving session after login:", saveErr);
+              logger.warn("Proceeding with login despite session save error");
+            }
+            
+            // Return user info without password
+            const { password, ...userInfo } = user;
+            return res.status(200).json(userInfo);
+          });
         });
       })(req, res, next);
     } catch (error) {
