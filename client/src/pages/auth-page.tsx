@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { LeafIcon } from "@/lib/icons";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { RegisterForm } from "@/components/auth/RegisterForm";
+import { DevLoginButton } from "@/components/auth/DevLoginButton";
 import { useAuth } from "@/context/AuthContext";
 
 type AuthMode = "login" | "register";
@@ -45,6 +46,12 @@ export default function AuthPage() {
               onSuccess={handleAuthSuccess}
               onRegisterClick={toggleMode}
             />
+            <div className="mt-6 text-center">
+              <div className="text-sm text-muted-foreground mb-2">
+                Development Options
+              </div>
+              <DevLoginButton />
+            </div>
           </div>
         ) : (
           <RegisterForm 

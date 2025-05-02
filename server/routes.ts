@@ -54,6 +54,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up direct login route for debugging
   setupDirectLoginRoute(app);
   
+  // Add development bypass route for easy authentication (DEVELOPMENT ONLY)
+  app.get("/api/auth/dev-login", async (req, res) => {
+    try {
+      const user = await storage.getUserByUsername("Zach");
+      
+      if (!user) {
+        return res.status(404).json({ message: "Developer user not found" });
+      }
+      
+      // Force login by setting the session directly
+      (req.session as any).passport = { user: user.id };
+      
+      // Save session explicitly
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+      
+      // Add special headers for CORS
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+      
+      // Return success with user info
+      const { password, ...userInfo } = user;
+      res.status(200).json({
+        ...userInfo,
+        _bypassLogin: true,
+        _sessionId: req.session.id
+      });
+    } catch (error) {
+      console.error("Dev login error:", error);
+      res.status(500).json({ message: "Error during dev login" });
+    }
+  });
+  
   // Set up light meter routes with OpenAI integration
   setupLightMeterRoutes(app);
   
