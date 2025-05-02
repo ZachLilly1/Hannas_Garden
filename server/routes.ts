@@ -42,6 +42,8 @@ import fs from "fs";
 import path from "path";
 import { setupAuth, isAuthenticated, hashPassword } from "./auth";
 
+// Direct login routes only used in development
+const isProduction = process.env.NODE_ENV === 'production';
 import { setupDirectLoginRoute } from "./routes/direct-login";
 import { setupLightMeterRoutes } from "./routes/light-meter";
 import { setupPlantLightAnalyzerRoutes } from "./routes/plant-light-analyzer";
@@ -51,8 +53,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
   
-  // Set up direct login route for debugging
-  setupDirectLoginRoute(app);
+  // Set up direct login route for debugging only in development
+  if (!isProduction) {
+    logger.info("Setting up direct login route for development");
+    setupDirectLoginRoute(app);
+  }
   
 
   
