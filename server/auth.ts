@@ -291,8 +291,8 @@ function setupAuthRoutes(app: Express) {
     res.json({ csrfToken: req.csrfToken() });
   });
 
-  // Register new user - CSRF protection temporarily removed for testing
-  app.post("/api/auth/register", registerLimiter, async (req, res, next) => {
+  // Register new user with CSRF protection
+  app.post("/api/auth/register", registerLimiter, csrfProtection, async (req, res, next) => {
     try {
       // Check if user already exists
       const existingUser = await storage.getUserByUsername(req.body.username);
@@ -425,8 +425,8 @@ function setupAuthRoutes(app: Express) {
     }
   });
 
-  // Logout user - CSRF protection temporarily removed for testing
-  app.post("/api/auth/logout", (req, res, next) => {
+  // Logout user with CSRF protection
+  app.post("/api/auth/logout", csrfProtection, (req, res, next) => {
     if (!req.isAuthenticated()) {
       return res.status(200).json({ message: "Already logged out" });
     }
@@ -478,8 +478,8 @@ function setupAuthRoutes(app: Express) {
     res.json(userInfo);
   });
 
-  // Update user profile - CSRF protection temporarily removed for testing
-  app.put("/api/auth/profile", isAuthenticated, async (req, res, next) => {
+  // Update user profile with CSRF protection
+  app.put("/api/auth/profile", isAuthenticated, csrfProtection, async (req, res, next) => {
     try {
       const userId = (req.user as SelectUser).id;
       const updatedUser = await storage.updateUserProfile(userId, req.body);

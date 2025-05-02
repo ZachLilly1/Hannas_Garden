@@ -3,17 +3,29 @@ import OpenAI from "openai";
 import { z } from "zod";
 import * as logger from "../services/logger";
 
-// Define schema for light analysis request
+// Enhanced schema for light analysis request with better validation
 const lightAnalysisSchema = z.object({
-  imageData: z.string(),
-  rawBrightness: z.number(),
-  correctedBrightness: z.number(),
-  estimatedLux: z.number(),
+  imageData: z.string()
+    .min(10, "Image data is too short or missing")
+    .refine(
+      (data) => data.startsWith('data:image/') || /^[A-Za-z0-9+/=]+$/.test(data),
+      "Invalid image data format. Must be a valid base64 string or data URL"
+    ),
+  rawBrightness: z.number()
+    .min(0, "Brightness cannot be negative")
+    .max(255, "Brightness cannot exceed 255"),
+  correctedBrightness: z.number()
+    .min(0, "Corrected brightness cannot be negative")
+    .max(255, "Corrected brightness cannot exceed 255"),
+  estimatedLux: z.number()
+    .min(0, "Lux value cannot be negative")
+    .max(150000, "Lux value exceeds normal range"),
   calculatedLevel: z.object({
-    name: z.string(),
-    range: z.tuple([z.number(), z.number()]),
-    description: z.string(),
-    suitable: z.string()
+    name: z.string().min(1, "Level name is required"),
+    range: z.tuple([z.number().min(0), z.number().min(0)])
+      .refine(([min, max]) => min < max, "Range minimum must be less than maximum"),
+    description: z.string().min(1, "Description is required"),
+    suitable: z.string().min(1, "Suitable plants information is required")
   })
 });
 
@@ -33,8 +45,19 @@ interface LightMeterAIResponse {
   confidence: "high" | "medium" | "low";
 }
 
-// The newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Initialize OpenAI client with proper error handling
+let openai: OpenAI | null = null;
+try {
+  if (!process.env.OPENAI_API_KEY) {
+    logger.warn("OPENAI_API_KEY is not set - AI light meter features will be limited");
+  } else {
+    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    logger.info("OpenAI client initialized for light meter service");
+  }
+} catch (error) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  logger.error("Failed to initialize OpenAI client for light meter:", new Error(errorMessage));
+}
 
 export function setupLightMeterRoutes(app: Express) {
   app.post("/api/light-meter/analyze", async (req: Request, res: Response) => {
@@ -73,11 +96,31 @@ export function setupLightMeterRoutes(app: Express) {
 
       return res.status(200).json(analysisResult);
     } catch (error) {
-      const errorObject = error instanceof Error ? error : new Error(String(error));
-      logger.error("Error analyzing light level with OpenAI:", errorObject);
+      // Consistent error handling pattern
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error("Error analyzing light level with OpenAI:", error instanceof Error ? error : new Error(errorMessage));
+      
+      // Check for specific error types to provide better error messages
+      if (errorMessage.includes('OpenAI') || errorMessage.includes('API')) {
+        return res.status(503).json({
+          error: "Light meter analysis service temporarily unavailable",
+          message: "The AI analysis service is currently unavailable. Please try again later.",
+          code: "SERVICE_UNAVAILABLE"
+        });
+      }
+      
+      if (errorMessage.includes('parse') || errorMessage.includes('JSON')) {
+        return res.status(422).json({
+          error: "Invalid response format",
+          message: "The service returned an invalid response format. Please try again.",
+          code: "INVALID_RESPONSE"
+        });
+      }
+      
       return res.status(500).json({ 
         error: "Failed to analyze light levels",
-        message: errorObject.message
+        message: errorMessage,
+        code: "ANALYSIS_FAILED"
       });
     }
   });
@@ -96,6 +139,25 @@ async function analyzeWithOpenAI(
   }
 ): Promise<LightMeterAIResponse> {
   try {
+    // Check if OpenAI client is available
+    if (!openai) {
+      logger.warn("OpenAI client not available for light meter analysis - using fallback");
+      return {
+        lightLevel: {
+          name: calculatedLevel.name,
+          luxRange: calculatedLevel.range,
+          description: calculatedLevel.description
+        },
+        plantRecommendations: {
+          recommended: calculatedLevel.suitable.split(", "),
+          notRecommended: [],
+          explanation: "Based on the calculated light level."
+        },
+        additionalAdvice: "OpenAI analysis is currently unavailable. Consider using a dedicated light meter for more accurate measurements.",
+        confidence: "low"
+      };
+    }
+    
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [

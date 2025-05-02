@@ -34,17 +34,39 @@ const poolConfig = {
 // Create connection pool with optimized settings
 export const pool = new Pool(poolConfig);
 
-// Add error handling to the pool
+// Add comprehensive error handling to the pool
 pool.on('error', (err) => {
   logger.error('Unexpected database pool error:', err);
   
-  // In extreme cases, the pool may need to be recreated
+  // Provide specific handling for different database error scenarios
   if (err.message.includes('connection terminated unexpectedly')) {
     logger.warn('Database connection terminated unexpectedly. Consider restarting the application if issues persist.');
+  } else if (err.message.includes('too many clients')) {
+    logger.error('Database connection pool exhausted. Check for connection leaks or increase pool size.');
+  } else if (err.message.includes('password authentication failed')) {
+    logger.error('Database authentication failed. Check DATABASE_URL for correct credentials.');
+  } else if (err.message.includes('database') && err.message.includes('does not exist')) {
+    logger.error('Database does not exist. Make sure the database is properly created.');
+  } else {
+    logger.error('Unhandled database error:', err);
   }
 });
 
-// Create Drizzle ORM instance with the connection pool
+// Configure query timeout and add logging
+const queryConfig = {
+  // Set a default query timeout of 30 seconds (30000ms)
+  // This helps prevent long-running queries from blocking the application
+  statementTimeout: 30000,
+  
+  // Configure query logging for development
+  // Only log slow queries in production to avoid excessive logging
+  logQueryStart: isProduction ? false : true,
+  logQueryDuration: true,
+  logSlowQuery: true,
+  slowQueryThreshold: isProduction ? 1000 : 500, // 1 second in prod, 500ms in dev
+};
+
+// Create Drizzle ORM instance with the connection pool and enhanced config
 export const db = drizzle({ client: pool, schema });
 
 // Log when database is ready
