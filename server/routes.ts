@@ -261,7 +261,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                           `Care Tips: ${careInfo.careTips}\n\n` +
                           `Interesting Fact: ${careInfo.interestingFact}`;
       } catch (error) {
-        logger.error("Error getting care recommendations:", error);
+        logger.error("Error getting care recommendations:", handleError(error));
         // Continue with user-provided data if OpenAI recommendation fails
       }
     }
@@ -467,7 +467,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Store the health diagnosis in the metadata field as JSON
         careLogData.metadata = JSON.stringify({ healthDiagnosis });
       } catch (error) {
-        logger.error('Error processing health diagnosis data:', error);
+        logger.error('Error processing health diagnosis data:', handleError(error));
       }
     }
     
@@ -528,12 +528,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               careLogData.notes = (careLogData.notes || "") + lightInfo;
             }
           } catch (analysisError) {
-            logger.error("Error performing light analysis on photo:", analysisError);
+            logger.error("Error performing light analysis on photo:", handleError(analysisError));
             // Continue without adding analysis to notes, don't block the main flow
           }
         }
       } catch (error) {
-        logger.error('Error processing photo data:', error);
+        logger.error('Error processing photo data:', handleError(error));
         return res.status(500).json({ message: 'Failed to process photo' });
       }
     }
@@ -725,11 +725,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
             }
           } catch (journalError) {
-            logger.error('Error generating journal entry:', journalError);
+            logger.error('Error generating journal entry:', handleError(journalError));
             // Don't block the process, continue with other tasks
           }
         } catch (error) {
-          logger.error('Error performing background analysis:', error);
+          logger.error('Error performing background analysis:', handleError(error));
           // No need to handle this error since this is a background task
           // and doesn't affect the response to the client
         }
