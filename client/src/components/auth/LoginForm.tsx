@@ -59,23 +59,51 @@ export function LoginForm({ onSuccess, onRegisterClick }: LoginFormProps) {
         credentials: "include"
       });
       
-      if (directLoginResponse.ok) {
+      // Check content type to make sure we're getting JSON back
+      const contentType = directLoginResponse.headers.get('content-type');
+      if (directLoginResponse.ok && contentType && contentType.includes('application/json')) {
         userData = await directLoginResponse.json();
         console.log("Direct login successful!");
         loginSuccessful = true;
       } else {
-        console.log("Direct login failed, trying standard login...");
+        // If we get a non-JSON response or an error, log it
+        if (contentType && !contentType.includes('application/json')) {
+          console.error("Invalid response type:", contentType);
+          const textResponse = await directLoginResponse.text();
+          console.error("Server returned non-JSON response:", textResponse.substring(0, 100) + "...");
+          error = new Error("Server error - received HTML instead of JSON. Please try again later.");
+        } else {
+          console.log("Direct login failed, trying standard login...");
+        }
         
         // Method 2: Try standard login as fallback
         try {
-          const standardLoginResponse = await apiRequest("POST", "/api/auth/login", data);
-          if (standardLoginResponse.ok) {
+          const standardLoginResponse = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+            credentials: "include"
+          });
+          
+          // Again, check content type
+          const loginContentType = standardLoginResponse.headers.get('content-type');
+          if (standardLoginResponse.ok && loginContentType && loginContentType.includes('application/json')) {
             userData = await standardLoginResponse.json();
             console.log("Standard login successful!");
             loginSuccessful = true;
+          } else if (loginContentType && !loginContentType.includes('application/json')) {
+            // Handle HTML response
+            const textResponse = await standardLoginResponse.text();
+            console.error("Server returned non-JSON response:", textResponse.substring(0, 100) + "...");
+            error = new Error("Server error - received HTML instead of JSON. Please try again later.");
           } else {
-            const errorData = await standardLoginResponse.json();
-            error = new Error(errorData.message || "Authentication failed");
+            // Handle regular JSON error
+            try {
+              const errorData = await standardLoginResponse.json();
+              error = new Error(errorData.message || "Authentication failed");
+            } catch (parseError) {
+              error = new Error("Failed to parse server response");
+            }
           }
         } catch (e) {
           console.error("Standard login error:", e);

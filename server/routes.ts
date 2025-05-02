@@ -71,6 +71,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const apiRouter = app;
 
   // Helper function to validate request body
+  // Helper function to ensure errors are properly typed for logger
+  function handleError(error: unknown): Error {
+    return error instanceof Error ? error : new Error(String(error));
+  }
+
   function validateRequest<T>(
     schema: z.ZodType<T>,
     req: Request,
@@ -80,7 +85,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const data = schema.parse(req.body);
       return { success: true, data };
     } catch (error) {
-      res.status(400).json({ message: "Invalid request data", error });
+      const typedError = handleError(error);
+      res.status(400).json({ 
+        message: "Invalid request data", 
+        error: typedError.message 
+      });
       return { success: false };
     }
   }
@@ -137,7 +146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // For this example, we'll just use the data URL as the avatar URL
         updateData.avatarUrl = photoBase64;
       } catch (error) {
-        logger.error("Error saving profile image:", error);
+        logger.error("Error saving profile image:", error instanceof Error ? error : new Error(String(error)));
         return res.status(500).json({ message: "Failed to save profile image" });
       }
     }

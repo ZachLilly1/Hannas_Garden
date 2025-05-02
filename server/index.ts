@@ -169,12 +169,24 @@ app.use((req, res, next) => {
 
   const server = await registerRoutes(app);
 
+// Global error handler - ensure all errors return JSON, never HTML
 app.use(async (err: any, _req: Request, res: Response, _next: NextFunction) => {
+    // Always set content type to JSON for consistency and API reliability
+    res.setHeader('Content-Type', 'application/json');
+    
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
     
-    logger.error(err); // Using logger.error instead of logger
-    return res.status(status).json({ message });
+    // Log the error
+    logger.error("Server error:", err instanceof Error ? err : new Error(String(err)));
+    
+    // Always return a properly formatted JSON response
+    return res.status(status).json({ 
+      message,
+      error: isProduction ? undefined : (err.stack || String(err)),
+      status,
+      success: false
+    });
     // no re-throw – prevents duplicate logs / crash
 });
   // importantly only setup vite in development and after
