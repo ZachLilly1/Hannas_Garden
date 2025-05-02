@@ -25,73 +25,33 @@ export function setupDirectLoginRoute(app: Express) {
         return res.status(401).json({ message: "Invalid username or password" });
       }
       
-      // Enhanced direct login with additional debugging and safeguards
-      logger.info("Password matches, attempting to login user:", username);
-      logger.info("Current session before login:", req.session.id);
+      // Simple login process - no regeneration or complex error handling
+      logger.info("Password matches, logging in user:", username);
       
-      // Log the user in manually with extended error handling
+      // Log the user in manually
       req.login(user, (err) => {
         if (err) {
-          logger.error("Error during manual login:", err);
-          logger.error("Login error details:", err.message, err.stack);
-          return res.status(500).json({ message: "Error during login", details: err.message });
+          logger.error("Error during login:", err);
+          return res.status(500).json({ message: "Error during login" });
         }
         
-        logger.info("User logged in successfully via direct login:", username);
-        logger.info("Session ID after login:", req.session.id);
-        logger.info("Is authenticated after login:", req.isAuthenticated());
+        // Add essential CORS header
+        res.header('Access-Control-Allow-Credentials', 'true');
         
-        // Force regenerate session to ensure clean state
-        const oldSessionId = req.session.id;
-        req.session.regenerate((regenerateErr) => {
-          if (regenerateErr) {
-            logger.error("Error regenerating session:", regenerateErr);
-            // Continue despite error
+        // Save session and return
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            logger.error("Error saving session:", saveErr);
           }
           
-          // Re-login after session regeneration
-          req.login(user, (loginErr) => {
-            if (loginErr) {
-              logger.error("Error during re-login after session regeneration:", loginErr);
-              return res.status(500).json({ message: "Session error during login" });
-            }
-            
-            logger.info(`Session regenerated from ${oldSessionId} to ${req.session.id}`);
-            
-            // Add additional session data to help with persistence
-            // Use type assertion to handle custom session properties
-            (req.session as any).loginTime = new Date().toISOString();
-            (req.session as any).userIdentifier = username;
-            
-            // Force session save with extended error handling and improved error recovery
-            req.session.save((saveErr) => {
-              if (saveErr) {
-                logger.error("Error saving session:", saveErr);
-                logger.error("Session save error details:", saveErr.message);
-                // Continue despite error, but log it clearly
-                logger.warn("Proceeding with login despite session save error");
-              }
-              
-              // Add additional headers to help with CORS
-              res.header('Access-Control-Allow-Credentials', 'true');
-              
-              // Return user info without password
-              const { password, ...userInfo } = user;
-              return res.status(200).json({
-                ...userInfo,
-                _loginMethod: "direct",
-                _sessionId: req.session.id
-              });
-            });
-          });
+          // Return user info without password
+          const { password, ...userInfo } = user;
+          return res.status(200).json(userInfo);
         });
       });
     } catch (error) {
       logger.error("Direct login error:", error);
-      res.status(500).json({ 
-        message: "Server error during login", 
-        error: error instanceof Error ? error.message : String(error)
-      });
+      res.status(500).json({ message: "Server error during login" });
     }
   });
   

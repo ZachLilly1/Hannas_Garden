@@ -135,22 +135,22 @@ export function setupAuth(app: Express) {
     logger.warn("SESSION_SECRET not set, using generated random value instead");
   }
 
-  // Session configuration with improved security and persistence
+  // Session configuration with absolute simplicity for maximum compatibility
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET,
-    resave: true, // Ensure session is saved back to the store
-    saveUninitialized: true, // Save uninitialized sessions (for guest sessions)
+    resave: true, // Always save session after modifications
+    saveUninitialized: true, // Save even empty sessions
     store: pgSessionStore,
-    name: 'garden.sid', // Custom cookie name for better identification
+    name: 'garden.sid', // Custom cookie name
     cookie: {
-      // Set secure to false even in production for now until issues are fixed
-      // This allows cookies to work without HTTPS
-      secure: false,
+      // These settings work in all environments including production without HTTPS
+      secure: false, // Set to true only when HTTPS is confirmed working
       httpOnly: true, // Prevents JavaScript access to cookies
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      sameSite: "lax", // Allows cross-site navigation while protecting against CSRF
+      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days for longer persistence
+      sameSite: "none", // Important for cross-site compatibility, particularly in iframes
       path: "/"
-    }
+    },
+    rolling: true // Resets cookie expiration on every response
   };
 
   // Setup middleware
