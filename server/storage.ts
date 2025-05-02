@@ -336,29 +336,39 @@ export class DatabaseStorage implements IStorage {
       notes: careLogData.notes ?? null
     };
     
-    const [careLog] = await db
-      .insert(careLogs)
-      .values(careLogDataWithDefaults)
-      .returning();
-    
-    // Update plant's last watered or fertilized date
-    if (careLogData.careType === 'water') {
-      // Convert Date to string in ISO format for date columns
-      const lastWateredDate = new Date().toISOString().split('T')[0];
-      await db
-        .update(plants)
-        .set({ lastWatered: lastWateredDate })
-        .where(eq(plants.id, careLogData.plantId));
-    } else if (careLogData.careType === 'fertilize') {
-      // Convert Date to string in ISO format for date columns
-      const lastFertilizedDate = new Date().toISOString().split('T')[0];
-      await db
-        .update(plants)
-        .set({ lastFertilized: lastFertilizedDate })
-        .where(eq(plants.id, careLogData.plantId));
-    }
-    
-    return careLog;
+    // Use a transaction to ensure both operations succeed or fail together
+    return await db.transaction(async (tx) => {
+      try {
+        // Insert the care log
+        const [careLog] = await tx
+          .insert(careLogs)
+          .values(careLogDataWithDefaults)
+          .returning();
+          
+        // Update plant's last watered or fertilized date
+        if (careLogData.careType === 'water') {
+          // Convert Date to string in ISO format for date columns
+          const lastWateredDate = new Date().toISOString().split('T')[0];
+          await tx
+            .update(plants)
+            .set({ lastWatered: lastWateredDate })
+            .where(eq(plants.id, careLogData.plantId));
+        } else if (careLogData.careType === 'fertilize') {
+          // Convert Date to string in ISO format for date columns
+          const lastFertilizedDate = new Date().toISOString().split('T')[0];
+          await tx
+            .update(plants)
+            .set({ lastFertilized: lastFertilizedDate })
+            .where(eq(plants.id, careLogData.plantId));
+        }
+        
+        return careLog;
+      } catch (error) {
+        // Log the error before rethrowing
+        logger.error('Transaction failed in createCareLog:', error instanceof Error ? error : new Error(String(error)));
+        throw error; // Rethrow to trigger transaction rollback
+      }
+    });
   }
   
   async updateCareLog(id: number, data: Partial<InsertCareLog>): Promise<CareLog | undefined> {
@@ -817,54 +827,72 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
     
-    // Add the vote
-    const [vote] = await db
-      .insert(tipVotes)
-      .values({
-        tipId,
-        userId,
-        vote: 1
-      })
-      .returning();
-    
-    // Update the like count on the tip
-    if (vote) {
-      await db
-        .update(communityTips)
-        .set({
-          likesCount: sql`${communityTips.likesCount} + 1`
-        })
-        .where(eq(communityTips.id, tipId));
-      
-      return true;
-    }
-    
-    return false;
+    // Use a transaction to ensure both operations succeed or fail together
+    return await db.transaction(async (tx) => {
+      try {
+        // Add the vote
+        const [vote] = await tx
+          .insert(tipVotes)
+          .values({
+            tipId,
+            userId,
+            vote: 1
+          })
+          .returning();
+        
+        // Update the like count on the tip
+        if (vote) {
+          await tx
+            .update(communityTips)
+            .set({
+              likesCount: sql`${communityTips.likesCount} + 1`
+            })
+            .where(eq(communityTips.id, tipId));
+          
+          return true;
+        }
+        
+        return false;
+      } catch (error) {
+        // Log the error before rethrowing
+        logger.error('Transaction failed in addTipVote:', error instanceof Error ? error : new Error(String(error)));
+        throw error; // Rethrow to trigger transaction rollback
+      }
+    });
   }
   
   async removeTipVote(tipId: number, userId: number): Promise<boolean> {
-    // Delete the vote
-    const [deletedVote] = await db
-      .delete(tipVotes)
-      .where(and(
-        eq(tipVotes.tipId, tipId),
-        eq(tipVotes.userId, userId)
-      ))
-      .returning();
-    
-    // Update the like count on the tip
-    if (deletedVote) {
-      await db
-        .update(communityTips)
-        .set({
-          likesCount: sql`${communityTips.likesCount} - 1`
-        })
-        .where(eq(communityTips.id, tipId));
-      
-      return true;
-    }
-    
-    return false;
+    // Use a transaction to ensure both operations succeed or fail together
+    return await db.transaction(async (tx) => {
+      try {
+        // Delete the vote
+        const [deletedVote] = await tx
+          .delete(tipVotes)
+          .where(and(
+            eq(tipVotes.tipId, tipId),
+            eq(tipVotes.userId, userId)
+          ))
+          .returning();
+        
+        // Update the like count on the tip
+        if (deletedVote) {
+          await tx
+            .update(communityTips)
+            .set({
+              likesCount: sql`${communityTips.likesCount} - 1`
+            })
+            .where(eq(communityTips.id, tipId));
+          
+          return true;
+        }
+        
+        return false;
+      } catch (error) {
+        // Log the error before rethrowing
+        logger.error('Transaction failed in removeTipVote:', error instanceof Error ? error : new Error(String(error)));
+        throw error; // Rethrow to trigger transaction rollback
+      }
+    });
   }
   
   async getUserVotedTips(userId: number): Promise<number[]> {
