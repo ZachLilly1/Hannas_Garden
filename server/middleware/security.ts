@@ -5,7 +5,7 @@
 
 import helmet from "helmet";
 import { Express } from "express";
-import logger from "../services/logger";
+import * as logger from "../services/logger";
 
 /**
  * Sets up all security middleware for the application

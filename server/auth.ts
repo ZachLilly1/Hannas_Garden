@@ -11,7 +11,7 @@ import { pool } from "./db";
 import csrf from "csurf";
 import rateLimit from "express-rate-limit";
 import { checkPasswordStrength, meetsMinimumRequirements } from "./services/passwordStrength";
-import logger from "./services/logger";
+import * as logger from "./services/logger";
 
 // Initialize CSRF protection middleware
 // This addresses authentication issues for development environments
