@@ -102,3 +102,13 @@
     word-break: break-word;
   }
 }
+
+/* Fix for input text color in light mode */
+.auth-form input {
+  @apply text-neutral-900 dark:text-neutral-100;
+}
+
+/* Global input text color fixes for better contrast */
+input, textarea, select {
+  @apply text-neutral-900 dark:text-neutral-100;
+}
