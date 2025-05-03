@@ -103,14 +103,14 @@
   }
 }
 
-/* Light theme: Force high contrast with white background and black text */
+/* Fix input text color for better contrast with light theme */
 .auth-form input {
-  background-color: white !important;
-  color: black !important;
+  color: #222 !important;
+  background-color: rgba(255, 255, 255, 0.8) !important;
 }
 
-/* Dark theme: Force high contrast with dark background and white text */
+/* Input text color for dark theme */
 .dark .auth-form input {
-  background-color: #333 !important;
-  color: white !important;
+  color: #fff !important;
+  background-color: rgba(20, 20, 20, 0.8) !important;
 }
