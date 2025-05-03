@@ -269,6 +269,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    // Fetch a fresh CSRF token first to ensure we have one before logout
+    try {
+      console.log('Fetching fresh CSRF token before logout');
+      const csrfRes = await fetch('/api/auth/csrf-token');
+      const csrfData = await csrfRes.json();
+      console.log('Got CSRF token, first 8 chars:', csrfData.csrfToken.substring(0, 8));
+    } catch (error) {
+      console.error('Error fetching CSRF token:', error);
+    }
+    
+    // Now try to logout
     await logoutMutation.mutateAsync();
   };
 

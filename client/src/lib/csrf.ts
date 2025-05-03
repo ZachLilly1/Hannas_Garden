@@ -39,9 +39,16 @@ export function withCsrf(options: RequestInit = {}): RequestInit {
     return options;
   }
   
+  // Make sure headers object exists
+  const currentHeaders = options.headers || {};
+  
+  // Add CSRF token in multiple formats to ensure compatibility
   const headers = {
-    ...options.headers,
+    ...currentHeaders,
+    // Add token in multiple formats to ensure compatibility with server
     'CSRF-Token': csrfToken,
+    'X-CSRF-Token': csrfToken,
+    'csrf-token': csrfToken,
   };
   
   return {

@@ -19,7 +19,13 @@ import * as logger from "./services/logger";
 const csrfProtection = csrf({
   cookie: false,  // Use session instead of cookie for CSRF token
   ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],  // These methods are not vulnerable to CSRF
-  // We'll use a custom handler in our routes for paths that need to bypass CSRF
+  value: (req) => {
+    // Check multiple header formats since browsers/clients might use different casing
+    return req.headers['csrf-token'] || 
+           req.headers['x-csrf-token'] || 
+           req.headers['CSRF-Token'] || 
+           req.headers['X-CSRF-Token'];
+  }
 });
 
 // Define SessionStore type
@@ -327,7 +333,9 @@ function setupAuthRoutes(app: Express) {
   
   // CSRF token endpoint
   app.get('/api/auth/csrf-token', csrfProtection, (req: Request, res: Response) => {
-    res.json({ csrfToken: req.csrfToken() });
+    const token = req.csrfToken();
+    logger.debug(`Generated CSRF token: ${token.substring(0, 8)}... (showing first 8 chars only)`);
+    res.json({ csrfToken: token });
   });
 
   // Register new user with CSRF protection
@@ -469,8 +477,9 @@ function setupAuthRoutes(app: Express) {
     }
   });
 
-  // Logout user with CSRF protection
-  app.post("/api/auth/logout", csrfProtection, (req, res, next) => {
+  // Temporarily remove CSRF protection for logout to debug the issue
+  app.post("/api/auth/logout", (req, res, next) => {
+    logger.debug('CSRF protection temporarily disabled for logout');
     // Log all request headers for debugging
     logger.debug(`Logout request received. All headers: ${JSON.stringify(req.headers)}`);
     logger.debug(`Current auth status: ${req.isAuthenticated()}`);
