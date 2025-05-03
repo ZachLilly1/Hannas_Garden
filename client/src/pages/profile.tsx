@@ -151,7 +151,9 @@ export default function Profile() {
 
   const handleLogout = async () => {
     try {
+      // The logout function in authContext now properly handles CSRF token
       await logout();
+      // The logout function handles the redirect, so no need to do anything else
     } catch (error) {
       toast({
         title: "Logout failed",
