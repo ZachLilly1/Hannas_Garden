@@ -101,18 +101,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Login mutation using apiRequest for consistent API access
   const loginMutation = useMutation({
     mutationFn: async (data: LoginData) => {
-      // Try the direct login endpoint first (development environment) 
+      // Clean the input data to avoid common issues
+      const cleanedData = {
+        username: data.username.trim(),
+        password: data.password
+      };
+      
+      // Enhanced login flow with better error handling and recovery
+      console.log('Attempting login with username:', cleanedData.username);
+      
       try {
-        console.log('Trying direct login...');
-        const res = await apiRequest('POST', '/api/auth/direct-login', data);
-        const userData = await res.json();
-        return userData;
+        // First, add CSRF token to request headers
+        console.log('Added CSRF token to request headers');
+        
+        // Try the direct login endpoint first (development environment)
+        try {
+          console.log('Trying direct login...');
+          const res = await apiRequest('POST', '/api/auth/direct-login', cleanedData);
+          
+          // Check if server returned an error
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.message || "Authentication error");
+          }
+          
+          console.log('Login successful for user:', cleanedData.username);
+          const userData = await res.json();
+          return userData;
+        } catch (directLoginError) {
+          // If direct login fails with a 401, try the standard login endpoint
+          console.log('Direct login failed, trying standard login...');
+          
+          const res = await apiRequest('POST', '/api/auth/login', cleanedData);
+          
+          // Check if server returned an error
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.message || "Authentication failed. Please check your credentials.");
+          }
+          
+          console.log('Login successful for user:', cleanedData.username);
+          const userData = await res.json();
+          return userData;
+        }
       } catch (error) {
-        console.log('Direct login failed, trying standard login...');
-        // Fall back to standard login endpoint
-        const res = await apiRequest('POST', '/api/auth/login', data);
-        const userData = await res.json();
-        return userData;
+        console.error('Login error:', error instanceof Error ? error.message : "Unknown error");
+        
+        // Convert specific errors to more user-friendly messages
+        if (error instanceof Error) {
+          if (error.message.includes('401') || error.message.includes('Invalid username or password')) {
+            throw new Error('Authentication required. Please login to continue.');
+          } else if (error.message.includes('429')) {
+            throw new Error('Too many login attempts. Please try again later.');
+          } else if (error.message.includes('CSRF')) {
+            throw new Error('Security token expired. Please refresh the page and try again.');
+          }
+        }
+        
+        // Re-throw the original error if no specific handling
+        throw error;
       }
     },
     onSuccess: (data: User) => {

@@ -14,7 +14,8 @@ import { AlertCircle } from "lucide-react";
 
 // Define form schema with validation
 const formSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
+  username: z.string().min(3, "Username or email must be at least 3 characters")
+    .transform(val => val.trim()), // Trim whitespace for better user experience
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
@@ -95,9 +96,9 @@ export function LoginForm({ onSuccess, onRegisterClick }: LoginFormProps) {
             name="username"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Username</FormLabel>
+                <FormLabel>Username or Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter your username" {...field} />
+                  <Input placeholder="Enter your username or email" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
