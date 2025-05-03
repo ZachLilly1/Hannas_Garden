@@ -1,77 +1,80 @@
-import { Express, Request, Response, NextFunction } from "express";
-import { storage } from "../storage";
+import { Request, Response, NextFunction, Express } from "express";
 import { isAuthenticated } from "../auth";
-import * as logger from "../services/logger";
+import { storage } from "../storage";
 
-// Create an async handler function to simplify error handling
 const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) => 
   (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
 
 export function setupSharedCareLogsRoutes(app: Express) {
-  // Create a shared care log link
+  // Create a new shared care log link
   app.post('/api/shared-care-logs', isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.id;
     const { careLogId } = req.body;
     
     if (!careLogId) {
-      return res.status(400).json({ message: "Care log ID is required" });
+      return res.status(400).json({ error: "Care log ID is required" });
     }
     
-    // Verify the care log exists
-    const careLog = await storage.getCareLogs(req.body.plantId);
-    const foundCareLog = careLog.find(log => log.id === careLogId);
-    
-    if (!foundCareLog) {
-      return res.status(404).json({ message: "Care log not found" });
+    try {
+      const sharedLink = await storage.createSharedCareLogLink(careLogId, userId);
+      res.status(201).json(sharedLink);
+    } catch (error) {
+      console.error("Error creating shared care log link:", error);
+      res.status(500).json({ error: "Failed to create shared care log link" });
     }
-    
-    // Create a shared link
-    const sharedLink = await storage.createSharedCareLogLink(careLogId, req.user!.id);
-    
-    return res.status(201).json(sharedLink);
   }));
   
-  // Get all shared care log links for the authenticated user
+  // Get all shared care log links for a user
   app.get('/api/shared-care-logs', isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
-    const sharedLinks = await storage.getSharedCareLogLinksByUser(req.user!.id);
-    return res.status(200).json(sharedLinks);
+    const userId = req.user!.id;
+    
+    try {
+      const sharedLinks = await storage.getSharedCareLogLinksByUser(userId);
+      res.json(sharedLinks);
+    } catch (error) {
+      console.error("Error fetching shared care log links:", error);
+      res.status(500).json({ error: "Failed to fetch shared care log links" });
+    }
   }));
   
-  // Delete (deactivate) a shared care log link
+  // Delete a shared care log link
   app.delete('/api/shared-care-logs/:shareId', isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
     const { shareId } = req.params;
     
-    // Verify the shared link exists and belongs to the user
-    const sharedLink = await storage.getSharedCareLogLink(shareId);
-    
-    if (!sharedLink) {
-      return res.status(404).json({ message: "Shared link not found" });
-    }
-    
-    if (sharedLink.userId !== req.user!.id) {
-      return res.status(403).json({ message: "You don't have permission to delete this shared link" });
-    }
-    
-    const success = await storage.deactivateSharedCareLogLink(shareId);
-    
-    if (success) {
-      return res.status(200).json({ message: "Shared link deactivated successfully" });
-    } else {
-      return res.status(500).json({ message: "Failed to deactivate shared link" });
+    try {
+      const success = await storage.deactivateSharedCareLogLink(shareId);
+      if (success) {
+        res.status(200).json({ success: true });
+      } else {
+        res.status(404).json({ error: "Shared care log link not found" });
+      }
+    } catch (error) {
+      console.error("Error deactivating shared care log link:", error);
+      res.status(500).json({ error: "Failed to deactivate shared care log link" });
     }
   }));
   
-  // Access a shared care log using its unique ID (public access)
+  // Public access to shared care log
   app.get('/api/sc/:shareId', asyncHandler(async (req: Request, res: Response) => {
     const { shareId } = req.params;
     
-    const sharedCareLog = await storage.getSharedCareLogWithDetails(shareId);
-    
-    if (!sharedCareLog) {
-      return res.status(404).json({ message: "Shared care log not found or link has been deactivated" });
+    try {
+      // Update the stats for the shared link (views count and last accessed)
+      await storage.updateSharedCareLogLinkStats(shareId);
+      
+      // Get the care log with plant details
+      const sharedData = await storage.getSharedCareLogWithDetails(shareId);
+      
+      if (!sharedData) {
+        return res.status(404).json({ error: "Shared care log not found or has been deactivated" });
+      }
+      
+      res.json(sharedData);
+    } catch (error) {
+      console.error("Error fetching shared care log:", error);
+      res.status(500).json({ error: "Failed to fetch shared care log" });
     }
-    
-    return res.status(200).json(sharedCareLog);
   }));
 }
