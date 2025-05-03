@@ -1,5 +1,5 @@
 import { 
-  users, plants, careLogs, plantGuides, reminders, communityTips, tipVotes, sharedPlantLinks,
+  users, plants, careLogs, plantGuides, reminders, communityTips, tipVotes, sharedPlantLinks, sharedCareLogLinks,
   type User, type InsertUser, 
   type Plant, type InsertPlant,
   type CareLog, type InsertCareLog,
@@ -7,12 +7,13 @@ import {
   type PlantWithCare, type Reminder, type InsertReminder,
   type CommunityTip, type InsertCommunityTip, type CommunityTipWithUser,
   type TipVote, type InsertTipVote,
-  type SharedPlantLink, type InsertSharedPlantLink
+  type SharedPlantLink, type InsertSharedPlantLink,
+  type SharedCareLogLink, type InsertSharedCareLogLink
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, sql } from "drizzle-orm";
 import * as logger from "./services/logger";
-import crypto from "crypto";
+import { randomUUID } from "crypto";
 
 // Interface for storage operations
 export interface IStorage {
@@ -1030,6 +1031,100 @@ export class DatabaseStorage implements IStorage {
     
     // Get the plant with care info
     return this.getPlant(sharedLink.plantId);
+  }
+  
+  // Shared care log links methods
+  async createSharedCareLogLink(careLogId: number, userId: number): Promise<SharedCareLogLink> {
+    // Generate a unique share ID (UUID v4)
+    const shareId = randomUUID();
+    
+    const [sharedLink] = await db
+      .insert(sharedCareLogLinks)
+      .values({
+        careLogId,
+        userId,
+        shareId,
+        active: true
+      })
+      .returning();
+      
+    return sharedLink;
+  }
+  
+  async getSharedCareLogLink(shareId: string): Promise<SharedCareLogLink | undefined> {
+    const [sharedLink] = await db
+      .select()
+      .from(sharedCareLogLinks)
+      .where(eq(sharedCareLogLinks.shareId, shareId));
+      
+    return sharedLink || undefined;
+  }
+  
+  async getSharedCareLogLinksByUser(userId: number): Promise<SharedCareLogLink[]> {
+    return db
+      .select()
+      .from(sharedCareLogLinks)
+      .where(eq(sharedCareLogLinks.userId, userId))
+      .orderBy(desc(sharedCareLogLinks.createdAt));
+  }
+  
+  async getSharedCareLogLinksByCareLog(careLogId: number): Promise<SharedCareLogLink[]> {
+    return db
+      .select()
+      .from(sharedCareLogLinks)
+      .where(eq(sharedCareLogLinks.careLogId, careLogId))
+      .orderBy(desc(sharedCareLogLinks.createdAt));
+  }
+  
+  async updateSharedCareLogLinkStats(shareId: string): Promise<SharedCareLogLink | undefined> {
+    const [updatedLink] = await db
+      .update(sharedCareLogLinks)
+      .set({
+        lastAccessed: new Date(),
+        viewCount: sql`${sharedCareLogLinks.viewCount} + 1`
+      })
+      .where(eq(sharedCareLogLinks.shareId, shareId))
+      .returning();
+      
+    return updatedLink || undefined;
+  }
+  
+  async deactivateSharedCareLogLink(shareId: string): Promise<boolean> {
+    const [deactivatedLink] = await db
+      .update(sharedCareLogLinks)
+      .set({ active: false })
+      .where(eq(sharedCareLogLinks.shareId, shareId))
+      .returning();
+      
+    return !!deactivatedLink;
+  }
+  
+  async getSharedCareLogWithDetails(shareId: string): Promise<{careLog: CareLog; plant: PlantWithCare} | undefined> {
+    const sharedLink = await this.getSharedCareLogLink(shareId);
+      
+    if (!sharedLink || !sharedLink.active) {
+      return undefined;
+    }
+    
+    // Update stats
+    await this.updateSharedCareLogLinkStats(shareId);
+    
+    // Get the care log
+    const [careLog] = await db
+      .select()
+      .from(careLogs)
+      .where(eq(careLogs.id, sharedLink.careLogId));
+      
+    if (!careLog) return undefined;
+    
+    // Get the plant that this care log belongs to
+    const plant = await this.getPlant(careLog.plantId);
+    if (!plant) return undefined;
+    
+    return {
+      careLog,
+      plant
+    };
   }
 }
 
