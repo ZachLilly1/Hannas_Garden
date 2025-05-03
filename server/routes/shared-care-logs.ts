@@ -1,8 +1,13 @@
-import { Express, Request, Response } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import { storage } from "../storage";
-import asyncHandler from "express-async-handler";
 import { isAuthenticated } from "../auth";
 import * as logger from "../services/logger";
+
+// Create an async handler function to simplify error handling
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) => 
+  (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
 
 export function setupSharedCareLogsRoutes(app: Express) {
   // Create a shared care log link
