@@ -37,6 +37,7 @@ function Router() {
     <Switch>
       {/* Public routes */}
       <Route path="/auth" component={AuthPage} />
+      <Route path="/shared/:shareId" component={SharedPlantView} />
       
       {/* Protected routes - require authentication */}
       <Route path="/">

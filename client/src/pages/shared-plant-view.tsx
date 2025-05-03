@@ -1,23 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRoute } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getQueryFn } from '@/lib/queryClient';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { formatRelativeDate, getDefaultPlantImage } from '@/lib/utils';
 import { differenceInDays } from 'date-fns';
 import { 
-  WaterDropIcon, 
-  SunIcon, 
-  SeedlingIcon,
-  TimerIcon,
-  PlantIcon,
-  PersonIcon,
-  CheckCircleIcon,
-  CircleDotIcon
-} from '@/lib/icons';
+  Droplets,
+  Sun,
+  Leaf,
+  Clock,
+  CheckCircle,
+  CircleDot,
+  Scissors
+} from 'lucide-react';
 import { type PlantWithCare, type CareLog } from '@shared/schema';
 
 // Interface for API response
@@ -29,7 +28,7 @@ interface SharedPlantResponse {
 
 export default function SharedPlantView() {
   const [_, params] = useRoute('/shared/:shareId');
-  const shareId = params?.shareId;
+  const shareId = params?.shareId || '';
 
   const { data, isLoading, error } = useQuery<SharedPlantResponse>({
     queryKey: [`/api/s/${shareId}`],
@@ -38,6 +37,8 @@ export default function SharedPlantView() {
     enabled: !!shareId
   });
 
+  const { toast } = useToast();
+  
   useEffect(() => {
     if (error) {
       toast({
@@ -46,7 +47,7 @@ export default function SharedPlantView() {
         variant: 'destructive'
       });
     }
-  }, [error]);
+  }, [error, toast]);
 
   // If still loading, show skeleton
   if (isLoading) {
@@ -108,6 +109,38 @@ export default function SharedPlantView() {
   const sortedLogs = [...careLogs].sort((a, b) => 
     new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
+
+  // Function to get the appropriate icon for care type
+  const getCareIcon = (careType: string) => {
+    switch(careType) {
+      case 'water':
+        return <Droplets className="h-5 w-5 text-blue-500" />;
+      case 'fertilize':
+        return <Leaf className="h-5 w-5 text-green-500" />;
+      case 'repot':
+        return <Leaf className="h-5 w-5 text-amber-500" />;
+      case 'prune':
+        return <Scissors className="h-5 w-5 text-purple-500" />;
+      default:
+        return <CircleDot className="h-5 w-5 text-gray-500" />;
+    }
+  };
+
+  // Function to get the appropriate background color for care type
+  const getCareBackgroundClass = (careType: string) => {
+    switch(careType) {
+      case 'water':
+        return 'bg-blue-100 dark:bg-blue-950';
+      case 'fertilize':
+        return 'bg-green-100 dark:bg-green-950';
+      case 'repot':
+        return 'bg-amber-100 dark:bg-amber-950';
+      case 'prune':
+        return 'bg-purple-100 dark:bg-purple-950';
+      default:
+        return 'bg-gray-100 dark:bg-gray-800';
+    }
+  };
 
   return (
     <div className="max-w-3xl mx-auto p-4 sm:p-6">
@@ -175,7 +208,7 @@ export default function SharedPlantView() {
           <Card className="p-4">
             <div className="flex items-center mb-2">
               <div className="p-2 bg-blue-100 dark:bg-blue-950 rounded-full mr-3">
-                <WaterDropIcon className="h-5 w-5 text-blue-500" />
+                <Droplets className="h-5 w-5 text-blue-500" />
               </div>
               <h3 className="font-medium">Water</h3>
             </div>
@@ -199,7 +232,7 @@ export default function SharedPlantView() {
           <Card className="p-4">
             <div className="flex items-center mb-2">
               <div className="p-2 bg-yellow-100 dark:bg-yellow-950 rounded-full mr-3">
-                <SunIcon className="h-5 w-5 text-yellow-500" />
+                <Sun className="h-5 w-5 text-yellow-500" />
               </div>
               <h3 className="font-medium">Sunlight</h3>
             </div>
@@ -209,7 +242,7 @@ export default function SharedPlantView() {
             </p>
             <div className="mt-2">
               <p className={sunlightAdequate ? "text-status-success font-medium" : "text-status-warning font-medium"}>
-                {sunlightAdequate ? <CheckCircleIcon className="h-4 w-4 inline mr-1" /> : null}
+                {sunlightAdequate ? <CheckCircle className="h-4 w-4 inline mr-1" /> : null}
                 {sunlightStatus}
               </p>
             </div>
@@ -219,7 +252,7 @@ export default function SharedPlantView() {
           <Card className="p-4">
             <div className="flex items-center mb-2">
               <div className="p-2 bg-green-100 dark:bg-green-950 rounded-full mr-3">
-                <SeedlingIcon className="h-5 w-5 text-green-500" />
+                <Leaf className="h-5 w-5 text-green-500" />
               </div>
               <h3 className="font-medium">Fertilizer</h3>
             </div>
@@ -257,24 +290,8 @@ export default function SharedPlantView() {
               <div key={log.id} className="border rounded-lg p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center">
-                    <div className={`p-2 rounded-full mr-3 ${
-                      log.careType === 'water' ? 'bg-blue-100 dark:bg-blue-950' :
-                      log.careType === 'fertilize' ? 'bg-green-100 dark:bg-green-950' :
-                      log.careType === 'repot' ? 'bg-amber-100 dark:bg-amber-950' :
-                      log.careType === 'prune' ? 'bg-purple-100 dark:bg-purple-950' :
-                      'bg-gray-100 dark:bg-gray-800'
-                    }`}>
-                      {log.careType === 'water' ? (
-                        <WaterDropIcon className="h-5 w-5 text-blue-500" />
-                      ) : log.careType === 'fertilize' ? (
-                        <SeedlingIcon className="h-5 w-5 text-green-500" />
-                      ) : log.careType === 'repot' ? (
-                        <PlantIcon className="h-5 w-5 text-amber-500" />
-                      ) : log.careType === 'prune' ? (
-                        <SunIcon className="h-5 w-5 text-purple-500" />
-                      ) : (
-                        <CircleDotIcon className="h-5 w-5 text-gray-500" />
-                      )}
+                    <div className={`p-2 rounded-full mr-3 ${getCareBackgroundClass(log.careType)}`}>
+                      {getCareIcon(log.careType)}
                     </div>
                     <div>
                       <h3 className="font-medium">
