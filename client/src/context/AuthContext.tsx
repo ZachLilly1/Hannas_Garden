@@ -98,30 +98,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [userError]);
 
-  // Login mutation - improved with better cookie handling
+  // Login mutation using apiRequest for consistent API access
   const loginMutation = useMutation({
     mutationFn: async (data: LoginData) => {
-      // Use direct fetch with explicit credential inclusion to ensure cookies are saved
-      const res = await fetch('/api/auth/direct-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-        credentials: 'include',
-      });
-      
-      if (!res.ok) {
-        let errorMsg = 'Login failed';
-        try {
-          const errorData = await res.json();
-          errorMsg = errorData.message || errorMsg;
-        } catch (_) {
-          // Ignore JSON parse errors
-        }
-        throw new Error(errorMsg);
+      // Try the direct login endpoint first (development environment) 
+      try {
+        console.log('Trying direct login...');
+        const res = await apiRequest('POST', '/api/auth/direct-login', data);
+        const userData = await res.json();
+        return userData;
+      } catch (error) {
+        console.log('Direct login failed, trying standard login...');
+        // Fall back to standard login endpoint
+        const res = await apiRequest('POST', '/api/auth/login', data);
+        const userData = await res.json();
+        return userData;
       }
-      
-      const userData = await res.json();
-      return userData;
     },
     onSuccess: (data: User) => {
       setError(null);
@@ -146,10 +138,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Register mutation - improved with direct fetch for better cookie handling
+  // Register mutation using apiRequest for consistent API access
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterData) => {
-      // Use direct fetch for registration, similar to login
+      // Prepare the registration payload with defaults
       const payload = {
         username: data.username,
         email: data.email,
@@ -160,24 +152,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         timezone: 'UTC',
       };
       
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        credentials: 'include',
-      });
-      
-      if (!res.ok) {
-        let errorMsg = 'Registration failed';
-        try {
-          const errorData = await res.json();
-          errorMsg = errorData.message || errorMsg;
-        } catch (_) {
-          // Ignore JSON parse errors
-        }
-        throw new Error(errorMsg);
-      }
-      
+      // Use apiRequest which handles CSRF tokens and error handling
+      const res = await apiRequest('POST', '/api/auth/register', payload);
       const userData = await res.json();
       return userData;
     },
@@ -204,26 +180,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Logout mutation - improved with direct fetch for better cookie handling
+  // Logout mutation using apiRequest to properly handle CSRF token
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      // Use direct fetch for logging out
-      const res = await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      
-      if (!res.ok) {
-        let errorMsg = 'Logout failed';
-        try {
-          const errorData = await res.json();
-          errorMsg = errorData.message || errorMsg;
-        } catch (_) {
-          // Ignore JSON parse errors
-        }
-        throw new Error(errorMsg);
-      }
-      
+      // Use apiRequest which will properly handle CSRF token fetching
+      const res = await apiRequest('POST', '/api/auth/logout');
       return res;
     },
     onSuccess: () => {
@@ -262,28 +223,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Update profile mutation - improved with direct fetch for better cookie handling
+  // Update profile mutation using apiRequest to properly handle CSRF token
   const updateProfileMutation = useMutation({
     mutationFn: async (data: UpdateProfileData) => {
-      // Use direct fetch for profile updates
-      const res = await fetch('/api/auth/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-        credentials: 'include',
-      });
-      
-      if (!res.ok) {
-        let errorMsg = 'Profile update failed';
-        try {
-          const errorData = await res.json();
-          errorMsg = errorData.message || errorMsg;
-        } catch (_) {
-          // Ignore JSON parse errors
-        }
-        throw new Error(errorMsg);
-      }
-      
+      // Use apiRequest which will properly handle CSRF token fetching
+      const res = await apiRequest('PUT', '/api/auth/profile', data);
       const userData = await res.json();
       return userData;
     },
