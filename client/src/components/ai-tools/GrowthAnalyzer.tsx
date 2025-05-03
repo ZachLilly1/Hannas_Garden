@@ -259,10 +259,10 @@ export function GrowthAnalyzer() {
       {analysis && (
         <Card className="border-emerald-200 dark:border-emerald-900">
           <CardHeader className="bg-emerald-50 dark:bg-emerald-950">
-            <span className="flex items-center text-base font-medium">
+            <CardTitle className="flex items-center text-base font-medium">
               <BarChart className="mr-2 h-5 w-5 text-emerald-500" />
               Analysis Results
-            </span>
+            </CardTitle>
             <CardDescription>
               AI-powered analysis of your plant's growth patterns
             </CardDescription>
