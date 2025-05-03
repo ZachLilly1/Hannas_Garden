@@ -100,18 +100,18 @@ export function GrowthAnalyzer() {
       // For debugging
       console.log(`Found ${imageBase64Array.length} photos for analysis`);
       
-      // Create mock analysis for demo purposes
-      const demoAnalysis = {
-        growthAssessment: "Your plant has been showing steady growth over the observed period.",
-        healthChanges: "The plant appears to be maintaining good health with consistent leaf color and structure.",
+      // Fallback analysis if the API fails (for error reporting only, not synthetic data)
+      const fallbackErrorMessage = {
+        growthAssessment: "Unable to analyze growth patterns from the provided images.",
+        healthChanges: "Image analysis unavailable. Please check your images or try again later.",
         growthRate: "moderate",
-        potentialIssues: [],
+        potentialIssues: ["Unable to perform automated analysis"],
         recommendations: [
-          "Continue with your current watering schedule",
-          "Consider rotating the plant periodically for even growth",
-          "Monitor for new leaf development as a sign of continued health"
+          "Try uploading clearer images of your plant",
+          "Ensure photos are taken from similar angles",
+          "Ensure photos have good lighting"
         ],
-        comparisonNotes: "Comparing the images, there's visible new growth with leaf expansion and improved structure."
+        comparisonNotes: "The automated analysis service is currently unavailable. Please try again later or contact support if the issue persists."
       };
       
       // Try to use the API, but fall back to demo data if needed
