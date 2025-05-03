@@ -107,8 +107,8 @@ export default function SharedPlantView() {
 
   // Format logs for timeline display
   const sortedLogs = [...careLogs].sort((a, b) => {
-    const dateA = new Date(a.timestamp);
-    const dateB = new Date(b.timestamp);
+    const dateA = new Date(String(a.timestamp));
+    const dateB = new Date(String(b.timestamp));
     return dateB.getTime() - dateA.getTime();
   });
 
@@ -300,7 +300,7 @@ export default function SharedPlantView() {
                         {log.careType.charAt(0).toUpperCase() + log.careType.slice(1)}
                       </h3>
                       <p className="text-xs text-muted-foreground">
-                        {formatRelativeDate(new Date(log.timestamp))}
+                        {formatRelativeDate(new Date(String(log.timestamp)))}
                       </p>
                     </div>
                   </div>
