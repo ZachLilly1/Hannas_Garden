@@ -226,17 +226,27 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        // Find user by username
-        const user = await storage.getUserByUsername(username);
+        // Enhanced authentication strategy that tries multiple lookup methods
+        logger.info(`Login attempt for user: ${username}`);
+        logger.debug(`Session ID before auth: ${(done as any).req?.session?.id || 'unknown'}`);
         
-        // If user doesn't exist, bail out early with generic message
+        // Try finding the user by username first
+        let user = await storage.getUserByUsername(username);
+        
+        // If not found by username, try by email
+        if (!user) {
+          logger.info(`User not found by username, trying email lookup for: ${username}`);
+          user = await storage.getUserByEmail(username);
+        }
+        
+        // If still no user, return authentication failure
         if (!user) {
           logger.info(`Login failed: User "${username}" not found`);
           return done(null, false, { message: "Invalid username or password" });
         }
         
-        // Enhanced logging for troubleshooting
-        logger.info(`Login attempt for ${username} with ${user.password.startsWith('$2') ? 'bcrypt' : 'scrypt'} password`);
+        // Log password format for debugging
+        logger.info(`Login attempt for ${user.username} with ${user.password.startsWith('$2') ? 'bcrypt' : 'scrypt'} password`);
         
         // Check password using our robust comparison method that handles both formats
         const passwordMatches = await comparePasswords(password, user.password);

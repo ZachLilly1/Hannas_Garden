@@ -34,18 +34,29 @@ export function setupDirectLoginRoute(app: Express) {
     }
   });
   
-  // Endpoint to check if a username exists
+  // Endpoint to check if a username or email exists
   app.post("/api/auth/check-username", async (req: Request, res: Response) => {
     try {
       const { username } = req.body;
       if (!username) {
-        return res.status(400).json({ message: "Username is required" });
+        return res.status(400).json({ message: "Username or email is required" });
       }
       
-      const user = await storage.getUserByUsername(username);
+      // Try first as username
+      let user = await storage.getUserByUsername(username);
+      
+      // If not found, try as email
+      if (!user && username.includes('@')) {
+        user = await storage.getUserByEmail(username);
+      }
+      
       return res.json({ 
         exists: !!user,
-        passwordFormat: user ? (user.password.startsWith('$2b$') ? 'bcrypt' : 'scrypt') : null
+        found_as: user ? (username === user.username ? 'username' : 
+                          username.toLowerCase() === user.username.toLowerCase() ? 'username_case_insensitive' : 
+                          username === user.email ? 'email' : 
+                          username.toLowerCase() === user.email.toLowerCase() ? 'email_case_insensitive' : 'unknown') : null,
+        passwordFormat: user ? (user.password.startsWith('$2b$') || user.password.startsWith('$2a$') ? 'bcrypt' : 'scrypt') : null
       });
     } catch (error) {
       logger.error("Error checking username:", error);
@@ -60,15 +71,24 @@ export function setupDirectLoginRoute(app: Express) {
       
       logger.info("Attempting direct login for user:", username);
       
-      // Find user
-      const user = await storage.getUserByUsername(username);
+      // Try multiple ways to find the user
+      // First try by username (case-insensitive)
+      let user = await storage.getUserByUsername(username);
+      
+      // If not found by username, try by email (case-insensitive)
       if (!user) {
-        logger.info("User not found:", username);
+        logger.info("User not found by username, trying email lookup for:", username);
+        user = await storage.getUserByEmail(username);
+      }
+      
+      // Final check - if still no user found
+      if (!user) {
+        logger.info("User not found by username or email:", username);
         return res.status(401).json({ message: "Invalid username or password" });
       }
       
       // Log password format for debugging
-      logger.info(`Password format for ${username}: ${user.password.startsWith('$2b$') ? 'bcrypt' : 'scrypt'}`);
+      logger.info(`Password format for ${user.username}: ${user.password.startsWith('$2b$') ? 'bcrypt' : 'scrypt'}`);
       
       // Normal password verification
       const passwordMatches = await comparePasswords(password, user.password);
