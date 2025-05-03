@@ -98,7 +98,12 @@ export function LoginForm({ onSuccess, onRegisterClick }: LoginFormProps) {
               <FormItem>
                 <FormLabel>Username or Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter your username or email" {...field} />
+                  <Input 
+                    placeholder="Enter your username or email" 
+                    className="text-black bg-white" 
+                    style={{ color: 'black' }}
+                    {...field} 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -115,6 +120,8 @@ export function LoginForm({ onSuccess, onRegisterClick }: LoginFormProps) {
                   <Input 
                     type="password" 
                     placeholder="Enter your password" 
+                    className="text-black bg-white" 
+                    style={{ color: 'black' }}
                     {...field} 
                   />
                 </FormControl>

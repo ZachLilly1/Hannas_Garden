@@ -80,7 +80,12 @@ export function RegisterForm({ onSuccess, onLoginClick }: RegisterFormProps) {
               <FormItem>
                 <FormLabel>Username</FormLabel>
                 <FormControl>
-                  <Input placeholder="Choose a username" {...field} />
+                  <Input 
+                    placeholder="Choose a username" 
+                    className="text-black bg-white" 
+                    style={{ color: 'black' }}
+                    {...field} 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -94,7 +99,13 @@ export function RegisterForm({ onSuccess, onLoginClick }: RegisterFormProps) {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="Enter your email" {...field} />
+                  <Input 
+                    type="email" 
+                    placeholder="Enter your email" 
+                    className="text-black bg-white" 
+                    style={{ color: 'black' }}
+                    {...field} 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -110,6 +121,8 @@ export function RegisterForm({ onSuccess, onLoginClick }: RegisterFormProps) {
                 <FormControl>
                   <Input 
                     placeholder="How would you like to be called?" 
+                    className="text-black bg-white" 
+                    style={{ color: 'black' }}
                     {...field} 
                   />
                 </FormControl>
@@ -128,6 +141,8 @@ export function RegisterForm({ onSuccess, onLoginClick }: RegisterFormProps) {
                   <Input 
                     type="password" 
                     placeholder="Create a password" 
+                    className="text-black bg-white" 
+                    style={{ color: 'black' }}
                     {...field} 
                   />
                 </FormControl>
@@ -146,6 +161,8 @@ export function RegisterForm({ onSuccess, onLoginClick }: RegisterFormProps) {
                   <Input 
                     type="password" 
                     placeholder="Confirm your password" 
+                    className="text-black bg-white" 
+                    style={{ color: 'black' }}
                     {...field} 
                   />
                 </FormControl>

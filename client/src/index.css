@@ -103,14 +103,4 @@
   }
 }
 
-/* Fix input text color for better contrast with light theme */
-.auth-form input {
-  color: #222 !important;
-  background-color: rgba(255, 255, 255, 0.8) !important;
-}
-
-/* Input text color for dark theme */
-.dark .auth-form input {
-  color: #fff !important;
-  background-color: rgba(20, 20, 20, 0.8) !important;
-}
+/* Input styling for auth forms is now handled with inline styles directly on each Input component */
