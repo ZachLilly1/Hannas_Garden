@@ -56,9 +56,43 @@ export function GrowthAnalyzer() {
       return dateA - dateB;
     }) || [];
   
+  // Compress base64 image data
+  const compressImage = (base64: string, maxWidth = 800, quality = 0.7): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        
+        // Calculate new dimensions while maintaining aspect ratio
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // Convert to compressed JPEG
+        const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressedBase64);
+      };
+      
+      // If image fails to load, return original
+      img.onerror = () => resolve(base64);
+    });
+  };
+  
   // Extract base64 image data from care log photo
   const getBase64FromPhoto = (photoUrl: string): string => {
-    // If it's already a base64 data URL, return the full URL since that's what the API expects
+    // For now, just return the original image
+    // We'll modify the runAnalysis function to handle the compression
     return photoUrl;
   };
   
@@ -93,12 +127,46 @@ export function GrowthAnalyzer() {
       // Use all photos for analysis
       const photosToAnalyze = careLogsWithPhotos;
       
-      const imageBase64Array = photosToAnalyze
+      // Step 1: Get all photos
+      const originalPhotos = photosToAnalyze
         .filter(log => log.photo)
-        .map(log => getBase64FromPhoto(log.photo!));
+        .map(log => log.photo!);
       
       // For debugging
-      console.log(`Found ${imageBase64Array.length} photos for analysis`);
+      console.log(`Found ${originalPhotos.length} photos for analysis`);
+      
+      // Step 2: Compress all photos (with progress indication)
+      const totalPhotos = originalPhotos.length;
+      toast({
+        title: "Preparing images",
+        description: `Compressing ${totalPhotos} photos for analysis...`,
+      });
+      
+      // Step 3: Process images in batches for better performance
+      const compressedPhotos = [];
+      for (let i = 0; i < originalPhotos.length; i++) {
+        try {
+          // Add small delay to prevent UI blocking
+          if (i > 0 && i % 3 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+          
+          const compressed = await compressImage(originalPhotos[i], 800, 0.6);
+          compressedPhotos.push(compressed);
+          
+          // Update progress for user
+          if (i > 0 && i % 3 === 0 || i === originalPhotos.length - 1) {
+            toast({
+              title: "Preparing images",
+              description: `Processed ${i+1} of ${totalPhotos} photos...`,
+            });
+          }
+        } catch (err) {
+          console.error("Error compressing image:", err);
+          // If compression fails, use original
+          compressedPhotos.push(originalPhotos[i]);
+        }
+      }
       
       // Fallback analysis if the API fails (for error reporting only, not synthetic data)
       const fallbackErrorMessage = {
@@ -118,11 +186,16 @@ export function GrowthAnalyzer() {
       let data;
       
       try {
+        toast({
+          title: "Analyzing growth",
+          description: "Sending compressed images to our AI service...",
+        });
+        
         // Try to get analysis from server
         const res = await apiRequest(
           "POST", 
           `/api/ai/growth-analysis/${selectedPlantId}`, 
-          { imageHistory: imageBase64Array }
+          { imageHistory: compressedPhotos }
         );
         
         data = await res.json();
