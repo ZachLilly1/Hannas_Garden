@@ -261,24 +261,29 @@ export function CareLogForm({ plantId, onSuccess }: CareLogFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="photo">Add Photo (optional)</Label>
+        <Label htmlFor="photo-upload">Add Photo (optional)</Label>
         <div className="flex items-center gap-3">
           <Button
             type="button"
             variant="outline"
             className="relative"
-            onClick={() => document.getElementById('photo-upload')?.click()}
+            onClick={() => {
+              const input = document.getElementById('photo-upload');
+              if (input) {
+                input.click();
+              }
+            }}
           >
             <CameraIcon className="h-4 w-4 mr-2" />
             {photoBase64 ? 'Change Photo' : 'Add Photo'}
-            <input
-              id="photo-upload"
-              type="file"
-              accept="image/*"
-              className="sr-only"
-              onChange={handleFileChange}
-            />
           </Button>
+          <input
+            id="photo-upload"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
           
           {photoBase64 && (
             <div className="h-16 w-16 relative rounded-md overflow-hidden">
