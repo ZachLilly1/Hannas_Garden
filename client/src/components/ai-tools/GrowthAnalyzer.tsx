@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, Brain, BarChart, Clock, Calendar, ArrowRightLeft, Zap, AlertTriangle, ChevronRight, ImagePlus } from "lucide-react";
+import { Loader2, Brain, BarChart, Clock, Calendar, ArrowRightLeft, Zap, AlertTriangle, ChevronRight, ImagePlus, Sparkles } from "lucide-react";
 import { apiRequest } from '@/lib/queryClient';
 import { PlantWithCare, CareLog } from '@shared/schema';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -90,8 +90,8 @@ export function GrowthAnalyzer() {
     setAnalyzing(true);
     
     try {
-      // Limit to the most recent 3 photos if we have more
-      const photosToAnalyze = careLogsWithPhotos.slice(-3);
+      // Use all photos for analysis
+      const photosToAnalyze = careLogsWithPhotos;
       
       const imageBase64Array = photosToAnalyze
         .filter(log => log.photo)
@@ -237,9 +237,10 @@ export function GrowthAnalyzer() {
                         <h4 className="text-sm font-medium text-blue-800">Photos Found</h4>
                         <p className="text-sm text-blue-700 mt-1">
                           {careLogsWithPhotos.length} photo{careLogsWithPhotos.length !== 1 ? 's' : ''} found in your care logs.
+                          All photos will be analyzed for growth patterns.
                           {careLogsWithPhotos.length > 3 ? 
-                            ' The most recent 3 photos will be used for analysis.' : 
-                            ' All photos will be analyzed.'}
+                            ' The most recent 3 photos are displayed below for reference.' : 
+                            ''}
                         </p>
                       </div>
                     </div>
@@ -356,7 +357,10 @@ export function GrowthAnalyzer() {
                 
                 <Card className="border-emerald-100 dark:border-emerald-800">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base">Growth Assessment</CardTitle>
+                    <CardTitle className="text-base flex items-center">
+                      <Sparkles className="h-4 w-4 mr-2 text-emerald-500" />
+                      Growth Assessment
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm">{analysis.growthAssessment}</p>
