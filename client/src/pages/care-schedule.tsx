@@ -1,7 +1,7 @@
 import React from "react";
 import { usePlants } from "@/context/PlantContext";
 import { Card, CardContent } from "@/components/ui/card";
-import { WaterDropIcon, SeedlingIcon, LeafIcon, ActivityIcon } from "@/lib/icons";
+import { WaterDropIcon, SeedlingIcon } from "@/lib/icons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatRelativeDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { PlantDetailModal } from "@/components/plants/PlantDetailModal";
 import { AddPlantModal } from "@/components/plants/AddPlantModal";
 import { differenceInDays } from "date-fns";
 import { type PlantWithCare } from "@shared/schema";
-import { Link } from "wouter";
+
 
 export default function CareSchedule() {
   const {
@@ -109,15 +109,8 @@ export default function CareSchedule() {
   return (
     <>
       <div className="p-4">
-        {/* Health check shortcut */}
-        <div className="mb-4 flex justify-between items-center">
-          <h2 className="text-lg font-medium dark:text-white">Care & Diagnostics</h2>
-          <Link href="/tools/plant-health-diagnostic">
-            <Button variant="outline" size="sm" className="gap-1.5 bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-800/30 text-amber-800 dark:text-amber-400 border-amber-300 dark:border-amber-700">
-              <LeafIcon className="h-4 w-4" />
-              Health Check
-            </Button>
-          </Link>
+        <div className="mb-4">
+          <h2 className="text-lg font-medium dark:text-white">Schedule</h2>
         </div>
         
         <Tabs defaultValue="water" className="w-full">
