@@ -1,34 +1,31 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Calendar, Clock, AlertTriangle, Info, Leaf, Droplet, Sun, Thermometer } from "lucide-react";
+import { Calendar, Clock, AlertTriangle, Info, Leaf, Droplet, Sun, Thermometer, Brain } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SharedPageLayout } from "@/components/layouts/SharedPageLayout";
-import { CareLogJournal } from "@/components/plants/CareLogJournal";
 import { format } from "date-fns";
 
 export default function SharedCareLogView() {
   const { shareId } = useParams();
   const [notFound, setNotFound] = useState(false);
 
-  const {
-    data,
-    error,
-    isLoading,
-  } = useQuery<{careLog: any; plant: any}>({
-    queryKey: [`/api/sc/${shareId}`],
-    retry: false,
-    onSettled: (data, error) => {
-      if (error) {
-        setNotFound(true);
-      }
-    },
+  const { data, error, isLoading } = useQuery<{careLog: any; plant: any}>({
+    queryKey: [`/api/sc/${shareId}`]
   });
+  
+  // Set not found if there's an error
+  React.useEffect(() => {
+    if (error) {
+      setNotFound(true);
+    }
+  }, [error]);
 
   if (notFound || error) {
     return (
@@ -55,7 +52,7 @@ export default function SharedCareLogView() {
     );
   }
 
-  if (isLoading) {
+  if (isLoading || !data) {
     return (
       <SharedPageLayout>
         <div className="container max-w-5xl mx-auto py-12">
@@ -211,7 +208,46 @@ export default function SharedCareLogView() {
                 {careLog.metadata && careLog.metadata.journalEntry && (
                   <div className="mt-6">
                     <Separator className="my-4" />
-                    <CareLogJournal journalEntry={careLog.metadata.journalEntry} />
+                    <div className="mt-3">
+                      <div className="flex items-center">
+                        <Brain className="h-3 w-3 mr-2 text-indigo-500" />
+                        <span className="text-sm font-medium">AI Analysis</span>
+                      </div>
+                      
+                      <Card className="mt-2 border-indigo-100">
+                        <CardContent className="p-3">
+                          <h4 className="text-sm font-medium mb-2">{careLog.metadata.journalEntry.title}</h4>
+                          
+                          <Tabs defaultValue="observations" className="w-full">
+                            <TabsList className="w-full mb-2 h-8">
+                              <TabsTrigger value="observations" className="text-xs">Observations</TabsTrigger>
+                              <TabsTrigger value="growth" className="text-xs">Growth Progress</TabsTrigger>
+                            </TabsList>
+                            
+                            <TabsContent value="observations">
+                              <ul className="text-xs space-y-1 pl-5 list-disc">
+                                {careLog.metadata.journalEntry.observations.map((obs: string, idx: number) => (
+                                  <li key={idx}>{obs}</li>
+                                ))}
+                              </ul>
+                            </TabsContent>
+                            
+                            <TabsContent value="growth">
+                              <p className="text-xs whitespace-pre-line">
+                                {careLog.metadata.journalEntry.growthProgress}
+                              </p>
+                            </TabsContent>
+                          </Tabs>
+                          
+                          <div className="mt-2 pt-2 border-t border-indigo-50 flex justify-end">
+                            <span className="text-xs text-indigo-400 flex items-center">
+                              <Brain className="h-3 w-3 mr-1" />
+                              AI-powered analysis
+                            </span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
                   </div>
                 )}
 
