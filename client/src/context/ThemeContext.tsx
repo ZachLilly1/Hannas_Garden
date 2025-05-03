@@ -13,6 +13,48 @@ interface ThemeContextType {
 // Create a context
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
+// Create a simplified theme provider that doesn't depend on auth
+export function StandaloneThemeProvider({ children }: { children: ReactNode }) {
+  // Initialize with system preference for dark mode
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(
+    window.matchMedia('(prefers-color-scheme: dark)').matches
+  );
+  
+  const [isOnboarding, setIsOnboarding] = useState<boolean>(false);
+
+  // Apply dark mode to HTML element
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+
+  // Mark onboarding as complete
+  const completeOnboarding = () => {
+    setIsOnboarding(false);
+  };
+
+  return (
+    <ThemeContext.Provider
+      value={{
+        isDarkMode,
+        toggleDarkMode,
+        isOnboarding,
+        completeOnboarding,
+      }}
+    >
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
 // Create our provider component
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const { user, isAuthenticated } = useAuth();

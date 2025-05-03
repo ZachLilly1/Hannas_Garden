@@ -80,12 +80,12 @@ export default function SharedPlantView() {
 
   // Calculate water status and remaining days
   const waterRemainingDays = plant.nextWatering 
-    ? differenceInDays(new Date(plant.nextWatering), new Date())
+    ? differenceInDays(new Date(String(plant.nextWatering)), new Date())
     : null;
 
   // Calculate fertilizer status and remaining days
   const fertilizerRemainingDays = plant.nextFertilizing 
-    ? differenceInDays(new Date(plant.nextFertilizing), new Date()) 
+    ? differenceInDays(new Date(String(plant.nextFertilizing)), new Date()) 
     : null;
 
   // Get sunlight adequacy
@@ -106,9 +106,11 @@ export default function SharedPlantView() {
   const sunlightAdequate = sunlightStatus === "Adequate";
 
   // Format logs for timeline display
-  const sortedLogs = [...careLogs].sort((a, b) => 
-    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-  );
+  const sortedLogs = [...careLogs].sort((a, b) => {
+    const dateA = new Date(a.timestamp);
+    const dateB = new Date(b.timestamp);
+    return dateB.getTime() - dateA.getTime();
+  });
 
   // Function to get the appropriate icon for care type
   const getCareIcon = (careType: string) => {

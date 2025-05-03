@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PlantProvider } from "@/context/PlantContext";
 import { AuthProvider } from "@/context/AuthContext";
-import { ThemeProvider } from "@/context/ThemeContext";
+import { ThemeProvider, StandaloneThemeProvider } from "@/context/ThemeContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MainLayout } from "@/components/layouts/MainLayout";
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
@@ -37,7 +37,11 @@ function Router() {
     <Switch>
       {/* Public routes */}
       <Route path="/auth" component={AuthPage} />
-      <Route path="/shared/:shareId" component={SharedPlantView} />
+      <Route path="/shared/:shareId">
+        <StandaloneThemeProvider>
+          <SharedPlantView />
+        </StandaloneThemeProvider>
+      </Route>
       
       {/* Protected routes - require authentication */}
       <Route path="/">
