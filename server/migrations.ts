@@ -201,6 +201,34 @@ export async function applyMigrations() {
     `);
     logger.info('Updated plant_guides table structure (if needed)');
 
+    // Create the shared_plant_links table if it doesn't exist
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "shared_plant_links" (
+        "id" SERIAL PRIMARY KEY,
+        "plant_id" INTEGER NOT NULL REFERENCES plants(id) ON DELETE CASCADE,
+        "user_id" INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        "share_id" TEXT NOT NULL UNIQUE,
+        "created_at" TIMESTAMP DEFAULT NOW(),
+        "last_accessed" TIMESTAMP,
+        "view_count" INTEGER DEFAULT 0,
+        "active" BOOLEAN DEFAULT TRUE
+      );
+    `);
+    logger.info('Created shared_plant_links table (if needed)');
+
+    // Create index on share_id for faster lookups
+    await db.execute(sql`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_indexes WHERE indexname = 'idx_shared_plant_links_share_id'
+        ) THEN
+          CREATE INDEX "idx_shared_plant_links_share_id" ON "shared_plant_links" ("share_id");
+        END IF;
+      END $$;
+    `);
+    logger.info('Created shared_plant_links index (if needed)');
+
     logger.info('Database migrations completed successfully!');
   } catch (error) {
     logger.error('Error applying migrations:', error);

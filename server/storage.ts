@@ -12,6 +12,7 @@ import {
 import { db } from "./db";
 import { eq, and, desc, asc, sql } from "drizzle-orm";
 import * as logger from "./services/logger";
+import crypto from "crypto";
 
 // Interface for storage operations
 export interface IStorage {
@@ -940,6 +941,86 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return !!tip;
+  }
+
+  // Shared plant links methods
+  async createSharedPlantLink(plantId: number, userId: number): Promise<SharedPlantLink> {
+    // Generate a random unique ID for sharing
+    const shareId = crypto.randomUUID();
+    
+    const [sharedLink] = await db
+      .insert(sharedPlantLinks)
+      .values({
+        plantId,
+        userId,
+        shareId,
+        active: true
+      })
+      .returning();
+    
+    return sharedLink;
+  }
+
+  async getSharedPlantLink(shareId: string): Promise<SharedPlantLink | undefined> {
+    const [sharedLink] = await db
+      .select()
+      .from(sharedPlantLinks)
+      .where(eq(sharedPlantLinks.shareId, shareId));
+    
+    return sharedLink || undefined;
+  }
+
+  async getSharedPlantLinksByUser(userId: number): Promise<SharedPlantLink[]> {
+    return db
+      .select()
+      .from(sharedPlantLinks)
+      .where(eq(sharedPlantLinks.userId, userId))
+      .orderBy(desc(sharedPlantLinks.createdAt));
+  }
+
+  async getSharedPlantLinksByPlant(plantId: number): Promise<SharedPlantLink[]> {
+    return db
+      .select()
+      .from(sharedPlantLinks)
+      .where(eq(sharedPlantLinks.plantId, plantId))
+      .orderBy(desc(sharedPlantLinks.createdAt));
+  }
+
+  async updateSharedPlantLinkStats(shareId: string): Promise<SharedPlantLink | undefined> {
+    const [sharedLink] = await db
+      .update(sharedPlantLinks)
+      .set({ 
+        lastAccessed: new Date(),
+        viewCount: sql`${sharedPlantLinks.viewCount} + 1`
+      })
+      .where(eq(sharedPlantLinks.shareId, shareId))
+      .returning();
+    
+    return sharedLink || undefined;
+  }
+
+  async deactivateSharedPlantLink(shareId: string): Promise<boolean> {
+    const [sharedLink] = await db
+      .update(sharedPlantLinks)
+      .set({ active: false })
+      .where(eq(sharedPlantLinks.shareId, shareId))
+      .returning();
+    
+    return !!sharedLink;
+  }
+
+  async getSharedPlantWithCare(shareId: string): Promise<PlantWithCare | undefined> {
+    const sharedLink = await this.getSharedPlantLink(shareId);
+    
+    if (!sharedLink || !sharedLink.active) {
+      return undefined;
+    }
+    
+    // Update the view count and last accessed date
+    await this.updateSharedPlantLinkStats(shareId);
+    
+    // Get the plant with care info
+    return this.getPlant(sharedLink.plantId);
   }
 }
 
