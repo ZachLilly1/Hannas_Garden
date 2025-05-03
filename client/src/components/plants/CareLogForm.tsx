@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { type InsertCareLog, CARE_TYPES } from '@shared/schema';
@@ -53,6 +53,9 @@ export function CareLogForm({ plantId, onSuccess }: CareLogFormProps) {
   const [isGeneratingAiSuggestions, setIsGeneratingAiSuggestions] = useState(false);
   const [healthDiagnosis, setHealthDiagnosis] = useState<PlantHealthDiagnosis | null>(null);
   const [aiCareSuggestions, setAiCareSuggestions] = useState<AiCareSuggestion[]>([]);
+  
+  // Create a ref for the file input
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -66,6 +69,9 @@ export function CareLogForm({ plantId, onSuccess }: CareLogFormProps) {
         });
         return;
       }
+
+      // Reset input so the same file can be selected again if needed
+      event.target.value = '';
 
       const reader = new FileReader();
       reader.onload = async (e) => {
@@ -268,9 +274,8 @@ export function CareLogForm({ plantId, onSuccess }: CareLogFormProps) {
             variant="outline"
             className="relative"
             onClick={() => {
-              const input = document.getElementById('photo-upload');
-              if (input) {
-                input.click();
+              if (fileInputRef.current) {
+                fileInputRef.current.click();
               }
             }}
           >
@@ -278,6 +283,7 @@ export function CareLogForm({ plantId, onSuccess }: CareLogFormProps) {
             {photoBase64 ? 'Change Photo' : 'Add Photo'}
           </Button>
           <input
+            ref={fileInputRef}
             id="photo-upload"
             type="file"
             accept="image/*"
