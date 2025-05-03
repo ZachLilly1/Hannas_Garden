@@ -1,12 +1,13 @@
 import { 
-  users, plants, careLogs, plantGuides, reminders, communityTips, tipVotes,
+  users, plants, careLogs, plantGuides, reminders, communityTips, tipVotes, sharedPlantLinks,
   type User, type InsertUser, 
   type Plant, type InsertPlant,
   type CareLog, type InsertCareLog,
   type PlantGuide, type InsertPlantGuide,
   type PlantWithCare, type Reminder, type InsertReminder,
   type CommunityTip, type InsertCommunityTip, type CommunityTipWithUser,
-  type TipVote, type InsertTipVote
+  type TipVote, type InsertTipVote,
+  type SharedPlantLink, type InsertSharedPlantLink
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, sql } from "drizzle-orm";
@@ -83,6 +84,15 @@ export interface IStorage {
   // Admin functions for community tips
   featureCommunityTip(id: number, featured: boolean): Promise<boolean>;
   updateTipStatus(id: number, status: string): Promise<boolean>;
+
+  // Shared plant links methods
+  createSharedPlantLink(plantId: number, userId: number): Promise<SharedPlantLink>;
+  getSharedPlantLink(shareId: string): Promise<SharedPlantLink | undefined>;
+  getSharedPlantLinksByUser(userId: number): Promise<SharedPlantLink[]>;
+  getSharedPlantLinksByPlant(plantId: number): Promise<SharedPlantLink[]>;
+  updateSharedPlantLinkStats(shareId: string): Promise<SharedPlantLink | undefined>;
+  deactivateSharedPlantLink(shareId: string): Promise<boolean>;
+  getSharedPlantWithCare(shareId: string): Promise<PlantWithCare | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {

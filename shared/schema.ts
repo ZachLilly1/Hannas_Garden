@@ -235,3 +235,29 @@ export const photos = pgTable("photos", {
   }),
   // ...
 });
+
+// Shared plant links schema
+export const sharedPlantLinks = pgTable("shared_plant_links", {
+  id: serial("id").primaryKey(),
+  plantId: integer("plant_id").notNull().references(() => plants.id, {
+    onDelete: "cascade",
+  }),
+  userId: integer("user_id").notNull().references(() => users.id, {
+    onDelete: "cascade",
+  }),
+  shareId: text("share_id").notNull().unique(), // Unique identifier for the URL
+  createdAt: timestamp("created_at").defaultNow(),
+  lastAccessed: timestamp("last_accessed"), // Track when the link was last viewed
+  viewCount: integer("view_count").default(0), // Track how many times the link was viewed
+  active: boolean("active").default(true), // Allow disabling sharing
+});
+
+export const insertSharedPlantLinkSchema = createInsertSchema(sharedPlantLinks).omit({
+  id: true,
+  createdAt: true,
+  lastAccessed: true,
+  viewCount: true,
+});
+
+export type SharedPlantLink = typeof sharedPlantLinks.$inferSelect;
+export type InsertSharedPlantLink = z.infer<typeof insertSharedPlantLinkSchema>;
