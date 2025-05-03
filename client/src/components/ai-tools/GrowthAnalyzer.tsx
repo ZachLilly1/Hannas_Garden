@@ -126,18 +126,25 @@ export function GrowthAnalyzer() {
         );
         
         data = await res.json();
+        
+        // Show success toast only on successful API response
+        toast({
+          title: "Growth analysis completed",
+          description: "Your plant growth analysis is ready!",
+        });
       } catch (error) {
         console.error("Error from growth analysis API", error);
-        // Use demo data as fallback
-        data = demoAnalysis;
+        // Use error message when API fails
+        data = fallbackErrorMessage;
+        
+        toast({
+          title: "Analysis service issue",
+          description: "We encountered a problem analyzing your plant photos. Please try again later or contact support.",
+          variant: "destructive",
+        });
       }
       
       setAnalysis(data);
-      
-      toast({
-        title: "Growth analysis completed",
-        description: "Your plant growth analysis is ready!",
-      });
     } catch (error: any) {
       console.error("Overall error in runAnalysis:", error);
       toast({
