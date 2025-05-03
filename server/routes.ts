@@ -47,6 +47,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 import { setupDirectLoginRoute } from "./routes/direct-login";
 import { setupLightMeterRoutes } from "./routes/light-meter";
 import { setupPlantLightAnalyzerRoutes } from "./routes/plant-light-analyzer";
+import { setupSharedPlantsRoutes } from "./routes/shared-plants";
 import { analyzePlantImageLightLevel } from "./services/lightAnalyzer";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -64,6 +65,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up plant light analyzer routes
   setupPlantLightAnalyzerRoutes(app);
+  
+  // Set up shared plants routes
+  setupSharedPlantsRoutes(app);
   
   // API routes
   const apiRouter = app;

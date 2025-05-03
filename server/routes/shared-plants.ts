@@ -1,5 +1,5 @@
 import { Express, Request, Response } from 'express';
-import asyncHandler from '../utils/errorHandler';
+import { asyncHandler } from '../utils/errorHandler';
 import { isAuthenticated } from '../auth';
 import { storage } from '../storage';
 import { sharedPlantLinks } from '@shared/schema';
