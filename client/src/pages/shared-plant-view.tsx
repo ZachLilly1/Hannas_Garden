@@ -32,7 +32,7 @@ export default function SharedPlantView() {
 
   const { data, isLoading, error } = useQuery<SharedPlantResponse>({
     queryKey: [`/api/s/${shareId}`],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: "returnNull" }),
     retry: 1,
     enabled: !!shareId
   });
