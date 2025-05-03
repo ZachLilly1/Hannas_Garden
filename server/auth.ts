@@ -12,6 +12,7 @@ import csrf from "csurf";
 import rateLimit from "express-rate-limit";
 import { checkPasswordStrength, meetsMinimumRequirements } from "./services/passwordStrength";
 import * as logger from "./services/logger";
+// We'll use dynamic import for bcrypt to avoid startup issues in environments without native build tools
 
 // Initialize CSRF protection middleware
 // This addresses authentication issues for development environments
@@ -70,37 +71,37 @@ export async function hashPassword(password: string): Promise<string> {
 // Compare user input with stored hashed password
 export async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
   try {
-    // Handle bcrypt passwords (starting with $2b$)
-    if (stored.startsWith('$2b$')) {
-      // In a production environment, we should properly hash and validate bcrypt passwords,
-      // but without the library, we'll mark them for upgrade.
-      // However, we'll allow it to work for backwards compatibility.
-      logger.warn("Legacy bcrypt password detected - allowing login but password should be reset");
+    // Handle bcrypt passwords (starting with $2a$ or $2b$)
+    if (stored.startsWith('$2a$') || stored.startsWith('$2b$')) {
+      // Import bcrypt at runtime to handle password verification
+      const bcrypt = await import('bcrypt');
       
-      // TEMPORARY SOLUTION FOR EXISTING USERS - ALLOW LOGIN EVEN IN PRODUCTION
-      // This is a security compromise to allow users to log in
-      // We'll mark their passwords for upgrade in the LocalStrategy
+      logger.info("Using bcrypt to verify legacy password");
       
-      // For testing and existing accounts - accept specific cases for known users
-      if (supplied === "password" || supplied === "password123") {
-        logger.warn("Common password detected - User should change password immediately");
-        return true;
-      }
-      
-      // For other bcrypt passwords, we'll try to validate with some basic checks
-      // This is not cryptographically secure, but better than locking users out
-      const bcryptInfo = stored.split('$');
-      if (bcryptInfo.length >= 4) {
-        // Check if the hash appears to be of correct length
-        const hashPart = bcryptInfo[3];
-        if (hashPart && hashPart.length >= 20) {
-          logger.warn("Using basic bcrypt validation - password should be reset");
-          return true; // Accept login but log warning
+      try {
+        // Proper cryptographic comparison of bcrypt password
+        const result = await bcrypt.compare(supplied, stored);
+        
+        if (result) {
+          logger.info("Bcrypt password verified successfully - will upgrade on login");
+        } else {
+          logger.info("Bcrypt password verification failed");
         }
+        
+        return result;
+      } catch (bcryptError) {
+        logger.error("Bcrypt comparison error:", bcryptError);
+        // Fall back to our custom verification only if bcrypt comparison fails
+        // This is a last resort for corrupted hashes
+        
+        // For emergency access with common passwords as a fallback only
+        if (process.env.NODE_ENV !== 'production' && (supplied === "password" || supplied === "password123")) {
+          logger.warn("⚠️ DEV ONLY: Using common password fallback - not allowed in production");
+          return true;
+        }
+        
+        return false;
       }
-      
-      logger.error("Invalid bcrypt format - cannot validate");
-      return false;
     }
     
     // For scrypt passwords (with salt format)
@@ -222,8 +223,20 @@ export function setupAuth(app: Express) {
         // Find user by username
         const user = await storage.getUserByUsername(username);
         
-        // Check if user exists and password matches
-        if (!user || !(await comparePasswords(password, user.password))) {
+        // If user doesn't exist, bail out early with generic message
+        if (!user) {
+          logger.info(`Login failed: User "${username}" not found`);
+          return done(null, false, { message: "Invalid username or password" });
+        }
+        
+        // Enhanced logging for troubleshooting
+        logger.info(`Login attempt for ${username} with ${user.password.startsWith('$2') ? 'bcrypt' : 'scrypt'} password`);
+        
+        // Check password using our robust comparison method that handles both formats
+        const passwordMatches = await comparePasswords(password, user.password);
+        
+        if (!passwordMatches) {
+          logger.info(`Login failed: Password mismatch for user "${username}"`);
           return done(null, false, { message: "Invalid username or password" });
         }
         
@@ -231,19 +244,27 @@ export function setupAuth(app: Express) {
         await storage.updateUserLastLogin(user.id);
         
         // If user has a bcrypt password, migrate it to scrypt for future logins
-        if (user.password.startsWith('$2b$')) {
+        if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
           try {
             logger.info(`Upgrading password from bcrypt to scrypt for user: ${username}`);
             const newHashedPassword = await hashPassword(password);
-            await storage.updateUserPassword(user.id, newHashedPassword);
+            const updateSuccess = await storage.updateUserPassword(user.id, newHashedPassword);
+            
+            if (updateSuccess) {
+              logger.info(`Password upgraded successfully for user: ${username}`);
+            } else {
+              logger.warn(`Password upgrade failed for user: ${username}`);
+            }
           } catch (err) {
             logger.error("Failed to upgrade password", err as Error);
             // Non-critical error, can continue with login
           }
         }
         
+        logger.info(`Authentication successful for user: ${username}`);
         return done(null, user);
       } catch (error) {
+        logger.error(`Authentication error for user "${username}":`, error);
         return done(error);
       }
     })

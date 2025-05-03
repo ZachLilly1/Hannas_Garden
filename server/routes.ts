@@ -42,7 +42,7 @@ import fs from "fs";
 import path from "path";
 import { setupAuth, isAuthenticated, hashPassword } from "./auth";
 
-// Direct login routes only used in development
+// Auth-related routes
 const isProduction = process.env.NODE_ENV === 'production';
 import { setupDirectLoginRoute } from "./routes/direct-login";
 import { setupLightMeterRoutes } from "./routes/light-meter";
@@ -58,8 +58,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     logger.info("Setting up direct login route for development");
     setupDirectLoginRoute(app);
   }
-  
-
   
   // Set up light meter routes with OpenAI integration
   setupLightMeterRoutes(app);
