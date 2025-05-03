@@ -29,6 +29,7 @@ import CareSchedulerPage from "@/pages/tools/care-scheduler";
 import CommunityInsightsPage from "@/pages/tools/community-insights";
 import HealthDiagnosisDemo from "@/pages/health-diagnosis-demo";
 import AuthPage from "@/pages/auth-page";
+import SharedPlantView from "@/pages/shared-plant-view";
 import NotFound from "@/pages/not-found";
 
 function Router() {
