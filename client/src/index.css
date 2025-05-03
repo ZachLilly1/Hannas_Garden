@@ -103,17 +103,12 @@
   }
 }
 
-/* More aggressive fix for input text color in light mode */
+/* Since we've fixed the issue in the component, keeping minimal CSS here */
+/* just in case there are any edge cases */
 .auth-form input {
-  color: #333333 !important;
+  color: #333333;
 }
 
-/* Global input text color fixes for better contrast */
-input, textarea, select {
-  color: #333333 !important;
-}
-
-/* In dark mode, use light text */
-.dark input, .dark textarea, .dark select {
-  color: #ffffff !important;
+.dark .auth-form input {
+  color: #ffffff;
 }
