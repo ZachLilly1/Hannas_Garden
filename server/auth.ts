@@ -424,90 +424,45 @@ function setupAuthRoutes(app: Express) {
         });
       }
       
-      // EMERGENCY OVERRIDE FOR DEPLOYMENT TESTING
-      // This is a temporary solution to allow login while troubleshooting production issues
-      const isEmergencyOverride = 
-        (username === "Zach" || username === "admin") && 
-        (password === "password" || password === "password123");
-      
-      if (isEmergencyOverride) {
-        // Manual authentication for emergency override
-        logger.warn(`⚠️ EMERGENCY OVERRIDE: Attempting manual login for ${username} ⚠️`);
+      // Manually invoke passport authenticate to handle in async/await context
+      passport.authenticate("local", (err: Error, user: SelectUser | false) => {
+        if (err) {
+          logger.error("Login authentication error", err);
+          return next(err);
+        }
         
-        try {
-          // Find the user manually
-          const user = await storage.getUserByUsername(username);
-          if (!user) {
-            logger.error("Emergency override failed: User not found");
-            return res.status(401).json({ message: "Invalid username or password" });
+        if (!user) {
+          logger.info(`Login failed for user: ${username}`);
+          return res.status(401).json({ message: "Invalid username or password" });
+        }
+        
+        logger.info(`User authenticated successfully: ${user.username}`);
+        
+        // Login and establish session
+        req.login(user, (loginErr) => {
+          if (loginErr) {
+            logger.error("Login session error", loginErr);
+            return next(loginErr);
           }
           
-          // Skip password validation for emergency override
-          logger.warn(`⚠️ EMERGENCY OVERRIDE: Password check bypassed for ${username} ⚠️`);
+          logger.debug(`Login completed, session ID: ${req.session.id}`);
           
-          // Login the user manually
-          req.login(user, (loginErr) => {
-            if (loginErr) {
-              logger.error("Emergency login failed:", loginErr);
-              return next(loginErr);
+          // Add CORS headers for cross-domain requests
+          res.header('Access-Control-Allow-Credentials', 'true');
+          
+          // Save session to ensure persistence
+          req.session.save((saveErr) => {
+            if (saveErr) {
+              logger.error("Error saving session:", saveErr);
             }
             
-            logger.warn(`⚠️ EMERGENCY OVERRIDE: Login successful for ${username} ⚠️`);
-            
-            // Return user info without password
+            // Return user data without password
             const { password, ...userInfo } = user;
             return res.status(200).json(userInfo);
           });
-        } catch (error) {
-          logger.error("Emergency override error:", error);
-          return next(error);
-        }
-      } else {
-        // Standard authentication path using passport
-        try {
-          // Manually invoke passport authenticate to handle in async/await context
-          passport.authenticate("local", (err: Error, user: SelectUser | false) => {
-            if (err) {
-              logger.error("Login authentication error", err);
-              return next(err);
-            }
-            
-            if (!user) {
-              logger.info(`Login failed for user: ${username}`);
-              return res.status(401).json({ message: "Invalid username or password" });
-            }
-            
-            logger.info(`User authenticated successfully: ${user.username}`);
-            
-            // Login and establish session
-            req.login(user, (loginErr) => {
-              if (loginErr) {
-                logger.error("Login session error", loginErr);
-                return next(loginErr);
-              }
-              
-              logger.debug(`Login completed, session ID: ${req.session.id}`);
-              
-              // Add CORS headers for cross-domain requests
-              res.header('Access-Control-Allow-Credentials', 'true');
-              
-              // Save session to ensure persistence
-              req.session.save((saveErr) => {
-                if (saveErr) {
-                  logger.error("Error saving session:", saveErr);
-                }
-                
-                // Return user data without password
-                const { password, ...userInfo } = user;
-                return res.status(200).json(userInfo);
-              });
-            });
-          })(req, res, next);
-        } catch (authError) {
-          logger.error("Authentication process error:", authError);
-          return next(authError);
-        }
-      }
+        });
+      })(req, res, next);
+      
     } catch (error) {
       logger.error("Login route error:", error);
       next(error);

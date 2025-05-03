@@ -70,24 +70,11 @@ export function setupDirectLoginRoute(app: Express) {
       // Log password format for debugging
       logger.info(`Password format for ${username}: ${user.password.startsWith('$2b$') ? 'bcrypt' : 'scrypt'}`);
       
-      // EMERGENCY OVERRIDE FOR DEPLOYMENT TESTING
-      // This is a temporary solution to allow login while troubleshooting
-      // ⚠️ WARNING: This should be removed after fixing the issue
-      const isEmergencyOverride = 
-        (username === "Zach" || username === "admin") && 
-        (password === "password" || password === "password123");
-        
-      if (isEmergencyOverride) {
-        logger.warn("⚠️ USING EMERGENCY LOGIN OVERRIDE ⚠️");
-        
-        // Skip password check for emergency override
-      } else {
-        // Normal password verification
-        const passwordMatches = await comparePasswords(password, user.password);
-        if (!passwordMatches) {
-          logger.info("Password does not match for user:", username);
-          return res.status(401).json({ message: "Invalid username or password" });
-        }
+      // Normal password verification
+      const passwordMatches = await comparePasswords(password, user.password);
+      if (!passwordMatches) {
+        logger.info("Password does not match for user:", username);
+        return res.status(401).json({ message: "Invalid username or password" });
       }
       
       logger.info("Password verification passed, logging in user:", username);
