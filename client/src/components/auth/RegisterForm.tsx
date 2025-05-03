@@ -63,7 +63,7 @@ export function RegisterForm({ onSuccess, onLoginClick }: RegisterFormProps) {
   }
 
   return (
-    <div className="w-full max-w-md space-y-6">
+    <div className="w-full max-w-md space-y-6 auth-form">
       <div className="text-center">
         <h2 className="text-2xl font-bold">Create an Account</h2>
         <p className="text-muted-foreground mt-2">
