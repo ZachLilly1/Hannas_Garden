@@ -5,6 +5,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { ShareCareLogButton } from "./ShareCareLogButton";
 
 // Define interface for the journal entry
 interface JournalEntry {
@@ -77,19 +78,22 @@ export function CareLogJournal({ careLogId, plantId, hasPhoto }: CareLogJournalP
         </Button>
       ) : (
         <div className="mt-3">
-          <div 
-            className="flex items-center justify-between cursor-pointer" 
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            <div className="flex items-center">
+          <div className="flex items-center justify-between">
+            <div 
+              className="flex items-center cursor-pointer" 
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
               <Brain className="h-3 w-3 mr-2 text-indigo-500" />
               <span className="text-sm font-medium">AI Analysis</span>
             </div>
-            {isExpanded ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
+            <div className="flex items-center gap-2">
+              <ShareCareLogButton careLogId={careLogId} size="sm" variant="ghost" />
+              {isExpanded ? (
+                <ChevronUp className="h-4 w-4 cursor-pointer" onClick={() => setIsExpanded(false)} />
+              ) : (
+                <ChevronDown className="h-4 w-4 cursor-pointer" onClick={() => setIsExpanded(true)} />
+              )}
+            </div>
           </div>
           
           {isExpanded && journalEntry && (

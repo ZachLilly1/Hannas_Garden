@@ -16,7 +16,38 @@ export default function SharedCareLogView() {
   const { shareId } = useParams();
   const [notFound, setNotFound] = useState(false);
 
-  const { data, error, isLoading } = useQuery<{careLog: any; plant: any}>({
+  // Define the interface for our data types
+  interface CareLog {
+    id: number;
+    plantId: number;
+    careType: string;
+    timestamp: string;
+    notes?: string;
+    metadata?: {
+      photos?: string[];
+      journalEntry?: {
+        title: string;
+        observations: string[];
+        growthProgress: string;
+      };
+      healthData?: {
+        concerns: string[];
+        recommendations: string;
+      };
+    };
+  }
+
+  interface Plant {
+    id: number;
+    name: string;
+    scientificName?: string;
+    image?: string;
+    location?: string;
+    type?: string;
+    sunlightLevel?: string;
+  }
+
+  const { data, error, isLoading } = useQuery<{careLog: CareLog; plant: Plant}>({
     queryKey: [`/api/sc/${shareId}`]
   });
   
