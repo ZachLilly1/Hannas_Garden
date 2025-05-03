@@ -116,8 +116,9 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
           });
         }
         
-        // Reset identification result when new image is selected
+        // Reset identification result and AI recommendations when new image is selected
         setIdentificationResult(null);
+        setUsingAiCareRecommendations(false);
         
         // Create a preview URL
         const reader = new FileReader();
@@ -340,6 +341,7 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
       setSelectedImage(null);
       setImageFile(null);
       setIdentificationResult(null);
+      setUsingAiCareRecommendations(false);
       onClose();
     } catch (error) {
       console.error(`Error ${plantToEdit ? 'updating' : 'adding'} plant:`, error);
@@ -421,7 +423,10 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
     <Dialog 
       open={isOpen} 
       onOpenChange={(open) => {
-        if (!open) onClose();
+        if (!open) {
+          setUsingAiCareRecommendations(false);
+          onClose();
+        }
       }}
     >
       <DialogContent 
@@ -755,24 +760,43 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
                   name="waterFrequency"
                   render={({ field }) => (
                     <FormItem className="mb-3">
-                      <FormLabel>Water Frequency</FormLabel>
-                      <Select 
-                        onValueChange={(value) => field.onChange(parseInt(value))} 
-                        defaultValue={field.value.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select water frequency" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {waterFrequencies.map((freq) => (
-                            <SelectItem key={freq.value} value={freq.value}>
-                              {freq.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormLabel>
+                        Water Frequency
+                        {usingAiCareRecommendations && (
+                          <Badge variant="outline" className="ml-2 bg-primary/10 text-xs">
+                            AI Recommended
+                          </Badge>
+                        )}
+                      </FormLabel>
+                      {usingAiCareRecommendations ? (
+                        <div className="flex items-center p-2.5 px-3 bg-muted/30 border rounded-md text-sm">
+                          Every {field.value} days
+                          {identificationResult?.confidence && (
+                            <Badge variant="outline" className="ml-auto text-xs" title={`AI confidence: ${identificationResult.confidence}`}>
+                              {identificationResult.confidence === "high" ? "High confidence" : 
+                               identificationResult.confidence === "medium" ? "Medium confidence" : "Low confidence"}
+                            </Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <Select 
+                          onValueChange={(value) => field.onChange(parseInt(value))} 
+                          defaultValue={field.value.toString()}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select water frequency" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {waterFrequencies.map((freq) => (
+                              <SelectItem key={freq.value} value={freq.value}>
+                                {freq.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -784,24 +808,43 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
                   name="sunlightLevel"
                   render={({ field }) => (
                     <FormItem className="mb-3">
-                      <FormLabel>Sunlight Requirement</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select sunlight level" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {sunlightLevels.map((level) => (
-                            <SelectItem key={level.value} value={level.value}>
-                              {level.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormLabel>
+                        Sunlight Requirement
+                        {usingAiCareRecommendations && (
+                          <Badge variant="outline" className="ml-2 bg-primary/10 text-xs">
+                            AI Recommended
+                          </Badge>
+                        )}
+                      </FormLabel>
+                      {usingAiCareRecommendations ? (
+                        <div className="flex items-center p-2.5 px-3 bg-muted/30 border rounded-md text-sm">
+                          {field.value.charAt(0).toUpperCase() + field.value.slice(1)} light
+                          {identificationResult?.confidence && (
+                            <Badge variant="outline" className="ml-auto text-xs" title={`AI confidence: ${identificationResult.confidence}`}>
+                              {identificationResult.confidence === "high" ? "High confidence" : 
+                               identificationResult.confidence === "medium" ? "Medium confidence" : "Low confidence"}
+                            </Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select sunlight level" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {sunlightLevels.map((level) => (
+                              <SelectItem key={level.value} value={level.value}>
+                                {level.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -813,24 +856,43 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
                   name="fertilizerFrequency"
                   render={({ field }) => (
                     <FormItem className="mb-3">
-                      <FormLabel>Fertilizer Frequency</FormLabel>
-                      <Select 
-                        onValueChange={(value) => field.onChange(parseInt(value))} 
-                        defaultValue={field.value.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select fertilizer frequency" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {fertilizerFrequencies.map((freq) => (
-                            <SelectItem key={freq.value} value={freq.value}>
-                              {freq.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormLabel>
+                        Fertilizer Frequency
+                        {usingAiCareRecommendations && (
+                          <Badge variant="outline" className="ml-2 bg-primary/10 text-xs">
+                            AI Recommended
+                          </Badge>
+                        )}
+                      </FormLabel>
+                      {usingAiCareRecommendations ? (
+                        <div className="flex items-center p-2.5 px-3 bg-muted/30 border rounded-md text-sm">
+                          {field.value === 0 ? "No fertilization needed" : `Every ${field.value} days`}
+                          {identificationResult?.confidence && (
+                            <Badge variant="outline" className="ml-auto text-xs" title={`AI confidence: ${identificationResult.confidence}`}>
+                              {identificationResult.confidence === "high" ? "High confidence" : 
+                               identificationResult.confidence === "medium" ? "Medium confidence" : "Low confidence"}
+                            </Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <Select 
+                          onValueChange={(value) => field.onChange(parseInt(value))} 
+                          defaultValue={field.value.toString()}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select fertilizer frequency" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {fertilizerFrequencies.map((freq) => (
+                              <SelectItem key={freq.value} value={freq.value}>
+                                {freq.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
