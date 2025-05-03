@@ -15,6 +15,7 @@ import {
   ActivityIcon,
   BrainIcon
 } from "@/lib/icons";
+import SharePlantButton from "./SharePlantButton";
 import { cn, formatRelativeDate, getDefaultPlantImage } from "@/lib/utils";
 import { type PlantWithCare, type CareLog, type InsertCareLog } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
@@ -271,6 +272,7 @@ export function PlantDetailModal({ plant, isOpen, onClose, onEdit }: PlantDetail
                 )}
               </div>
               <div className="flex space-x-3 flex-shrink-0">
+                <SharePlantButton plantId={plant.id} plantName={plant.name} />
                 <button 
                   className="text-neutral-dark opacity-70 hover:opacity-100"
                   onClick={() => onEdit(plant)}

@@ -13,6 +13,17 @@ interface SharePlantButtonProps {
   plantName: string;
 }
 
+// Interface for shared plant link data
+interface SharedPlantLink {
+  shareId: string;
+  plantId: number;
+  userId: number;
+  active: boolean;
+  createdAt: string;
+  lastViewed?: string;
+  viewCount: number;
+}
+
 export default function SharePlantButton({ plantId, plantName }: SharePlantButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [shareLink, setShareLink] = useState('');
@@ -21,18 +32,18 @@ export default function SharePlantButton({ plantId, plantName }: SharePlantButto
   const queryClient = useQueryClient();
 
   // Query to check if there's already an active share link
-  const { data: existingLinks, isLoading: isLoadingLinks } = useQuery({
+  const { data: existingLinks = [], isLoading: isLoadingLinks } = useQuery<SharedPlantLink[]>({
     queryKey: ['/api/shared-plants'],
     enabled: isOpen, // Only fetch when dialog opens
   });
 
   // Find active link for this plant
-  const activeLink = existingLinks?.find(
-    (link: any) => link.plantId === plantId && link.active
+  const activeLink = existingLinks.find(
+    (link) => link.plantId === plantId && link.active
   );
 
   // Mutation to create a new share link
-  const createShareMutation = useMutation({
+  const createShareMutation = useMutation<SharedPlantLink, Error, void>({
     mutationFn: async () => {
       const res = await apiRequest('POST', '/api/shared-plants', { plantId });
       return await res.json();
@@ -53,7 +64,7 @@ export default function SharePlantButton({ plantId, plantName }: SharePlantButto
   });
 
   // Mutation to deactivate a share link
-  const deactivateMutation = useMutation({
+  const deactivateMutation = useMutation<any, Error, string>({
     mutationFn: async (shareId: string) => {
       const res = await apiRequest('DELETE', `/api/shared-plants/${shareId}`);
       return await res.json();
