@@ -94,6 +94,15 @@ export interface IStorage {
   updateSharedPlantLinkStats(shareId: string): Promise<SharedPlantLink | undefined>;
   deactivateSharedPlantLink(shareId: string): Promise<boolean>;
   getSharedPlantWithCare(shareId: string): Promise<PlantWithCare | undefined>;
+  
+  // Shared care log links methods
+  createSharedCareLogLink(careLogId: number, userId: number): Promise<SharedCareLogLink>;
+  getSharedCareLogLink(shareId: string): Promise<SharedCareLogLink | undefined>;
+  getSharedCareLogLinksByUser(userId: number): Promise<SharedCareLogLink[]>;
+  getSharedCareLogLinksByCareLog(careLogId: number): Promise<SharedCareLogLink[]>;
+  updateSharedCareLogLinkStats(shareId: string): Promise<SharedCareLogLink | undefined>;
+  deactivateSharedCareLogLink(shareId: string): Promise<boolean>;
+  getSharedCareLogWithDetails(shareId: string): Promise<{careLog: CareLog; plant: PlantWithCare} | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {

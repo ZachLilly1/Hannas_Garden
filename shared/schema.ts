@@ -261,3 +261,29 @@ export const insertSharedPlantLinkSchema = createInsertSchema(sharedPlantLinks).
 
 export type SharedPlantLink = typeof sharedPlantLinks.$inferSelect;
 export type InsertSharedPlantLink = z.infer<typeof insertSharedPlantLinkSchema>;
+
+// Shared care log links schema
+export const sharedCareLogLinks = pgTable("shared_care_log_links", {
+  id: serial("id").primaryKey(),
+  careLogId: integer("care_log_id").notNull().references(() => careLogs.id, {
+    onDelete: "cascade",
+  }),
+  userId: integer("user_id").notNull().references(() => users.id, {
+    onDelete: "cascade",
+  }),
+  shareId: text("share_id").notNull().unique(), // Unique identifier for the URL
+  createdAt: timestamp("created_at").defaultNow(),
+  lastAccessed: timestamp("last_accessed"), // Track when the link was last viewed
+  viewCount: integer("view_count").default(0), // Track how many times the link was viewed
+  active: boolean("active").default(true), // Allow disabling sharing
+});
+
+export const insertSharedCareLogLinkSchema = createInsertSchema(sharedCareLogLinks).omit({
+  id: true,
+  createdAt: true,
+  lastAccessed: true,
+  viewCount: true,
+});
+
+export type SharedCareLogLink = typeof sharedCareLogLinks.$inferSelect;
+export type InsertSharedCareLogLink = z.infer<typeof insertSharedCareLogLinkSchema>;
