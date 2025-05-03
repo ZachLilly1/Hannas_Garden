@@ -103,12 +103,14 @@
   }
 }
 
-/* Since we've fixed the issue in the component, keeping minimal CSS here */
-/* just in case there are any edge cases */
+/* Light theme: Force high contrast with white background and black text */
 .auth-form input {
-  color: #333333;
+  background-color: white !important;
+  color: black !important;
 }
 
+/* Dark theme: Force high contrast with dark background and white text */
 .dark .auth-form input {
-  color: #ffffff;
+  background-color: #333 !important;
+  color: white !important;
 }
