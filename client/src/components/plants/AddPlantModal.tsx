@@ -51,6 +51,7 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isIdentifying, setIsIdentifying] = useState(false);
   const [identificationResult, setIdentificationResult] = useState<PlantIdentificationResult | null>(null);
+  const [usingAiCareRecommendations, setUsingAiCareRecommendations] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Extend the insertPlantSchema with client-side validation
@@ -257,6 +258,9 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
         const existingNotes = form.getValues("notes") || "";
         const newNotes = `Care Tips: ${result.careRecommendations.additionalCare || 'No specific care tips available.'}${existingNotes ? "\n\n" + existingNotes : ""}`;
         form.setValue("notes", newNotes);
+        
+        // Set the AI recommendations flag to make fields read-only
+        setUsingAiCareRecommendations(true);
       }
       
       toast({
