@@ -82,6 +82,7 @@ export async function apiRequest(
         // Fetch CSRF token and add it to headers
         await fetchCsrfToken();
         options = withCsrf(options);
+        console.log('Added CSRF token to request headers');
       } catch (error) {
         console.error('CSRF token error:', error);
         // Continue without CSRF token - the server will reject if needed

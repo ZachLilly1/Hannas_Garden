@@ -183,9 +183,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Logout mutation using apiRequest to properly handle CSRF token
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      // Use apiRequest which will properly handle CSRF token fetching
-      const res = await apiRequest('POST', '/api/auth/logout');
-      return res;
+      console.log('Attempting to logout...');
+      try {
+        // Use apiRequest which will properly handle CSRF token fetching
+        const res = await apiRequest('POST', '/api/auth/logout');
+        console.log('Logout response:', res.status);
+        return res;
+      } catch (error) {
+        console.error('Logout error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       // Clear the CSRF token to prevent using old tokens

@@ -471,7 +471,12 @@ function setupAuthRoutes(app: Express) {
 
   // Logout user with CSRF protection
   app.post("/api/auth/logout", csrfProtection, (req, res, next) => {
+    // Log all request headers for debugging
+    logger.debug(`Logout request received. All headers: ${JSON.stringify(req.headers)}`);
+    logger.debug(`Current auth status: ${req.isAuthenticated()}`);
+
     if (!req.isAuthenticated()) {
+      logger.debug('User already logged out, returning success');
       return res.status(200).json({ message: "Already logged out" });
     }
     
@@ -485,12 +490,16 @@ function setupAuthRoutes(app: Express) {
         return next(err);
       }
       
+      logger.debug('User logged out successfully, regenerating session');
+      
       // Destroy session with regenerate to ensure complete cleanup
       req.session.regenerate((regenerateErr) => {
         if (regenerateErr) {
           logger.error('Error regenerating session during logout:', regenerateErr);
           return next(regenerateErr);
         }
+        
+        logger.debug('Session regenerated successfully');
         
         // Explicitly clear the cookie with exact same settings as session cookie
         res.clearCookie('garden.sid', { 
