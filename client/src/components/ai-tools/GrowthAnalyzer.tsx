@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, Brain, BarChart, Clock, Calendar, ArrowRightLeft, Zap, AlertTriangle, ChevronRight, ImagePlus, Sparkles } from "lucide-react";
+import { Loader2, Brain, BarChart, Clock, Calendar, ArrowRightLeft, Zap, AlertTriangle, ChevronRight, ImagePlus } from "lucide-react";
 import { apiRequest } from '@/lib/queryClient';
 import { PlantWithCare, CareLog } from '@shared/schema';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -358,7 +358,7 @@ export function GrowthAnalyzer() {
                 <Card className="border-emerald-100 dark:border-emerald-800">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center">
-                      <Sparkles className="h-4 w-4 mr-2 text-emerald-500" />
+                      <Brain className="h-4 w-4 mr-2 text-emerald-500" />
                       Growth Assessment
                     </CardTitle>
                   </CardHeader>
