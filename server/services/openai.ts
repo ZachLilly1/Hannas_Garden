@@ -936,7 +936,7 @@ export async function verifyPlantIdentity(
     }
 
     const rawContent = response.choices[0].message.content;
-    const result = JSONparse(rawContent);
+    const result = JSON.parse(rawContent);
 
     return {
       matches: result.matches === true,
@@ -981,19 +981,16 @@ export async function generateJournalEntry(
 
         logger.info(`Plant identity verification result: ${plantIdentityMatch.matches ? 'Match' : 'Mismatch'} (confidence: ${plantIdentityMatch.confidence})`);
 
-        // If plant doesn't match and we have medium or high confidence in that assessment,
-        // return a simplified journal entry with just a mismatch note instead of doing a full health check
-        if (!plantIdentityMatch.matches && 
-            plantIdentityMatch.confidence !== "low" && 
-            plantIdentityMatch.detectedPlant) {
-
-          logger.info(`Skipping health check due to plant identity mismatch. Detected ${plantIdentityMatch.detectedPlant} instead of ${plant.name}`);
+        // If plant doesn't match, return a simplified journal entry with just a mismatch note
+        // instead of doing a full health check - regardless of confidence level
+        if (!plantIdentityMatch.matches) {
+          logger.info(`Skipping health check due to plant identity mismatch. Detected ${plantIdentityMatch.detectedPlant || 'a different plant'} instead of ${plant.name}`);
 
           // Return a simple journal entry noting the mismatch
           return {
             title: "Plant Identity Mismatch Detected",
             observations: [
-              `This appears to be a ${plantIdentityMatch.detectedPlant} rather than the expected ${plant.name}.`,
+              `This appears to be ${plantIdentityMatch.detectedPlant ? `a ${plantIdentityMatch.detectedPlant}` : 'a different plant'} rather than the expected ${plant.name}.`,
               "No health analysis was performed due to the plant identity mismatch.",
               "Please verify that this is the correct plant before logging care activities."
             ],

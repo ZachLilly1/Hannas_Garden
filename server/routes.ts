@@ -676,38 +676,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Generate journal entry with AI analysis and care history
             const journalEntry = await generateJournalEntry(careLog, plantWithCare, pastCareHistory);
             
-            // Create summary to add to the care log notes
-            let aiAnalysisSummary = "\n\n--- AI Analysis ---\n";
+            // We no longer add the AI analysis to the notes since it's shown 
+            // in the UI under the dedicated AI Analysis section
             
-            // Add plant identity verification result
-            if (journalEntry.plantIdentityMatch) {
-              const matchResult = journalEntry.plantIdentityMatch.matches ? "✓" : "✗";
-              const plantName = journalEntry.plantIdentityMatch.detectedPlant || 'Unknown plant';
-              
-              aiAnalysisSummary += journalEntry.plantIdentityMatch.matches 
-                ? `Plant identification: ${matchResult} Confirmed ${plant.name}\n`
-                : `Plant identification: ${matchResult} Detected ${plantName} instead of ${plant.name}\n`;
-            }
-            
-            // Add a couple key observations
-            if (journalEntry.observations && journalEntry.observations.length > 0) {
-              aiAnalysisSummary += "\nObservations:\n";
-              // Add up to 3 observations to keep it concise
-              journalEntry.observations.slice(0, 3).forEach(obs => {
-                aiAnalysisSummary += `- ${obs}\n`;
-              });
-            }
-            
-            // Add growth progress summary
-            if (journalEntry.growthProgress) {
-              aiAnalysisSummary += `\nGrowth assessment: ${journalEntry.growthProgress.split('\n')[0]}\n`;
-            }
-            
-            // Update the care log with the AI analysis in the notes
-            const updatedNotes = (careLog.notes || "") + aiAnalysisSummary;
-            await storage.updateCareLog(careLog.id, {
-              notes: updatedNotes
-            });
+            // Only handle metadata for plant identity mismatch if needed
             
             // Handle plant identity mismatch in metadata
             if (journalEntry.plantIdentityMatch && 
