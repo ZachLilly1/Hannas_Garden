@@ -1,5 +1,6 @@
 import { 
   users, plants, careLogs, plantGuides, reminders, communityTips, tipVotes, sharedPlantLinks, sharedCareLogLinks,
+  userFollows, activityFeed, profileSettings,
   type User, type InsertUser, 
   type Plant, type InsertPlant,
   type CareLog, type InsertCareLog,
@@ -8,7 +9,10 @@ import {
   type CommunityTip, type InsertCommunityTip, type CommunityTipWithUser,
   type TipVote, type InsertTipVote,
   type SharedPlantLink, type InsertSharedPlantLink,
-  type SharedCareLogLink, type InsertSharedCareLogLink
+  type SharedCareLogLink, type InsertSharedCareLogLink,
+  type UserFollow, type InsertUserFollow,
+  type ActivityFeed, type InsertActivityFeed,
+  type ProfileSettings, type InsertProfileSettings
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, sql } from "drizzle-orm";
@@ -104,6 +108,28 @@ export interface IStorage {
   updateSharedCareLogLinkStats(shareId: string): Promise<SharedCareLogLink | undefined>;
   deactivateSharedCareLogLink(shareId: string): Promise<boolean>;
   getSharedCareLogWithDetails(shareId: string): Promise<{careLog: CareLog; plant: PlantWithCare} | undefined>;
+  
+  // User Follow System methods
+  followUser(followerId: number, followedId: number): Promise<UserFollow>;
+  unfollowUser(followerId: number, followedId: number): Promise<boolean>;
+  getFollowers(userId: number): Promise<User[]>;
+  getFollowing(userId: number): Promise<User[]>;
+  isFollowing(followerId: number, followedId: number): Promise<boolean>;
+  getFollowCount(userId: number): Promise<{followers: number; following: number}>;
+  
+  // Activity Feed methods
+  createActivity(activity: InsertActivityFeed): Promise<ActivityFeed>;
+  getUserActivityFeed(userId: number, limit?: number, offset?: number): Promise<ActivityFeed[]>;
+  getFollowingActivityFeed(userId: number, limit?: number, offset?: number): Promise<ActivityFeed[]>;
+  
+  // Profile Settings methods
+  getProfileSettings(userId: number): Promise<ProfileSettings | undefined>;
+  createProfileSettings(settings: InsertProfileSettings): Promise<ProfileSettings>;
+  updateProfileSettings(userId: number, settings: Partial<ProfileSettings>): Promise<ProfileSettings | undefined>;
+  
+  // Public Profile methods
+  getPublicProfile(username: string): Promise<{user: User; profileSettings: ProfileSettings} | undefined>;
+  getPublicPlants(userId: number): Promise<PlantWithCare[]>;
 }
 
 export class DatabaseStorage implements IStorage {

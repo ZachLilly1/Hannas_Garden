@@ -287,3 +287,70 @@ export const insertSharedCareLogLinkSchema = createInsertSchema(sharedCareLogLin
 
 export type SharedCareLogLink = typeof sharedCareLogLinks.$inferSelect;
 export type InsertSharedCareLogLink = z.infer<typeof insertSharedCareLogLinkSchema>;
+
+// User Follow System
+export const userFollows = pgTable("user_follows", {
+  id: serial("id").primaryKey(),
+  followerId: integer("follower_id").notNull().references(() => users.id, {
+    onDelete: "cascade",
+  }),
+  followedId: integer("followed_id").notNull().references(() => users.id, {
+    onDelete: "cascade",
+  }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertUserFollowSchema = createInsertSchema(userFollows).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type UserFollow = typeof userFollows.$inferSelect;
+export type InsertUserFollow = z.infer<typeof insertUserFollowSchema>;
+
+// Activity Feed System
+export const ACTIVITY_TYPES = ['plant_added', 'care_log_added', 'plant_shared', 'care_log_shared', 'profile_updated'] as const;
+
+export const activityFeed = pgTable("activity_feed", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, {
+    onDelete: "cascade",
+  }),
+  activityType: text("activity_type").notNull(), // One of ACTIVITY_TYPES
+  entityId: integer("entity_id"), // ID of the related entity (plant, care log, etc.)
+  entityType: text("entity_type"), // Type of entity (plant, care log, etc.)
+  metadata: text("metadata"), // JSON string with additional data
+  isPublic: boolean("is_public").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertActivityFeedSchema = createInsertSchema(activityFeed).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type ActivityFeed = typeof activityFeed.$inferSelect;
+export type InsertActivityFeed = z.infer<typeof insertActivityFeedSchema>;
+
+// Profile and Collection Visibility Settings
+export const profileSettings = pgTable("profile_settings", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, {
+    onDelete: "cascade",
+  }).unique(),
+  isProfilePublic: boolean("is_profile_public").default(false),
+  isCollectionPublic: boolean("is_collection_public").default(false),
+  showActivityInFeed: boolean("show_activity_in_feed").default(true),
+  allowFollowers: boolean("allow_followers").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertProfileSettingsSchema = createInsertSchema(profileSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type ProfileSettings = typeof profileSettings.$inferSelect;
+export type InsertProfileSettings = z.infer<typeof insertProfileSettingsSchema>;
