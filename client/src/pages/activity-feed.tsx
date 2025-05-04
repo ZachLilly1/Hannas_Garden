@@ -162,7 +162,7 @@ export default function ActivityFeed() {
         <div className="flex justify-center py-10">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      ) : activityData && activityData.length > 0 ? (
+      ) : activityData && Array.isArray(activityData) && activityData.length > 0 ? (
         <div className="space-y-4">
           {activityData.map((activity: ActivityFeedItem) => (
             <Card key={activity.id} className="overflow-hidden">

@@ -28,18 +28,25 @@ export default function DiscoverUsers() {
   // Fetch suggested users and trending users
   const { data: suggestedUsers, isLoading: suggestedLoading } = useQuery<UserProfileItem[]>({
     queryKey: ['/api/discover/suggested'],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: "returnNull" }),
   });
   
   const { data: trendingUsers, isLoading: trendingLoading } = useQuery<UserProfileItem[]>({
     queryKey: ['/api/discover/trending'],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: "returnNull" }),
   });
   
   // Search users query
   const { data: searchResults, isLoading: searchLoading } = useQuery<UserProfileItem[]>({
     queryKey: ['/api/discover/search', searchQuery],
-    queryFn: () => fetch(`/api/discover/search?q=${encodeURIComponent(searchQuery)}`).then(res => res.json()),
+    queryFn: async () => {
+      const res = await fetch(`/api/discover/search?q=${encodeURIComponent(searchQuery)}`);
+      if (!res.ok) {
+        if (res.status === 401) return null;
+        throw new Error(`Search failed: ${res.statusText}`);
+      }
+      return await res.json();
+    },
     enabled: searchQuery.length > 0,
   });
   
