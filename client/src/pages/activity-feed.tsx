@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
@@ -126,14 +126,16 @@ export default function ActivityFeed() {
     setPage(prevPage => prevPage + 1);
   };
   
-  // Handle errors
-  if (error) {
-    toast({
-      title: 'Error',
-      description: 'Failed to load activity feed',
-      variant: 'destructive',
-    });
-  }
+  // Handle errors with useEffect to avoid re-render loops
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load activity feed',
+        variant: 'destructive',
+      });
+    }
+  }, [error, toast]);
   
   // No data yet
   if (!activityData && !isLoading) {

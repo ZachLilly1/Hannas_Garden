@@ -229,6 +229,74 @@ export async function applyMigrations() {
     `);
     logger.info('Created shared_plant_links index (if needed)');
 
+    // Create shared_care_log_links table if it doesn't exist
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "shared_care_log_links" (
+        "id" SERIAL PRIMARY KEY,
+        "care_log_id" INTEGER NOT NULL REFERENCES care_logs(id) ON DELETE CASCADE,
+        "user_id" INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        "share_id" TEXT NOT NULL UNIQUE,
+        "created_at" TIMESTAMP DEFAULT NOW(),
+        "last_accessed" TIMESTAMP,
+        "view_count" INTEGER DEFAULT 0,
+        "active" BOOLEAN DEFAULT TRUE
+      );
+    `);
+    logger.info('Created shared_care_log_links table (if needed)');
+
+    // Create index on share_id for faster lookups
+    await db.execute(sql`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_indexes WHERE indexname = 'idx_shared_care_log_links_share_id'
+        ) THEN
+          CREATE INDEX "idx_shared_care_log_links_share_id" ON "shared_care_log_links" ("share_id");
+        END IF;
+      END $$;
+    `);
+    logger.info('Created shared_care_log_links index (if needed)');
+
+    // Create user_follows table if it doesn't exist
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "user_follows" (
+        "id" SERIAL PRIMARY KEY,
+        "follower_id" INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        "followed_id" INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        "created_at" TIMESTAMP DEFAULT NOW(),
+        UNIQUE("follower_id", "followed_id")
+      );
+    `);
+    logger.info('Created user_follows table (if needed)');
+
+    // Create activity_feed table if it doesn't exist
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "activity_feed" (
+        "id" SERIAL PRIMARY KEY,
+        "user_id" INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        "activity_type" TEXT NOT NULL,
+        "entity_id" INTEGER,
+        "details" JSONB DEFAULT '{}',
+        "created_at" TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    logger.info('Created activity_feed table (if needed)');
+
+    // Create profile_settings table if it doesn't exist
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "profile_settings" (
+        "id" SERIAL PRIMARY KEY,
+        "user_id" INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+        "is_profile_public" BOOLEAN DEFAULT false,
+        "is_collection_public" BOOLEAN DEFAULT false,
+        "allow_followers" BOOLEAN DEFAULT true,
+        "show_activity_in_feed" BOOLEAN DEFAULT true,
+        "created_at" TIMESTAMP DEFAULT NOW(),
+        "updated_at" TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    logger.info('Created profile_settings table (if needed)');
+
     logger.info('Database migrations completed successfully!');
   } catch (error) {
     logger.error('Error applying migrations:', error);
