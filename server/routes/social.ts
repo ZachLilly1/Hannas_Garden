@@ -80,7 +80,7 @@ export function registerSocialRoutes(app: Express) {
   // Update profile settings
   app.patch('/api/profile/settings', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user!.id;
       
       // Validate input
       const settingsSchema = insertProfileSettingsSchema.partial().omit({ userId: true });
@@ -98,7 +98,7 @@ export function registerSocialRoutes(app: Express) {
       
       return res.status(200).json(settings);
     } catch (error) {
-      console.error('Error updating profile settings:', error);
+      logger.error('Error updating profile settings:', error);
       return res.status(500).json({ message: "Failed to update profile settings" });
     }
   });
@@ -116,7 +116,7 @@ export function registerSocialRoutes(app: Express) {
       }
       
       // Check if plants are public or if current user is the owner
-      const isOwner = req.isAuthenticated() && req.user.id === profile.user.id;
+      const isOwner = req.isAuthenticated() && req.user && req.user.id === profile.user.id;
       
       if (!profile.profileSettings.isCollectionPublic && !isOwner) {
         return res.status(403).json({ message: "This plant collection is private" });
@@ -135,7 +135,7 @@ export function registerSocialRoutes(app: Express) {
   // Follow a user
   app.post('/api/follow/:userId', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const followerId = req.user.id;
+      const followerId = req.user!.id;
       const followedId = parseInt(req.params.userId);
       
       if (isNaN(followedId)) {
@@ -161,11 +161,13 @@ export function registerSocialRoutes(app: Express) {
       
       return res.status(201).json(follow);
     } catch (error) {
-      console.error('Error following user:', error);
+      logger.error('Error following user:', error);
       
-      if (error.message === "Users cannot follow themselves" || 
-          error.message === "Already following this user") {
-        return res.status(400).json({ message: error.message });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      if (errorMessage === "Users cannot follow themselves" || 
+          errorMessage === "Already following this user") {
+        return res.status(400).json({ message: errorMessage });
       }
       
       return res.status(500).json({ message: "Failed to follow user" });
@@ -175,7 +177,7 @@ export function registerSocialRoutes(app: Express) {
   // Unfollow a user
   app.delete('/api/follow/:userId', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const followerId = req.user.id;
+      const followerId = req.user!.id;
       const followedId = parseInt(req.params.userId);
       
       if (isNaN(followedId)) {
@@ -191,7 +193,7 @@ export function registerSocialRoutes(app: Express) {
       
       return res.status(200).json({ message: "Successfully unfollowed user" });
     } catch (error) {
-      console.error('Error unfollowing user:', error);
+      logger.error('Error unfollowing user:', error);
       return res.status(500).json({ message: "Failed to unfollow user" });
     }
   });
@@ -216,7 +218,7 @@ export function registerSocialRoutes(app: Express) {
       
       return res.status(200).json(safeFollowers);
     } catch (error) {
-      console.error('Error fetching followers:', error);
+      logger.error('Error fetching followers:', error);
       return res.status(500).json({ message: "Failed to fetch followers" });
     }
   });
@@ -241,7 +243,7 @@ export function registerSocialRoutes(app: Express) {
       
       return res.status(200).json(safeFollowing);
     } catch (error) {
-      console.error('Error fetching following:', error);
+      logger.error('Error fetching following:', error);
       return res.status(500).json({ message: "Failed to fetch following" });
     }
   });
@@ -249,7 +251,7 @@ export function registerSocialRoutes(app: Express) {
   // Get activity feed - for authenticated user
   app.get('/api/feed', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user!.id;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
       const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
       
@@ -258,7 +260,7 @@ export function registerSocialRoutes(app: Express) {
       
       return res.status(200).json(activities);
     } catch (error) {
-      console.error('Error fetching activity feed:', error);
+      logger.error('Error fetching activity feed:', error);
       return res.status(500).json({ message: "Failed to fetch activity feed" });
     }
   });
@@ -266,7 +268,7 @@ export function registerSocialRoutes(app: Express) {
   // Get own activity
   app.get('/api/activities', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user!.id;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
       const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
       
@@ -275,7 +277,7 @@ export function registerSocialRoutes(app: Express) {
       
       return res.status(200).json(activities);
     } catch (error) {
-      console.error('Error fetching user activities:', error);
+      logger.error('Error fetching user activities:', error);
       return res.status(500).json({ message: "Failed to fetch user activities" });
     }
   });
