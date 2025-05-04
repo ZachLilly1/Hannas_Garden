@@ -1152,6 +1152,244 @@ export class DatabaseStorage implements IStorage {
       plant
     };
   }
+
+  // User Follow System methods
+  async followUser(followerId: number, followedId: number): Promise<UserFollow> {
+    // Prevent following yourself
+    if (followerId === followedId) {
+      throw new Error("Users cannot follow themselves");
+    }
+    
+    // Check if already following
+    const isAlreadyFollowing = await this.isFollowing(followerId, followedId);
+    if (isAlreadyFollowing) {
+      throw new Error("Already following this user");
+    }
+
+    // Create the follow relationship
+    const [follow] = await db
+      .insert(userFollows)
+      .values({
+        followerId,
+        followedId
+      })
+      .returning();
+    
+    // Log the activity for social feed
+    await this.createActivity({
+      userId: followerId,
+      activityType: 'follow_user',
+      entityId: followedId,
+      entityType: 'user',
+      isPublic: true,
+      metadata: null
+    });
+    
+    return follow;
+  }
+
+  async unfollowUser(followerId: number, followedId: number): Promise<boolean> {
+    const [deleted] = await db
+      .delete(userFollows)
+      .where(and(
+        eq(userFollows.followerId, followerId),
+        eq(userFollows.followedId, followedId)
+      ))
+      .returning();
+    
+    return !!deleted;
+  }
+
+  async getFollowers(userId: number): Promise<User[]> {
+    const followers = await db
+      .select({
+        user: users
+      })
+      .from(userFollows)
+      .innerJoin(users, eq(userFollows.followerId, users.id))
+      .where(eq(userFollows.followedId, userId));
+    
+    return followers.map(f => f.user);
+  }
+
+  async getFollowing(userId: number): Promise<User[]> {
+    const following = await db
+      .select({
+        user: users
+      })
+      .from(userFollows)
+      .innerJoin(users, eq(userFollows.followedId, users.id))
+      .where(eq(userFollows.followerId, userId));
+    
+    return following.map(f => f.user);
+  }
+
+  async isFollowing(followerId: number, followedId: number): Promise<boolean> {
+    const [follow] = await db
+      .select()
+      .from(userFollows)
+      .where(and(
+        eq(userFollows.followerId, followerId),
+        eq(userFollows.followedId, followedId)
+      ));
+    
+    return !!follow;
+  }
+
+  async getFollowCount(userId: number): Promise<{followers: number; following: number}> {
+    const followerCount = await db
+      .select({
+        count: sql<number>`count(*)`
+      })
+      .from(userFollows)
+      .where(eq(userFollows.followedId, userId));
+      
+    const followingCount = await db
+      .select({
+        count: sql<number>`count(*)`
+      })
+      .from(userFollows)
+      .where(eq(userFollows.followerId, userId));
+    
+    return {
+      followers: followerCount[0]?.count || 0,
+      following: followingCount[0]?.count || 0
+    };
+  }
+
+  // Activity Feed methods
+  async createActivity(activity: InsertActivityFeed): Promise<ActivityFeed> {
+    // Ensure JSON metadata is stored as a string
+    const processedActivity = {
+      ...activity,
+      metadata: activity.metadata ? JSON.stringify(activity.metadata) : null
+    };
+    
+    const [newActivity] = await db
+      .insert(activityFeed)
+      .values(processedActivity)
+      .returning();
+    
+    return newActivity;
+  }
+
+  async getUserActivityFeed(userId: number, limit: number = 20, offset: number = 0): Promise<ActivityFeed[]> {
+    return db
+      .select()
+      .from(activityFeed)
+      .where(eq(activityFeed.userId, userId))
+      .orderBy(desc(activityFeed.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async getFollowingActivityFeed(userId: number, limit: number = 20, offset: number = 0): Promise<ActivityFeed[]> {
+    // Get all users that the current user is following
+    const following = await this.getFollowing(userId);
+    const followingIds = following.map(user => user.id);
+    
+    // If not following anyone, return empty array
+    if (followingIds.length === 0) {
+      return [];
+    }
+    
+    // Get activities from followed users
+    const activities = await db
+      .select()
+      .from(activityFeed)
+      .where(
+        sql`${activityFeed.userId} = ANY(ARRAY[${followingIds.join(', ')}]::integer[]) AND ${activityFeed.isPublic} = true`
+      )
+      .orderBy(desc(activityFeed.createdAt))
+      .limit(limit)
+      .offset(offset);
+    
+    return activities;
+  }
+
+  // Profile Settings methods
+  async getProfileSettings(userId: number): Promise<ProfileSettings | undefined> {
+    const [settings] = await db
+      .select()
+      .from(profileSettings)
+      .where(eq(profileSettings.userId, userId));
+    
+    return settings;
+  }
+
+  async createProfileSettings(settings: InsertProfileSettings): Promise<ProfileSettings> {
+    // Check if settings already exist
+    const existingSettings = await this.getProfileSettings(settings.userId);
+    if (existingSettings) {
+      return this.updateProfileSettings(settings.userId, settings) as Promise<ProfileSettings>;
+    }
+
+    const [newSettings] = await db
+      .insert(profileSettings)
+      .values(settings)
+      .returning();
+    
+    return newSettings;
+  }
+
+  async updateProfileSettings(userId: number, settings: Partial<ProfileSettings>): Promise<ProfileSettings | undefined> {
+    // Exclude id and userId
+    const { id, userId: _, ...updateData } = settings;
+    
+    // Add updatedAt timestamp
+    const dataWithTimestamp = {
+      ...updateData,
+      updatedAt: new Date()
+    };
+    
+    const [updatedSettings] = await db
+      .update(profileSettings)
+      .set(dataWithTimestamp)
+      .where(eq(profileSettings.userId, userId))
+      .returning();
+    
+    return updatedSettings;
+  }
+
+  // Public Profile methods
+  async getPublicProfile(username: string): Promise<{user: User; profileSettings: ProfileSettings} | undefined> {
+    const user = await this.getUserByUsername(username);
+    
+    if (!user) {
+      return undefined;
+    }
+    
+    // Get or create profile settings
+    let settings = await this.getProfileSettings(user.id);
+    
+    if (!settings) {
+      // Create default settings if none exist
+      settings = await this.createProfileSettings({
+        userId: user.id,
+        isProfilePublic: false,
+        isCollectionPublic: false,
+        showActivityInFeed: true,
+        allowFollowers: true
+      });
+    }
+    
+    return {
+      user,
+      profileSettings: settings
+    };
+  }
+
+  async getPublicPlants(userId: number): Promise<PlantWithCare[]> {
+    // Check if user's collection is public
+    const settings = await this.getProfileSettings(userId);
+    
+    if (!settings || !settings.isCollectionPublic) {
+      return [];
+    }
+    
+    // Get plants with care info
+    return this.getPlants(userId);
+  }
 }
 
 export const storage = new DatabaseStorage();

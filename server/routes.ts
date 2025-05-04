@@ -49,6 +49,7 @@ import { setupLightMeterRoutes } from "./routes/light-meter";
 import { setupPlantLightAnalyzerRoutes } from "./routes/plant-light-analyzer";
 import { setupSharedPlantsRoutes } from "./routes/shared-plants";
 import { setupSharedCareLogsRoutes } from "./routes/shared-care-logs";
+import { registerSocialRoutes } from "./routes/social";
 import { analyzePlantImageLightLevel } from "./services/lightAnalyzer";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -72,6 +73,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up shared care logs routes
   setupSharedCareLogsRoutes(app);
+  
+  // Set up social features routes
+  registerSocialRoutes(app);
   
   // API routes
   const apiRouter = app;

@@ -309,7 +309,7 @@ export type UserFollow = typeof userFollows.$inferSelect;
 export type InsertUserFollow = z.infer<typeof insertUserFollowSchema>;
 
 // Activity Feed System
-export const ACTIVITY_TYPES = ['plant_added', 'care_log_added', 'plant_shared', 'care_log_shared', 'profile_updated'] as const;
+export const ACTIVITY_TYPES = ['plant_added', 'care_log_added', 'plant_shared', 'care_log_shared', 'profile_updated', 'follow_user'] as const;
 
 export const activityFeed = pgTable("activity_feed", {
   id: serial("id").primaryKey(),
