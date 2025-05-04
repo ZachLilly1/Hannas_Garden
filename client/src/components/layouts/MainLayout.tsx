@@ -33,11 +33,21 @@ export function MainLayout({ children }: MainLayoutProps) {
         return "Plant Guides";
       case "/profile":
         return "My Profile";
+      case "/profile-settings":
+        return "Profile Settings";
+      case "/feed":
+        return "Activity Feed";
+      case "/discover":
+        return "Discover Users";
       case "/tools":
         return "Garden Tools";
       case "/tools/light-meter":
         return "Light Meter";
       default:
+        // Check if it's a profile view page
+        if (location.startsWith('/profile/')) {
+          return "User Profile";
+        }
         return "Hanna's Garden";
     }
   };

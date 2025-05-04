@@ -16,6 +16,10 @@ import Plants from "@/pages/plants";
 import CareSchedule from "@/pages/care-schedule";
 import Guides from "@/pages/guides";
 import Profile from "@/pages/profile";
+import ProfileView from "@/pages/profile-view";
+import ProfileSettings from "@/pages/profile-settings";
+import ActivityFeed from "@/pages/activity-feed";
+import Discover from "@/pages/discover";
 import Tools from "@/pages/tools";
 import LightMeterPage from "@/pages/light-meter";
 import PlantIdentifierPage from "@/pages/tools/plant-identifier";
@@ -170,6 +174,39 @@ function Router() {
         <ProtectedRoute>
           <MainLayout>
             <Profile />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      
+      {/* Social features routes */}
+      <Route path="/profile/:username">
+        <ProtectedRoute>
+          <MainLayout>
+            <ProfileView />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/profile-settings">
+        <ProtectedRoute>
+          <MainLayout>
+            <ProfileSettings />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/feed">
+        <ProtectedRoute>
+          <MainLayout>
+            <ActivityFeed />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/discover">
+        <ProtectedRoute>
+          <MainLayout>
+            <Discover />
           </MainLayout>
         </ProtectedRoute>
       </Route>
