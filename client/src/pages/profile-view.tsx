@@ -33,14 +33,14 @@ export default function ProfileView() {
   // Fetch profile data
   const { data: profile, isLoading: profileLoading, error: profileError } = useQuery<ProfileResponse>({
     queryKey: [`/api/profiles/${username}`],
-    queryFn: getQueryFn({ on404: "returnEmpty" }),
+    queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: !!username,
   });
 
   // Fetch user's plants if they are public or it's the user's own profile
   const { data: plants, isLoading: plantsLoading } = useQuery<PlantWithCare[]>({
     queryKey: [`/api/profiles/${username}/plants`],
-    queryFn: getQueryFn({ on404: "returnEmpty" }),
+    queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: !!profile && (profile.isCollectionPublic || profile.isOwnProfile),
   });
 
@@ -95,14 +95,14 @@ export default function ProfileView() {
   // Fetch followers
   const { data: followers, isLoading: followersLoading } = useQuery<User[]>({
     queryKey: [`/api/profiles/${username}/followers`],
-    queryFn: getQueryFn({ on404: "returnEmpty" }),
+    queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: activeTab === 'followers' && !!profile,
   });
 
   // Fetch following
   const { data: following, isLoading: followingLoading } = useQuery<User[]>({
     queryKey: [`/api/profiles/${username}/following`],
-    queryFn: getQueryFn({ on404: "returnEmpty" }),
+    queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: activeTab === 'following' && !!profile,
   });
 

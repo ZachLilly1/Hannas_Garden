@@ -108,18 +108,23 @@ export default function ActivityFeed() {
   const [page, setPage] = useState(0);
   const limit = 10;
   
+  // Define activity feed type
+  type ActivityFeedResponse = ActivityFeedItem[];
+  
   // Fetch activity feed
   const { 
     data: activityData,
     isLoading,
-    error,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage
-  } = useQuery({
+    error
+  } = useQuery<ActivityFeedResponse>({
     queryKey: ['/api/feed', { limit, offset: page * limit }],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: "returnNull" }),
   });
+  
+  // Function to load more items
+  const loadMoreItems = () => {
+    setPage(prevPage => prevPage + 1);
+  };
   
   // Handle errors
   if (error) {
@@ -201,27 +206,22 @@ export default function ActivityFeed() {
             </Card>
           ))}
           
-          {hasNextPage && (
-            <div className="flex justify-center mt-4">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setPage(page + 1);
-                  fetchNextPage();
-                }}
-                disabled={isFetchingNextPage}
-              >
-                {isFetchingNextPage ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Loading more...
-                  </>
-                ) : (
-                  'Load More'
-                )}
-              </Button>
-            </div>
-          )}
+          <div className="flex justify-center mt-4">
+            <Button
+              variant="outline"
+              onClick={loadMoreItems}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Loading more...
+                </>
+              ) : (
+                'Load More'
+              )}
+            </Button>
+          </div>
         </div>
       ) : (
         <Card>

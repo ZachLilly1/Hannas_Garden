@@ -12,6 +12,7 @@ import { apiRequest, getQueryFn } from '@/lib/queryClient';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { User } from '@shared/schema';
 
 // Type for profile settings response
 type ProfileSettings = {
@@ -29,9 +30,9 @@ export default function ProfileSettings() {
   const queryClient = useQueryClient();
   
   // Get user data
-  const { data: user, isLoading: userLoading } = useQuery({
+  const { data: user, isLoading: userLoading } = useQuery<User>({
     queryKey: ['/api/auth/user'],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: "returnNull" }),
   });
   
   // Get profile settings
@@ -41,7 +42,7 @@ export default function ProfileSettings() {
     error: settingsError
   } = useQuery<ProfileSettings>({
     queryKey: ['/api/profile/settings'],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: !!user,
   });
   
