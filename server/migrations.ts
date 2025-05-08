@@ -281,6 +281,48 @@ export async function applyMigrations() {
       );
     `);
     logger.info('Created activity_feed table (if needed)');
+    
+    // Add entity_type column to activity_feed if it doesn't exist
+    await db.execute(sql`
+      DO $$ 
+      BEGIN 
+        IF NOT EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_name = 'activity_feed' AND column_name = 'entity_type'
+        ) THEN 
+          ALTER TABLE activity_feed ADD COLUMN entity_type TEXT;
+        END IF;
+      END $$;
+    `);
+    logger.info('Added entity_type column to activity_feed table (if needed)');
+    
+    // Add metadata column to activity_feed if it doesn't exist
+    await db.execute(sql`
+      DO $$ 
+      BEGIN 
+        IF NOT EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_name = 'activity_feed' AND column_name = 'metadata'
+        ) THEN 
+          ALTER TABLE activity_feed ADD COLUMN metadata TEXT;
+        END IF;
+      END $$;
+    `);
+    logger.info('Added metadata column to activity_feed table (if needed)');
+    
+    // Add is_public column to activity_feed if it doesn't exist
+    await db.execute(sql`
+      DO $$ 
+      BEGIN 
+        IF NOT EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_name = 'activity_feed' AND column_name = 'is_public'
+        ) THEN 
+          ALTER TABLE activity_feed ADD COLUMN is_public BOOLEAN DEFAULT TRUE;
+        END IF;
+      END $$;
+    `);
+    logger.info('Added is_public column to activity_feed table (if needed)');
 
     // Create profile_settings table if it doesn't exist
     await db.execute(sql`
