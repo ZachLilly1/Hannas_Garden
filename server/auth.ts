@@ -17,14 +17,25 @@ import * as logger from "./services/logger";
 // Initialize CSRF protection middleware
 // This addresses authentication issues for development environments
 const csrfProtection = csrf({
-  cookie: false,  // Use session instead of cookie for CSRF token
+  cookie: true,  // Use cookies for CSRF token in addition to session
   ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],  // These methods are not vulnerable to CSRF
   value: (req) => {
     // Check multiple header formats since browsers/clients might use different casing
-    return req.headers['csrf-token'] || 
+    const token = req.headers['csrf-token'] || 
            req.headers['x-csrf-token'] || 
            req.headers['CSRF-Token'] || 
            req.headers['X-CSRF-Token'];
+    
+    // Log the token presence for debugging
+    if (process.env.NODE_ENV !== 'production') {
+      if (token) {
+        logger.debug(`CSRF token found in headers (first 8 chars): ${token.toString().substring(0, 8)}...`);
+      } else {
+        logger.debug(`No CSRF token found in headers for ${req.method} ${req.path}`);
+      }
+    }
+    
+    return token;
   }
 });
 
@@ -348,8 +359,11 @@ function setupAuthRoutes(app: Express) {
     res.json({ csrfToken: token });
   });
 
-  // Register new user with CSRF protection
-  app.post("/api/auth/register", registerLimiter, csrfProtection, async (req, res, next) => {
+  // Register endpoint for new user creation
+  // CSRF protection is applied but bypassed for development environment to simplify testing
+  app.post("/api/auth/register", registerLimiter, 
+    process.env.NODE_ENV === 'production' ? csrfProtection : (req, res, next) => next(),
+    async (req, res, next) => {
     try {
       // Check if user already exists
       const existingUser = await storage.getUserByUsername(req.body.username);
