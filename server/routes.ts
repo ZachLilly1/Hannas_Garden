@@ -1,46 +1,8 @@
-import type { Express, Request, Response, NextFunction } from "express";
+import type { Express } from "express";
+import { Router } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
 import * as logger from "./services/logger";
-import { 
-  insertPlantSchema, 
-  insertCareLogSchema, 
-  insertCommunityTipSchema,
-  type InsertPlant,
-  type InsertCareLog,
-  type InsertCommunityTip,
-  type CommunityTipWithUser,
-  CARE_CATEGORIES
-} from "@shared/schema";
-import { z } from "zod";
-import { 
-  identifyPlantFromImage, 
-  diagnosePlantHealth,
-  getPersonalizedPlantAdvice,
-  getSeasonalCareRecommendations,
-  getPlantArrangementSuggestions,
-  generateJournalEntry,
-  analyzeGrowthProgression,
-  getPlantCareAnswer,
-  generateOptimizedCareSchedule,
-  generateCommunityInsights,
-  type PlantIdentificationResult, 
-  type PlantHealthDiagnosis,
-  type PersonalizedAdvice,
-  type SeasonalCareGuide,
-  type ArrangementSuggestion,
-  type EnhancedJournalEntry,
-  type GrowthAnalysis,
-  type PlantCareAnswer,
-  type OptimizedCareSchedule,
-  type CommunityInsight,
-  type UserEnvironment,
-  type UserSchedule,
-  type AnonymizedCareLog
-} from "./services/openai";
-import fs from "fs";
-import path from "path";
-import { setupAuth, isAuthenticated, hashPassword } from "./auth";
+import { setupAuth } from "./auth";
 
 // Auth-related routes
 const isProduction = process.env.NODE_ENV === 'production';
@@ -50,7 +12,10 @@ import { setupPlantLightAnalyzerRoutes } from "./routes/plant-light-analyzer";
 import { setupSharedPlantsRoutes } from "./routes/shared-plants";
 import { setupSharedCareLogsRoutes } from "./routes/shared-care-logs";
 import { registerSocialRoutes } from "./routes/social";
-import { analyzePlantImageLightLevel } from "./services/lightAnalyzer";
+
+// Import the new modular API routers
+import { plantsRouter } from "./routes/api/plants";
+// ... import other new routers like profileRouter, aiRouter, etc.
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
