@@ -17,12 +17,17 @@ const app = express();
 // Production environment flag
 const isProduction = process.env.NODE_ENV === 'production';
 
+if (isProduction && !process.env.ALLOWED_ORIGINS) {
+  logger.warn('ALLOWED_ORIGINS environment variable is not set. CORS may block frontend requests in production.');
+}
+
 // Apply comprehensive security middleware (including Helmet)
 setupSecurityMiddleware(app);
 
 // Configure CORS with production-optimized settings
 app.use(cors({
-  // In production, restrict to specific domains; in development, allow any origin
+  // In production, restrict to specific domains from an environment variable.
+  // In development, allow any origin for simplicity.
   origin: isProduction 
     ? process.env.ALLOWED_ORIGINS?.split(',') || ['https://your-production-domain.com'] 
     : true,
@@ -133,9 +138,7 @@ app.use((req, res, next) => {
         if (capturedJsonResponse) {
           logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
         }
-        if (logLine.length > 120) {
-          logLine = logLine.slice(0, 119) + "…";
-        }
+        logLine = logLine.substring(0, 150) + (logLine.length > 150 ? "…" : "");
         logger.info(logLine);
       }
     } 
@@ -175,7 +178,7 @@ app.use(globalErrorHandler);
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
+  if (!isProduction) {
     await setupVite(app, server); // Function is async, need to use await
   } else {
     serveStatic(app);
