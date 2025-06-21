@@ -871,13 +871,12 @@ export async function verifyPlantIdentity(
   expectedPlantName: string,
   expectedScientificName?: string
 ): Promise<{
-  const client = getClient();
-
   matches: boolean;
   confidence: "low" | "medium" | "high";
   detectedPlant?: string;
 }> {
   try {
+    const client = getClient();
     logger.info(`Verifying plant identity in photo - Expected: ${expectedPlantName}`);
 
     // System prompt for plant verification
@@ -896,7 +895,7 @@ export async function verifyPlantIdentity(
 
     // Call OpenAI API with the image
     logger.info("Making request to OpenAI API for plant identity verification...");
-    const response = await client.chat.completions.create({
+    const response = await getClient().chat.completions.create({
       model: MODEL,
       messages: [
         {
