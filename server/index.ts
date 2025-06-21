@@ -181,16 +181,14 @@ app.use(globalErrorHandler);
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
+  // Use the PORT from environment variables, or default to 3000 for local development
+  const port = parseInt(process.env.PORT || '3000', 10);
   server.listen({
     port,
     host: "0.0.0.0",
-    reusePort: true,
   }, () => {
-    logger.info(`Server running on port ${port} (${isProduction ? 'production' : 'development'} mode)`);
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+    logger.info(`Server running at ${protocol}://localhost:${port} (${isProduction ? 'production' : 'development'} mode)`);
   });
   
   // Setup graceful shutdown handlers for production
