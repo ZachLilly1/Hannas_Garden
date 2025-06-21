@@ -5,17 +5,31 @@ import * as logger from "./logger";
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const MODEL = "gpt-4o";
 
-// Check for OpenAI API key
-if (!process.env.OPENAI_API_KEY) {
-  logger.error("OPENAI_API_KEY environment variable is not set");
-  throw new Error("OpenAI API key is required but not provided. Please set the OPENAI_API_KEY environment variable.");
+const apiKey = process.env.OPENAI_API_KEY;
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Initialize OpenAI client, but allow it to be null in development if the key is missing.
+let openai: OpenAI | null = null;
+
+if (apiKey) {
+  openai = new OpenAI({ apiKey });
+} else {
+  if (isProduction) {
+    logger.error("CRITICAL: OPENAI_API_KEY is not set in production. The application cannot start.");
+    throw new Error("OpenAI API key is required for production. Please set the OPENAI_API_KEY environment variable.");
+  } else {
+    logger.warn("OPENAI_API_KEY is not set. AI-powered features will be disabled.");
+  }
 }
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
+// Helper function to get the OpenAI client or throw a runtime error if it's not available.
+// This prevents the entire app from crashing at startup in development.
+function getClient(): OpenAI {
+  if (!openai) {
+    throw new Error("OpenAI API key is not configured. Please set OPENAI_API_KEY in your .env file to use this feature.");
+  }
+  return openai;
+}
 // ===== ORIGINAL TYPES =====
 
 // Types for plant care recommendations
@@ -252,6 +266,8 @@ export interface AnonymizedCareLog {
  * @returns Detailed care recommendations
  */
 export async function getPlantCareRecommendations(plantName: string): Promise<PlantCareRecommendations> {
+  const client = getClient();
+
   try {
     logger.info(`Getting care recommendations for plant: ${plantName}`);
 
@@ -284,7 +300,7 @@ export async function getPlantCareRecommendations(plantName: string): Promise<Pl
     `;
 
     // Query OpenAI
-    const response = await openai.chat.completions.create({
+    const response = await client.chat.completions.create({
       model: MODEL,
       messages: [
         {
@@ -342,6 +358,8 @@ export async function getPlantCareRecommendations(plantName: string): Promise<Pl
  * @returns Plant health diagnosis with recommendations
  */
 export async function diagnosePlantHealth(base64Image: string): Promise<PlantHealthDiagnosis> {
+  const client = getClient();
+
   try {
     logger.info("Starting plant health diagnosis process");
     const imageUrl = processBase64Image(base64Image);
@@ -372,7 +390,7 @@ export async function diagnosePlantHealth(base64Image: string): Promise<PlantHea
 
     // Call OpenAI API with the image
     logger.info("Making request to OpenAI API for plant health diagnosis...");
-    const response = await openai.chat.completions.create({
+    const response = await client.chat.completions.create({
       model: MODEL,
       messages: [
         {
@@ -438,6 +456,8 @@ export async function diagnosePlantHealth(base64Image: string): Promise<PlantHea
 }
 
 export async function identifyPlantFromImage(base64Image: string): Promise<PlantIdentificationResult> {
+  const client = getClient();
+
   try {
     logger.info("Starting plant identification process");
     const imageUrl = processBase64Image(base64Image);
@@ -456,7 +476,7 @@ export async function identifyPlantFromImage(base64Image: string): Promise<Plant
     logger.info("Making request to OpenAI API...");
 
     // Query OpenAI Vision model
-    const response = await openai.chat.completions.create({
+    const response = await client.chat.completions.create({
       model: MODEL,
       messages: [
         {
@@ -547,6 +567,8 @@ export async function getPersonalizedPlantAdvice(
   careHistory: CareLog[],
   userEnvironment: UserEnvironment
 ): Promise<PersonalizedAdvice> {
+  const client = getClient();
+
   try {
     logger.info(`Getting personalized advice for plant: ${plant.name} (${plant.scientificName})`);
 
@@ -583,7 +605,7 @@ export async function getPersonalizedPlantAdvice(
     `;
 
     // Query OpenAI
-    const response = await openai.chat.completions.create({
+    const response = await client.chat.completions.create({
       model: MODEL,
       messages: [
         {
@@ -658,6 +680,8 @@ export async function getSeasonalCareRecommendations(
   location: string,
   season: string = getCurrentSeason()
 ): Promise<SeasonalCareGuide> {
+  const client = getClient();
+
   try {
     logger.info(`Getting seasonal care recommendations for ${season} in ${location}`);
 
@@ -694,7 +718,7 @@ export async function getSeasonalCareRecommendations(
     `;
 
     // Query OpenAI
-    const response = await openai.chat.completions.create({
+    const response = await client.chat.completions.create({
       model: MODEL,
       messages: [
         {
@@ -751,6 +775,8 @@ export async function getPlantArrangementSuggestions(
   spaceType: string,
   spaceSize: string
 ): Promise<ArrangementSuggestion> {
+  const client = getClient();
+
   try {
     logger.info(`Getting plant arrangement suggestions for ${spaceType} (${spaceSize})`);
 
@@ -788,7 +814,7 @@ export async function getPlantArrangementSuggestions(
     `;
 
     // Query OpenAI
-    const response = await openai.chat.completions.create({
+    const response = await client.chat.completions.create({
       model: MODEL,
       messages: [
         {
@@ -845,6 +871,8 @@ export async function verifyPlantIdentity(
   expectedPlantName: string,
   expectedScientificName?: string
 ): Promise<{
+  const client = getClient();
+
   matches: boolean;
   confidence: "low" | "medium" | "high";
   detectedPlant?: string;
@@ -868,7 +896,7 @@ export async function verifyPlantIdentity(
 
     // Call OpenAI API with the image
     logger.info("Making request to OpenAI API for plant identity verification...");
-    const response = await openai.chat.completions.create({
+    const response = await client.chat.completions.create({
       model: MODEL,
       messages: [
         {
@@ -931,6 +959,8 @@ export async function generateJournalEntry(
   plant: PlantWithCare,
   careHistory?: CareLog[]
 ): Promise<EnhancedJournalEntry> {
+  const client = getClient();
+
   try {
     logger.info(`Generating journal entry for ${plant.name} care log (${careLog.careType})`);
 
@@ -1053,7 +1083,7 @@ export async function generateJournalEntry(
         // Lower max_tokens on retry attempts
         const maxTokens = attempts > 0 ? 600 : 1200;
 
-        response = await openai.chat.completions.create({
+        response = await client.chat.completions.create({
           model: attempts > 0 ? "gpt-3.5-turbo" : MODEL, // Fallback to smaller model after first attempt
           messages: [
             {
@@ -1139,6 +1169,8 @@ export async function analyzeGrowthProgression(
   imageHistory: string[], // Array of base64 image data
   plant: PlantWithCare
 ): Promise<GrowthAnalysis> {
+  const client = getClient();
+
   try {
     logger.info(`Analyzing growth progression for ${plant.name} with ${imageHistory.length} images`);
 
@@ -1194,7 +1226,7 @@ export async function analyzeGrowthProgression(
         }
 
         // Try with full vision analysis first
-        response = await openai.chat.completions.create({
+        response = await client.chat.completions.create({
           model: MODEL,
           messages: [
             {
@@ -1239,7 +1271,7 @@ export async function analyzeGrowthProgression(
         } else if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'invalid_image_url' && attempts < maxAttempts) {
           logger.error("Invalid image URL, will try text-only analysis next:", error.message);
           // Fallback to simpler text-only analysis if image URLs are invalid
-          response = await openai.chat.completions.create({
+          response = await client.chat.completions.create({
             model: "gpt-3.5-turbo", // Use simpler model for fallback
             messages: [
               {
@@ -1326,6 +1358,8 @@ export async function getPlantCareAnswer(
   question: string,
   plantsInCollection?: PlantWithCare[]
 ): Promise<PlantCareAnswer> {
+  const client = getClient();
+
   try {
     logger.info(`Getting answer to plant care question: ${question}`);
 
@@ -1349,7 +1383,7 @@ export async function getPlantCareAnswer(
     `;
 
     // Query OpenAI
-    const response = await openai.chat.completions.create({
+    const response = await client.chat.completions.create({
       model: MODEL,
       messages: [
         {
@@ -1404,6 +1438,8 @@ export async function generateOptimizedCareSchedule(
   plants: PlantWithCare[],
   userAvailability: UserSchedule
 ): Promise<OptimizedCareSchedule> {
+  const client = getClient();
+
   try {
     logger.info(`Generating optimized care schedule for ${plants.length} plants`);
 
@@ -1444,7 +1480,7 @@ export async function generateOptimizedCareSchedule(
     `;
 
     // Query OpenAI
-    const response = await openai.chat.completions.create({
+    const response = await client.chat.completions.create({
       model: MODEL,
       messages: [
         {
@@ -1505,6 +1541,8 @@ export async function generateCommunityInsights(
   plantType: string,
   anonymizedCareLogs: AnonymizedCareLog[]
 ): Promise<CommunityInsight> {
+  const client = getClient();
+
   try {
     logger.info(`Generating community insights for ${plantType} plants from ${anonymizedCareLogs.length} care logs`);
 
@@ -1534,7 +1572,7 @@ export async function generateCommunityInsights(
     `;
 
     // Query OpenAI
-    const response = await openai.chat.completions.create({
+    const response = await client.chat.completions.create({
       model: MODEL,
       messages: [
         {
@@ -1602,6 +1640,8 @@ export async function analyzePhotoForCareLog(
   plantName: string, 
   plantType: string
 ): Promise<SimpleHealthAnalysis> {
+  const client = getClient();
+
   try {
     logger.info(`Analyzing photo for care log of plant: ${plantName} (${plantType})`);
 
@@ -1623,7 +1663,7 @@ export async function analyzePhotoForCareLog(
 
     // Call OpenAI API with the image
     logger.info("Making request to OpenAI API for plant photo analysis...");
-    const response = await openai.chat.completions.create({
+    const response = await client.chat.completions.create({
       model: MODEL,
       messages: [
         {
