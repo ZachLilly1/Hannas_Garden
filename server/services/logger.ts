@@ -90,46 +90,9 @@ export function error(message: string, error?: unknown, ...meta: any[]): void {
   }
 }
 
-/**
- * Log API request (filtered by environment)
- * @param method HTTP method
- * @param path Request path
- * @param statusCode HTTP status code
- * @param duration Request duration in ms
- */
-export function apiRequest(
-  method: string,
-  path: string,
-  statusCode: number,
-  duration: number
-): void {
-  const level: LogLevel = statusCode >= 500 ? 'error' : 
-                       statusCode >= 400 ? 'warn' : 
-                       path.includes('/auth') ? 'info' : 'debug';
-  
-  if (shouldLog(level)) {
-    const message = `${method} ${path} ${statusCode} in ${duration}ms`;
-    
-    switch (level) {
-      case 'error':
-        console.error(`API: ${message}`);
-        break;
-      case 'warn':
-        console.warn(`API: ${message}`);
-        break;
-      case 'info':
-        console.info(`API: ${message}`);
-        break;
-      default:
-        console.debug(`API: ${message}`);
-    }
-  }
-}
-
 export default {
   debug,
   info,
   warn,
   error,
-  apiRequest
 };

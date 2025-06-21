@@ -18,7 +18,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CameraIcon, LeafIcon } from "@/lib/icons";
 import { apiRequest, getQueryFn } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
-import { insertPlantSchema } from "@shared/schema";
 import { toast } from "@/hooks/use-toast";
 import { type PlantWithCare } from "@shared/schema";
 import { Progress } from "@/components/ui/progress";
@@ -55,14 +54,17 @@ export function AddPlantModal({ isOpen, onClose, plantToEdit }: AddPlantModalPro
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Extend the insertPlantSchema with client-side validation
-  const formSchema = insertPlantSchema.extend({
+  const formSchema = z.object({
     name: z.string().min(2, "Plant name must be at least 2 characters."),
     location: z.string().min(2, "Location must be at least 2 characters."),
-    type: z.string().optional().default("identified"), // No longer required, using scientificName instead
-    scientificName: z.string().nullable().optional(),
-    sunlightLevel: z.string().min(1, "Please select a sunlight level."),
+    image: z.string().nullable().optional(), // Base64 string for upload
+    notes: z.string().nullable().optional(),
     waterFrequency: z.coerce.number().min(1, "Water frequency must be at least 1 day."),
+    sunlightLevel: z.string().min(1, "Please select a sunlight level."),
     fertilizerFrequency: z.coerce.number().min(0, "Fertilizer frequency must be 0 or more days."),
+    status: z.string().optional().default("healthy"), // Default status
+    type: z.string().optional().default("identified"), // Default type
+    scientificName: z.string().nullable().optional(), // Optional scientific name
   });
 
   // Create form with defaultValues

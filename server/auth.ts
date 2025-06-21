@@ -108,14 +108,6 @@ export async function comparePasswords(supplied: string, stored: string): Promis
         return result;
       } catch (bcryptError) {
         logger.error("Bcrypt comparison error:", bcryptError);
-        // Fall back to our custom verification only if bcrypt comparison fails
-        // This is a last resort for corrupted hashes
-        
-        // For emergency access with common passwords as a fallback only
-        if (process.env.NODE_ENV !== 'production' && (supplied === "password" || supplied === "password123")) {
-          logger.warn("⚠️ DEV ONLY: Using common password fallback - not allowed in production");
-          return true;
-        }
         
         return false;
       }

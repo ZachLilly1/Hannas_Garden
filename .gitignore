@@ -1,6 +1,11 @@
 node_modules
 dist
 .DS_Store
-server/public
+# Ignore user-uploaded files, which are stored in the root public directory
+public/uploads/
+
+# Ignore environment files
+.env*
+
 vite.config.ts.*
 *.tar.gz

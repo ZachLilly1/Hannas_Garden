@@ -164,6 +164,38 @@ export interface PlantCareAnswer {
   additionalResources?: string[];
   confidenceLevel: "low" | "medium" | "high";
 }
+/**
+ * Processes a base64 image string, validates it, and returns a data URL.
+ * @param base64Image The base64 encoded image string.
+ * @returns A data URL string (e.g., `data:image/jpeg;base64,...`).
+ * @throws An error if the image is too large or the format is invalid.
+ */
+function processBase64Image(base64Image: string): string {
+  const buffer = Buffer.from(base64Image, 'base64');
+  const imageSizeInMB = buffer.length / (1024 * 1024);
+  logger.info(`Image size: ${imageSizeInMB.toFixed(2)} MB`);
+
+  if (imageSizeInMB > 20) {
+    throw new Error(`Image size (${imageSizeInMB.toFixed(2)} MB) exceeds the 20 MB limit.`);
+  }
+
+  let imageFormat = 'jpeg'; // Default format
+  if (buffer.length >= 4) {
+    const firstBytes = buffer.slice(0, 4);
+    if (firstBytes[0] === 0x89 && firstBytes[1] === 0x50 && firstBytes[2] === 0x4E && firstBytes[3] === 0x47) {
+      imageFormat = 'png';
+    } else if (firstBytes[0] === 0xFF && firstBytes[1] === 0xD8) {
+      imageFormat = 'jpeg';
+    } else if (firstBytes[0] === 0x47 && firstBytes[1] === 0x49 && firstBytes[2] === 0x46) {
+      imageFormat = 'gif';
+    }
+  }
+
+  const imageUrl = `data:image/${imageFormat};base64,${base64Image}`;
+  logger.info(`Image URL prepared with format: ${imageFormat}`);
+  return imageUrl;
+}
+
 
 // Interface for optimized care schedules
 export interface OptimizedCareSchedule {
@@ -312,40 +344,7 @@ export async function getPlantCareRecommendations(plantName: string): Promise<Pl
 export async function diagnosePlantHealth(base64Image: string): Promise<PlantHealthDiagnosis> {
   try {
     logger.info("Starting plant health diagnosis process");
-
-    // Check image size
-    const buffer = Buffer.from(base64Image, 'base64');
-    const imageSizeInMB = buffer.length / (1024 * 1024);
-    logger.info(`Image size: ${imageSizeInMB.toFixed(2)} MB`);
-
-    if (imageSizeInMB > 20) {
-      throw new Error(`Image size (${imageSizeInMB.toFixed(2)} MB) exceeds the recommended limit of 20 MB. Please resize the image.`);
-    }
-
-    // Detect image format based on file signature/magic numbers
-    let imageFormat = 'jpeg'; // Default format
-    if (buffer.length >= 4) {
-      const firstBytes = buffer.slice(0, 4);
-
-      // Check for PNG signature (89 50 4E 47)
-      if (firstBytes[0] === 0x89 && firstBytes[1] === 0x50 && 
-          firstBytes[2] === 0x4E && firstBytes[3] === 0x47) {
-        imageFormat = 'png';
-      }
-      // Check for JPEG signature (FF D8)
-      else if (firstBytes[0] === 0xFF && firstBytes[1] === 0xD8) {
-        imageFormat = 'jpeg';
-      }
-      // Check for GIF signature (47 49 46)
-      else if (firstBytes[0] === 0x47 && firstBytes[1] === 0x49 && 
-              firstBytes[2] === 0x46) {
-        imageFormat = 'gif';
-      }
-    }
-
-    // Prefix for base64 encoded images with detected format
-    const imageUrl = `data:image/${imageFormat};base64,${base64Image}`;
-    logger.info(`Image URL prepared with format: ${imageFormat}`);
+    const imageUrl = processBase64Image(base64Image);
 
     // System message to guide the AI in diagnosing plant health issues
     const systemPrompt = `
@@ -441,40 +440,7 @@ export async function diagnosePlantHealth(base64Image: string): Promise<PlantHea
 export async function identifyPlantFromImage(base64Image: string): Promise<PlantIdentificationResult> {
   try {
     logger.info("Starting plant identification process");
-
-    // Check image size
-    const buffer = Buffer.from(base64Image, 'base64');
-    const imageSizeInMB = buffer.length / (1024 * 1024);
-    logger.info(`Image size: ${imageSizeInMB.toFixed(2)} MB`);
-
-    if (imageSizeInMB > 20) {
-      throw new Error(`Image size (${imageSizeInMB.toFixed(2)} MB) exceeds the recommended limit of 20 MB. Please resize the image.`);
-    }
-
-    // Detect image format based on file signature/magic numbers
-    let imageFormat = 'jpeg'; // Default format
-    if (buffer.length >= 4) {
-      const firstBytes = buffer.slice(0, 4);
-
-      // Check for PNG signature (89 50 4E 47)
-      if (firstBytes[0] === 0x89 && firstBytes[1] === 0x50 && 
-          firstBytes[2] === 0x4E && firstBytes[3] === 0x47) {
-        imageFormat = 'png';
-      }
-      // Check for JPEG signature (FF D8)
-      else if (firstBytes[0] === 0xFF && firstBytes[1] === 0xD8) {
-        imageFormat = 'jpeg';
-      }
-      // Check for GIF signature (47 49 46)
-      else if (firstBytes[0] === 0x47 && firstBytes[1] === 0x49 && 
-              firstBytes[2] === 0x46) {
-        imageFormat = 'gif';
-      }
-    }
-
-    // Prefix for base64 encoded images with detected format
-    const imageUrl = `data:image/${imageFormat};base64,${base64Image}`;
-    logger.info(`Image URL prepared with format: ${imageFormat}`);
+    const imageUrl = processBase64Image(base64Image);
 
     // System prompt for plant identification
     const systemPrompt = `
