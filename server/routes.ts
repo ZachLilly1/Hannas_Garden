@@ -743,9 +743,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard summary route
-  apiRouter.get("/api/dashboard/care-needed", async (req, res) => {
-    // For debugging, always use user ID 1 (Zach) if not authenticated
-    const userId = req.isAuthenticated() ? req.user!.id : 1;
+  apiRouter.get("/api/dashboard/care-needed", isAuthenticated, async (req, res) => {
+    const userId = req.user!.id;
     logger.info(`Getting care needed for user ID ${userId}`);
     const careNeeded = await storage.getPlantsNeedingCare(userId);
     logger.info(`Found ${careNeeded.needsWater.length} plants needing water and ${careNeeded.needsFertilizer.length} plants needing fertilizer`);

@@ -430,7 +430,7 @@ function setupAuthRoutes(app: Express) {
   });
 
   // Login user - no CSRF protection for login since user isn't authenticated yet
-  app.post("/api/auth/login", authLimiter, async (req, res, next) => {
+  app.post("/api/auth/login", authLimiter, csrfProtection, async (req, res, next) => {
     try {
       const username = req.body.username;
       const password = req.body.password;
