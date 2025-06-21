@@ -502,15 +502,14 @@ function setupAuthRoutes(app: Express) {
   });
 
   // Temporarily remove CSRF protection for logout to debug the issue
-  app.post("/api/auth/logout", (req, res, next) => {
-    logger.debug('CSRF protection temporarily disabled for logout');
+  app.post("/api/auth/logout", csrfProtection, (req, res, next) => {
     // Log all request headers for debugging
     logger.debug(`Logout request received. All headers: ${JSON.stringify(req.headers)}`);
     logger.debug(`Current auth status: ${req.isAuthenticated()}`);
 
     if (!req.isAuthenticated()) {
       logger.debug('User already logged out, returning success');
-      return res.status(200).json({ message: "Already logged out" });
+      return res.status(200).json({ message: "Already logged out" }); // Should be 204 No Content
     }
     
     // Get session id for logging
@@ -537,9 +536,9 @@ function setupAuthRoutes(app: Express) {
         // Explicitly clear the cookie with exact same settings as session cookie
         res.clearCookie('garden.sid', { 
           path: '/',
-          httpOnly: true,
-          secure: false, // Must match session.cookie.secure
-          sameSite: 'lax',  // Must match session.cookie.sameSite
+          httpOnly: sessionSettings.cookie.httpOnly,
+          secure: sessionSettings.cookie.secure,
+          sameSite: sessionSettings.cookie.sameSite,
         });
         
         logger.debug(`User logged out successfully. Old session: ${sessionId}`);
